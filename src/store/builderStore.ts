@@ -197,7 +197,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
 
   importProject: (data: ProjectData) => {
     // Handle migration from old formats
-    let componentsByViewport = {
+    let componentsByViewport: {
+      mobile: PlacedComponent[];
+      tablet: PlacedComponent[];
+      desktop: PlacedComponent[];
+    } = {
       mobile: [],
       tablet: [],
       desktop: [],
