@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Layouts, Responsive, WidthProvider } from 'react-grid-layout';
 import { useBuilderStore, viewportConfigs } from '../store/builderStore';
 import ComponentRenderer from '../components/ComponentRenderer';
@@ -17,7 +17,7 @@ interface SelectionBox {
 }
 
 export default function Canvas() {
-  const { viewport, canvasSettingsByViewport, componentsByViewport, selectedComponents, updateLayout, removeComponent, addComponent, setSelectedComponents, clearSelection } = useBuilderStore();
+  const { viewport, canvasSettingsByViewport, componentsByViewport, selectedComponents, zoom, updateLayout, removeComponent, addComponent, setSelectedComponents, clearSelection } = useBuilderStore();
   const components = componentsByViewport[viewport];
   const canvasSettings = canvasSettingsByViewport[viewport];
   const baseConfig = viewportConfigs[viewport];
@@ -25,6 +25,7 @@ export default function Canvas() {
   const [isSelecting, setIsSelecting] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const lastLayoutRef = useRef<any>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   const config = {
     ...baseConfig,
@@ -33,6 +34,16 @@ export default function Canvas() {
   };
 
   const canvasHeight = canvasSettings.height || 1080;
+
+  // Track window resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Separate components into three layers: background (containers), middle (cards/forms), foreground (others)
   const backgroundComponents = components.filter((comp) => comp.type === 'Container');
@@ -227,30 +238,34 @@ export default function Canvas() {
   };
 
   return (
-    <div
-      ref={canvasRef}
-      className="bg-white border-2 border-dashed border-gray-300 overflow-auto relative"
-      style={{
-        width: config.width,
-        height: canvasHeight,
-        margin: '0 auto'
-      }}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={() => {
-        if (isSelecting) {
-          setIsSelecting(false);
-          setSelectionBox(null);
-        }
-      }}
-    >
-      {/* Selection Box */}
-      {isSelecting && selectionBox && (
-        <div style={getSelectionBoxStyle()} />
-      )}
+    <div className="w-full h-full overflow-auto">
+      <div
+        ref={canvasRef}
+        className="bg-white border-2 border-dashed border-gray-300 relative"
+        style={{
+          width: config.width,
+          height: canvasHeight,
+          margin: '0 auto',
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top center',
+          transition: 'transform 0.2s ease-out'
+        }}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => {
+          if (isSelecting) {
+            setIsSelecting(false);
+            setSelectionBox(null);
+          }
+        }}
+      >
+        {/* Selection Box */}
+        {isSelecting && selectionBox && (
+          <div style={getSelectionBoxStyle()} />
+        )}
 
       {/* Background Layer - Containers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
@@ -263,8 +278,8 @@ export default function Canvas() {
           rowHeight={config.rowHeight}
           width={config.width}
           onLayoutChange={handleLayoutChange}
-          isDraggable={true}
-          isResizable={true}
+          isDraggable={!isMobile || selectedComponents.length === 1}
+          isResizable={!isMobile || selectedComponents.length === 1}
           compactType={null}
           preventCollision={true}
         >
@@ -309,8 +324,8 @@ export default function Canvas() {
           rowHeight={config.rowHeight}
           width={config.width}
           onLayoutChange={handleLayoutChange}
-          isDraggable={true}
-          isResizable={true}
+          isDraggable={!isMobile || selectedComponents.length === 1}
+          isResizable={!isMobile || selectedComponents.length === 1}
           compactType={null}
           preventCollision={true}
         >
@@ -355,8 +370,8 @@ export default function Canvas() {
           rowHeight={config.rowHeight}
           width={config.width}
           onLayoutChange={handleLayoutChange}
-          isDraggable={true}
-          isResizable={true}
+          isDraggable={!isMobile || selectedComponents.length === 1}
+          isResizable={!isMobile || selectedComponents.length === 1}
           compactType={null}
           preventCollision={true}
         >
@@ -390,6 +405,7 @@ export default function Canvas() {
             </div>
           ))}
         </ResponsiveGridLayout>
+      </div>
       </div>
     </div>
   );

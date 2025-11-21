@@ -132,9 +132,9 @@ export default function ComponentLibrary() {
   };
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
+    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 flex flex-col h-full">
       <h2 className="text-lg font-bold mb-4 text-gray-800">Components</h2>
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-y-auto flex-1 pr-2">
         {availableComponents.map((item) => (
           <div
             key={item.type}
@@ -148,7 +148,7 @@ export default function ComponentLibrary() {
         ))}
       </div>
 
-      <div className="mt-6 pt-6 border-t border-gray-200">
+      <div className="mt-6 pt-6 border-t border-gray-200 flex-shrink-0">
         <h3 className="text-sm font-semibold mb-2 text-gray-600">Instructions</h3>
         <p className="text-xs text-gray-500 mb-3">
           <strong>Drag</strong> components onto the canvas or <strong>click</strong> to add at top-left.

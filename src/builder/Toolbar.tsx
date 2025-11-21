@@ -124,22 +124,22 @@ export default function Toolbar() {
   };
 
   return (
-    <div className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-bold text-gray-800">Zont UX Builder</h1>
+    <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-800">Zont UX Builder</h1>
         <input
           type="text"
           value={projectName}
           onChange={handleProjectNameChange}
-          className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          className="w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           placeholder="Project name"
         />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
         <button
           onClick={handleNew}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-sm"
+          className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
         >
           New
         </button>
@@ -154,30 +154,51 @@ export default function Toolbar() {
         />
         <label
           htmlFor="import-input"
-          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium text-sm cursor-pointer"
+          className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium text-xs sm:text-sm cursor-pointer whitespace-nowrap"
         >
           Import
         </label>
 
         <button
           onClick={handleExport}
-          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-sm"
+          className="hidden sm:block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-sm whitespace-nowrap"
         >
           Export JSON
         </button>
 
         <button
+          onClick={handleExport}
+          className="sm:hidden px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-xs whitespace-nowrap"
+        >
+          JSON
+        </button>
+
+        <button
           onClick={handleExportPNG}
-          className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-sm"
+          className="hidden sm:block px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-sm whitespace-nowrap"
         >
           Export PNG
         </button>
 
         <button
+          onClick={handleExportPNG}
+          className="sm:hidden px-3 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-xs whitespace-nowrap"
+        >
+          PNG
+        </button>
+
+        <button
           onClick={handleExportPDF}
-          className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-sm"
+          className="hidden sm:block px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-sm whitespace-nowrap"
         >
           Export PDF
+        </button>
+
+        <button
+          onClick={handleExportPDF}
+          className="sm:hidden px-3 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-xs whitespace-nowrap"
+        >
+          PDF
         </button>
       </div>
     </div>

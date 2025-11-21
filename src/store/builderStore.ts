@@ -39,6 +39,7 @@ interface BuilderState {
   };
   selectedComponents: string[];
   projectName: string;
+  zoom: number;
   setViewport: (viewport: Viewport) => void;
   setCustomWidth: (width: number | null) => void;
   setCustomCols: (cols: number | null) => void;
@@ -51,6 +52,7 @@ interface BuilderState {
   toggleComponentSelection: (id: string) => void;
   clearSelection: () => void;
   setProjectName: (name: string) => void;
+  setZoom: (zoom: number) => void;
   exportProject: () => ProjectData;
   importProject: (data: ProjectData) => void;
   clearProject: () => void;
@@ -87,7 +89,9 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
   selectedComponents: [],
   projectName: 'Untitled Project',
+  zoom: 1,
   setViewport: (viewport) => set({ viewport, selectedComponents: [] }),
+  setZoom: (zoom) => set({ zoom }),
   setCustomWidth: (width) => set((state) => ({
     canvasSettingsByViewport: {
       ...state.canvasSettingsByViewport,
