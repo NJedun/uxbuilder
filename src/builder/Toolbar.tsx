@@ -1,5 +1,7 @@
 import { useBuilderStore } from '../store/builderStore';
 import { useRef } from 'react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function Toolbar() {
   const { projectName, setProjectName, exportProject, importProject, clearProject, saveToLocalStorage } = useBuilderStore();
@@ -56,6 +58,71 @@ export default function Toolbar() {
     saveToLocalStorage(); // Auto-save on name change
   };
 
+  const handleExportPNG = async () => {
+    const canvasElement = document.querySelector('.bg-white.border-2.border-dashed') as HTMLElement;
+    if (!canvasElement) {
+      alert('Canvas not found');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(canvasElement, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Higher quality
+        logging: false,
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to export PNG:', error);
+      alert('Failed to export PNG');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    const canvasElement = document.querySelector('.bg-white.border-2.border-dashed') as HTMLElement;
+    if (!canvasElement) {
+      alert('Canvas not found');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(canvasElement, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+
+      // Calculate PDF dimensions (A4 or custom based on canvas aspect ratio)
+      const pdf = new jsPDF({
+        orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [imgWidth, imgHeight],
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.pdf`);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Failed to export PDF');
+    }
+  };
+
   return (
     <div className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -97,6 +164,20 @@ export default function Toolbar() {
           className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-sm"
         >
           Export JSON
+        </button>
+
+        <button
+          onClick={handleExportPNG}
+          className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-sm"
+        >
+          Export PNG
+        </button>
+
+        <button
+          onClick={handleExportPDF}
+          className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-sm"
+        >
+          Export PDF
         </button>
       </div>
     </div>

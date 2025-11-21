@@ -324,7 +324,7 @@ export default function Canvas() {
                 ...(selectedComponents.includes(comp.i) ? { boxShadow: '0 0 0 4px #3b82f6' } : {}),
               }}
             >
-              {comp.type === 'Card' ? <Card {...comp.props} /> : <Form />}
+              {comp.type === 'Card' ? <Card {...comp.props} /> : <Form {...comp.props} />}
               <button
                 onMouseDown={(e) => {
                   e.stopPropagation();
@@ -364,7 +364,7 @@ export default function Canvas() {
             <div
               key={comp.i}
               onClick={(e) => handleComponentClick(e, comp.i)}
-              className={`bg-transparent border rounded p-4 hover:border-gray-400 cursor-move relative group pointer-events-auto ${
+              className={`bg-transparent border rounded hover:border-gray-400 cursor-move relative group pointer-events-auto ${
                 selectedComponents.includes(comp.i) ? 'border-blue-500 border-2 ring-2 ring-blue-300' : 'border-transparent'
               }`}
               style={{

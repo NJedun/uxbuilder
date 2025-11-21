@@ -1,6 +1,11 @@
-export default function Dropdown() {
+interface DropdownProps {
+  showLabel?: boolean;
+}
+
+export default function Dropdown({ showLabel = false }: DropdownProps) {
   return (
-    <div className="w-full h-full flex items-center px-2">
+    <div className="w-full h-full flex flex-col justify-center px-2 gap-1">
+      {showLabel && <div className="h-1.5 bg-gray-500 rounded" style={{ width: '60px' }} />}
       <div className="w-full h-8 border-2 border-gray-400 rounded bg-white relative flex items-center justify-end pr-2">
         <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

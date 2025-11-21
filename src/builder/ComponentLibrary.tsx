@@ -72,8 +72,8 @@ const availableComponents: ComponentItem[] = [
   {
     type: 'Form',
     label: 'Form',
-    defaultProps: {},
-    defaultSize: { w: 3, h: 3 },
+    defaultProps: { showLabels: true },
+    defaultSize: { w: 3, h: 6 },
   },
   {
     type: 'Input',
