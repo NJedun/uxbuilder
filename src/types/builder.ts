@@ -21,7 +21,14 @@ export type ComponentType =
   | 'HorizontalLine'
   // Footer Components
   | 'FooterPattern'
-  | 'CopyrightText';
+  | 'CopyrightText'
+  // Content Patterns
+  | 'ProductCard'
+  | 'ProductList'
+  | 'ProductDetails'
+  | 'HeroSection'
+  | 'HeroWithImage'
+  | 'ContactForm';
 
 export interface ComponentDefinition {
   id: string;

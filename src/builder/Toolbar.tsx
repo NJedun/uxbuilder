@@ -84,6 +84,8 @@ export default function Toolbar() {
         scale: 2, // Higher quality
         logging: false,
         useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: false,
       });
 
       // Restore visibility
@@ -138,6 +140,8 @@ export default function Toolbar() {
         scale: 2,
         logging: false,
         useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: false,
       });
 
       // Restore visibility

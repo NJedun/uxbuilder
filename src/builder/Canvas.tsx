@@ -215,7 +215,7 @@ export default function Canvas() {
         isDraggable={true}
         isResizable={true}
         compactType={null}
-        preventCollision={false}
+        preventCollision={true}
       >
         {sectionComponents.map((comp) => (
           <div

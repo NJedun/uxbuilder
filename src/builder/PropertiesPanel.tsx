@@ -189,6 +189,152 @@ export default function PropertiesPanel() {
         </div>
       )}
 
+      {/* ProductCard Properties */}
+      {component.type === 'ProductCard' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout
+          </label>
+          <select
+            value={component.props?.variant || 'grid'}
+            onChange={(e) => handlePropChange('variant', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="grid">Grid View</option>
+            <option value="list">List View</option>
+          </select>
+        </div>
+      )}
+
+      {/* ProductList Properties */}
+      {component.type === 'ProductList' && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Layout
+            </label>
+            <select
+              value={component.props?.layout || 'grid'}
+              onChange={(e) => handlePropChange('layout', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="grid">Grid</option>
+              <option value="list">List</option>
+            </select>
+          </div>
+          {component.props?.layout === 'grid' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Columns
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="4"
+                value={component.props?.columns || 3}
+                onChange={(e) => handlePropChange('columns', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Number of Items
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={component.props?.itemCount || 6}
+              onChange={(e) => handlePropChange('itemCount', parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </>
+      )}
+
+      {/* ProductDetails Properties */}
+      {component.type === 'ProductDetails' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout
+          </label>
+          <select
+            value={component.props?.layout || 'sideBySide'}
+            onChange={(e) => handlePropChange('layout', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="sideBySide">Side by Side</option>
+            <option value="stacked">Stacked</option>
+          </select>
+        </div>
+      )}
+
+      {/* HeroSection Properties */}
+      {component.type === 'HeroSection' && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Alignment
+            </label>
+            <select
+              value={component.props?.align || 'center'}
+              onChange={(e) => handlePropChange('align', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={component.props?.hasImageBackground === true}
+                onChange={(e) => handlePropChange('hasImageBackground', e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Image Background</span>
+            </label>
+          </div>
+        </>
+      )}
+
+      {/* HeroWithImage Properties */}
+      {component.type === 'HeroWithImage' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Image Position
+          </label>
+          <select
+            value={component.props?.align || 'left'}
+            onChange={(e) => handlePropChange('align', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+      )}
+
+      {/* ContactForm Properties */}
+      {component.type === 'ContactForm' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout
+          </label>
+          <select
+            value={component.props?.layout || 'standard'}
+            onChange={(e) => handlePropChange('layout', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="standard">Standard</option>
+            <option value="withInfo">With Contact Info</option>
+          </select>
+        </div>
+      )}
+
       {/* Card Properties */}
       {component.type === 'Card' && (
         <div className="mb-4">

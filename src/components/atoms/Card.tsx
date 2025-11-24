@@ -16,9 +16,7 @@ export default function Card({ variant = 'solid' }: CardProps) {
         {isImage && (
           <>
             {/* Diagonal stripes pattern to represent image */}
-            <div className="absolute inset-0" style={{
-              backgroundImage: 'repeating-linear-gradient(45deg, #d1d5db 0, #d1d5db 10px, #e5e7eb 10px, #e5e7eb 20px)',
-            }} />
+            <div className="absolute inset-0 image-pattern" />
             {/* X mark in center to represent image placeholder */}
             <div className="absolute inset-0 flex items-center justify-center">
               <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

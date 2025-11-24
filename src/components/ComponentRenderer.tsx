@@ -20,6 +20,12 @@ import HeaderPattern from './atoms/HeaderPattern';
 import HorizontalLine from './atoms/HorizontalLine';
 import FooterPattern from './atoms/FooterPattern';
 import CopyrightText from './atoms/CopyrightText';
+import ProductCard from './atoms/ProductCard';
+import ProductList from './atoms/ProductList';
+import ProductDetails from './atoms/ProductDetails';
+import HeroSection from './atoms/HeroSection';
+import HeroWithImage from './atoms/HeroWithImage';
+import ContactForm from './atoms/ContactForm';
 
 interface ComponentRendererProps {
   component: ComponentDefinition;
@@ -46,6 +52,20 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
       return <FooterPattern {...component.props} />;
     case 'CopyrightText':
       return <CopyrightText {...component.props} />;
+
+    // Content Patterns
+    case 'ProductCard':
+      return <ProductCard {...component.props} />;
+    case 'ProductList':
+      return <ProductList {...component.props} />;
+    case 'ProductDetails':
+      return <ProductDetails {...component.props} />;
+    case 'HeroSection':
+      return <HeroSection {...component.props} />;
+    case 'HeroWithImage':
+      return <HeroWithImage {...component.props} />;
+    case 'ContactForm':
+      return <ContactForm {...component.props} />;
 
     // Basic Components
     case 'Card':

@@ -49,12 +49,6 @@ const componentGroups: ComponentGroup[] = [
         defaultSize: { w: 1, h: 1 },
       },
       {
-        type: 'HorizontalLine',
-        label: 'Horizontal Line',
-        defaultProps: { width: 2, align: 'center' },
-        defaultSize: { w: 12, h: 1 },
-      },
-      {
         type: 'HeaderPattern',
         label: 'Full Header',
         defaultProps: { variant: 'simple' },
@@ -63,7 +57,48 @@ const componentGroups: ComponentGroup[] = [
     ],
   },
   {
-    title: 'Content',
+    title: 'Content Patterns',
+    items: [
+      {
+        type: 'HeroSection',
+        label: 'Hero Section',
+        defaultProps: { align: 'center', hasImageBackground: false },
+        defaultSize: { w: 12, h: 6 },
+      },
+      {
+        type: 'HeroWithImage',
+        label: 'Hero with Image',
+        defaultProps: { align: 'left' },
+        defaultSize: { w: 12, h: 6 },
+      },
+      {
+        type: 'ProductList',
+        label: 'Product List',
+        defaultProps: { layout: 'grid', columns: 3 },
+        defaultSize: { w: 12, h: 8 },
+      },
+      {
+        type: 'ProductCard',
+        label: 'Product Card',
+        defaultProps: { variant: 'grid' },
+        defaultSize: { w: 3, h: 4 },
+      },
+      {
+        type: 'ProductDetails',
+        label: 'Product Details',
+        defaultProps: { layout: 'sideBySide' },
+        defaultSize: { w: 12, h: 8 },
+      },
+      {
+        type: 'ContactForm',
+        label: 'Contact Form',
+        defaultProps: { layout: 'standard' },
+        defaultSize: { w: 8, h: 8 },
+      },
+    ],
+  },
+  {
+    title: 'Basic Elements',
     items: [
       {
         type: 'Title',
@@ -94,6 +129,12 @@ const componentGroups: ComponentGroup[] = [
         label: 'Card',
         defaultProps: { variant: 'solid' },
         defaultSize: { w: 3, h: 2 },
+      },
+      {
+        type: 'HorizontalLine',
+        label: 'Horizontal Line',
+        defaultProps: { width: 2, align: 'center' },
+        defaultSize: { w: 12, h: 1 },
       },
     ],
   },

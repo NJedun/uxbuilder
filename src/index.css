@@ -57,3 +57,8 @@ body {
   border-right: 2px solid rgba(0, 0, 0, 0.4);
   border-bottom: 2px solid rgba(0, 0, 0, 0.4);
 }
+
+/* Image placeholder background */
+.image-pattern {
+  background-color: #e5e7eb;
+}
