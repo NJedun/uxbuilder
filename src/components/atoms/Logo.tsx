@@ -4,9 +4,9 @@ interface LogoProps {
 
 export default function Logo({ size = 'medium' }: LogoProps) {
   const sizeConfig = {
-    small: { width: '65%', height: '18px' },
-    medium: { width: '75%', height: '24px' },
-    large: { width: '85%', height: '30px' },
+    small: { width: '60px', height: '18px' },
+    medium: { width: '80px', height: '24px' },
+    large: { width: '100px', height: '30px' },
   };
 
   const config = sizeConfig[size];

@@ -12,6 +12,14 @@ import Textarea from './atoms/Textarea';
 import Dropdown from './atoms/Dropdown';
 import Form from './atoms/Form';
 import SocialLinks from './atoms/SocialLinks';
+import NavMenu from './atoms/NavMenu';
+import SearchBar from './atoms/SearchBar';
+import HeaderActions from './atoms/HeaderActions';
+import HamburgerIcon from './atoms/HamburgerIcon';
+import HeaderPattern from './atoms/HeaderPattern';
+import HorizontalLine from './atoms/HorizontalLine';
+import FooterPattern from './atoms/FooterPattern';
+import CopyrightText from './atoms/CopyrightText';
 
 interface ComponentRendererProps {
   component: ComponentDefinition;
@@ -19,12 +27,31 @@ interface ComponentRendererProps {
 
 export default function ComponentRenderer({ component }: ComponentRendererProps) {
   switch (component.type) {
-    case 'Container':
-      return null; // Containers are rendered directly in Canvas as background layer
+    // Header Components
+    case 'NavMenu':
+      return <NavMenu {...component.props} />;
+    case 'SearchBar':
+      return <SearchBar {...component.props} />;
+    case 'HeaderActions':
+      return <HeaderActions {...component.props} />;
+    case 'HamburgerIcon':
+      return <HamburgerIcon />;
+    case 'HeaderPattern':
+      return <HeaderPattern {...component.props} />;
+    case 'HorizontalLine':
+      return <HorizontalLine {...component.props} />;
+
+    // Footer Components
+    case 'FooterPattern':
+      return <FooterPattern {...component.props} />;
+    case 'CopyrightText':
+      return <CopyrightText {...component.props} />;
+
+    // Basic Components
     case 'Card':
-      return null; // Cards are rendered directly in Canvas as background layer
+      return <Card {...component.props} />;
     case 'Form':
-      return null; // Forms are rendered directly in Canvas as background layer
+      return <Form {...component.props} />;
     case 'Button':
       return <Button {...component.props} />;
     case 'Title':

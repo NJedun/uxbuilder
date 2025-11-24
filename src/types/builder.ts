@@ -1,4 +1,27 @@
-export type ComponentType = 'Button' | 'Title' | 'Container' | 'Logo' | 'Image' | 'Card' | 'Paragraph' | 'Link' | 'List' | 'Input' | 'Textarea' | 'Dropdown' | 'Form' | 'SocialLinks';
+export type ComponentType =
+  | 'Button'
+  | 'Title'
+  | 'Logo'
+  | 'Image'
+  | 'Card'
+  | 'Paragraph'
+  | 'Link'
+  | 'List'
+  | 'Input'
+  | 'Textarea'
+  | 'Dropdown'
+  | 'Form'
+  | 'SocialLinks'
+  // Header Components
+  | 'NavMenu'
+  | 'SearchBar'
+  | 'HeaderActions'
+  | 'HamburgerIcon'
+  | 'HeaderPattern'
+  | 'HorizontalLine'
+  // Footer Components
+  | 'FooterPattern'
+  | 'CopyrightText';
 
 export interface ComponentDefinition {
   id: string;
@@ -20,6 +43,7 @@ export interface PlacedComponent extends ComponentDefinition {
   y: number;
   w: number;
   h: number;
+  parentId?: string; // 'header', 'body', or 'footer' for section-based layout
 }
 
 export type Viewport = 'mobile' | 'tablet' | 'desktop';

@@ -5,6 +5,9 @@ interface CanvasSettings {
   width: number | null;
   height: number | null;
   cols: number | null;
+  headerHeight: number;
+  bodyHeight: number;
+  footerHeight: number;
 }
 
 export interface ProjectData {
@@ -38,12 +41,15 @@ interface BuilderState {
     desktop: PlacedComponent[];
   };
   selectedComponents: string[];
+  selectedLayoutSection: 'Header' | 'Body' | 'Footer' | null;
   projectName: string;
   zoom: number;
   setViewport: (viewport: Viewport) => void;
   setCustomWidth: (width: number | null) => void;
   setCustomCols: (cols: number | null) => void;
   setCustomHeight: (height: number | null) => void;
+  setSectionHeight: (section: 'header' | 'body' | 'footer', height: number) => void;
+  setSelectedLayoutSection: (section: 'Header' | 'Body' | 'Footer' | null) => void;
   addComponent: (component: PlacedComponent) => void;
   updateLayout: (layout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => void;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
@@ -73,6 +79,9 @@ const defaultCanvasSettings: CanvasSettings = {
   width: null,
   height: null,
   cols: null,
+  headerHeight: 150,
+  bodyHeight: 600,
+  footerHeight: 200,
 };
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -88,10 +97,12 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     desktop: [],
   },
   selectedComponents: [],
+  selectedLayoutSection: null,
   projectName: 'Untitled Project',
   zoom: 1,
-  setViewport: (viewport) => set({ viewport, selectedComponents: [] }),
+  setViewport: (viewport) => set({ viewport, selectedComponents: [], selectedLayoutSection: null }),
   setZoom: (zoom) => set({ zoom }),
+  setSelectedLayoutSection: (section) => set({ selectedLayoutSection: section }),
   setCustomWidth: (width) => set((state) => ({
     canvasSettingsByViewport: {
       ...state.canvasSettingsByViewport,
@@ -116,6 +127,15 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       [state.viewport]: {
         ...state.canvasSettingsByViewport[state.viewport],
         height,
+      },
+    },
+  })),
+  setSectionHeight: (section, height) => set((state) => ({
+    canvasSettingsByViewport: {
+      ...state.canvasSettingsByViewport,
+      [state.viewport]: {
+        ...state.canvasSettingsByViewport[state.viewport],
+        [`${section}Height`]: height,
       },
     },
   })),

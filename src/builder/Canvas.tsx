@@ -2,30 +2,35 @@ import { useState, useRef, useEffect } from 'react';
 import { Layouts, Responsive, WidthProvider } from 'react-grid-layout';
 import { useBuilderStore, viewportConfigs } from '../store/builderStore';
 import ComponentRenderer from '../components/ComponentRenderer';
-import Card from '../components/atoms/Card';
-import Form from '../components/atoms/Form';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-interface SelectionBox {
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
-}
-
 export default function Canvas() {
-  const { viewport, canvasSettingsByViewport, componentsByViewport, selectedComponents, zoom, updateLayout, removeComponent, addComponent, setSelectedComponents, clearSelection } = useBuilderStore();
+  const {
+    viewport,
+    canvasSettingsByViewport,
+    componentsByViewport,
+    selectedComponents,
+    selectedLayoutSection,
+    zoom,
+    updateLayout,
+    removeComponent,
+    addComponent,
+    setSelectedComponents,
+    setSelectedLayoutSection,
+    setSectionHeight,
+    clearSelection
+  } = useBuilderStore();
+
   const components = componentsByViewport[viewport];
   const canvasSettings = canvasSettingsByViewport[viewport];
   const baseConfig = viewportConfigs[viewport];
-  const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const lastLayoutRef = useRef<any>(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [resizing, setResizing] = useState<'header' | 'body' | 'footer' | null>(null);
+  const [resizeStartY, setResizeStartY] = useState(0);
+  const [resizeStartHeight, setResizeStartHeight] = useState(0);
 
   const config = {
     ...baseConfig,
@@ -33,91 +38,76 @@ export default function Canvas() {
     cols: canvasSettings.cols || baseConfig.cols,
   };
 
-  const canvasHeight = canvasSettings.height || 1080;
+  const headerHeight = canvasSettings.headerHeight;
+  const bodyHeight = canvasSettings.bodyHeight;
+  const footerHeight = canvasSettings.footerHeight;
 
-  // Track window resize for mobile detection
+  // Separate components by section
+  const headerComponents = components.filter(c => c.parentId === 'header');
+  const bodyComponents = components.filter(c => c.parentId === 'body');
+  const footerComponents = components.filter(c => c.parentId === 'footer');
+
+  // Create layouts for each section
+  const createLayouts = (sectionComponents: typeof components): Layouts => ({
+    lg: sectionComponents.map((comp) => ({
+      i: comp.i,
+      x: comp.x,
+      y: comp.y,
+      w: comp.w,
+      h: comp.h,
+      static: false,
+    })),
+  });
+
+  const headerLayouts = createLayouts(headerComponents);
+  const bodyLayouts = createLayouts(bodyComponents);
+  const footerLayouts = createLayouts(footerComponents);
+
+  // Calculate minimum height needed for each section based on components
+  const calculateMinHeight = (sectionComponents: typeof components): number => {
+    if (sectionComponents.length === 0) return 100; // Minimum height when empty
+
+    // Find the bottom-most component
+    const maxBottom = Math.max(
+      ...sectionComponents.map(comp => (comp.y + comp.h) * config.rowHeight)
+    );
+
+    return Math.max(100, maxBottom + 50); // Add 50px padding at bottom
+  };
+
+  // Auto-expand sections if components exceed current height
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
+    const headerMinHeight = calculateMinHeight(headerComponents);
+    const bodyMinHeight = calculateMinHeight(bodyComponents);
+    const footerMinHeight = calculateMinHeight(footerComponents);
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Separate components into three layers: background (containers), middle (cards/forms), foreground (others)
-  const backgroundComponents = components.filter((comp) => comp.type === 'Container');
-  const middleComponents = components.filter((comp) => comp.type === 'Card' || comp.type === 'Form');
-  const foregroundComponents = components.filter((comp) => comp.type !== 'Container' && comp.type !== 'Card' && comp.type !== 'Form');
-
-  const backgroundLayouts: Layouts = {
-    lg: backgroundComponents.map((comp) => ({
-      i: comp.i,
-      x: comp.x,
-      y: comp.y,
-      w: comp.w,
-      h: comp.h,
-    })),
-  };
-
-  const middleLayouts: Layouts = {
-    lg: middleComponents.map((comp) => ({
-      i: comp.i,
-      x: comp.x,
-      y: comp.y,
-      w: comp.w,
-      h: comp.h,
-    })),
-  };
-
-  const foregroundLayouts: Layouts = {
-    lg: foregroundComponents.map((comp) => ({
-      i: comp.i,
-      x: comp.x,
-      y: comp.y,
-      w: comp.w,
-      h: comp.h,
-    })),
-  };
-
-  const handleLayoutChange = (_layout: any, allLayouts: Layouts) => {
-    if (!allLayouts.lg) return;
-
-    // If multiple components are selected, move them together
-    if (selectedComponents.length > 1 && lastLayoutRef.current) {
-      const movedItem = allLayouts.lg.find((item: any) => {
-        const lastItem = lastLayoutRef.current.find((last: any) => last.i === item.i);
-        return lastItem && (lastItem.x !== item.x || lastItem.y !== item.y);
-      });
-
-      if (movedItem && selectedComponents.includes(movedItem.i)) {
-        const lastItem = lastLayoutRef.current.find((last: any) => last.i === movedItem.i);
-        const deltaX = movedItem.x - lastItem.x;
-        const deltaY = movedItem.y - lastItem.y;
-
-        // Apply the same delta to all selected components
-        const updatedLayout = allLayouts.lg.map((item: any) => {
-          if (selectedComponents.includes(item.i) && item.i !== movedItem.i) {
-            return {
-              ...item,
-              x: Math.max(0, Math.min(item.x + deltaX, config.cols - item.w)),
-              y: Math.max(0, item.y + deltaY),
-            };
-          }
-          return item;
-        });
-
-        lastLayoutRef.current = updatedLayout;
-        updateLayout(updatedLayout);
-        return;
-      }
+    if (headerHeight < headerMinHeight) {
+      setSectionHeight('header', headerMinHeight);
     }
+    if (bodyHeight < bodyMinHeight) {
+      setSectionHeight('body', bodyMinHeight);
+    }
+    if (footerHeight < footerMinHeight) {
+      setSectionHeight('footer', footerMinHeight);
+    }
+  }, [headerComponents.length, bodyComponents.length, footerComponents.length, components]);
 
-    lastLayoutRef.current = allLayouts.lg;
-    updateLayout(allLayouts.lg);
+  const handleLayoutChange = (layout: any[]) => {
+    updateLayout(layout);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleCanvasClick = () => {
+    clearSelection();
+    setSelectedLayoutSection(null);
+  };
+
+  const handleSectionClick = (section: 'Header' | 'Body' | 'Footer', e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedLayoutSection(section);
+    clearSelection();
+  };
+
+  const handleDrop = (e: React.DragEvent, section: 'header' | 'body' | 'footer') => {
     e.preventDefault();
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
@@ -125,7 +115,6 @@ export default function Canvas() {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      // Calculate grid position
       const colWidth = config.width / config.cols;
       const col = Math.floor(x / colWidth);
       const row = Math.floor(y / config.rowHeight);
@@ -141,6 +130,7 @@ export default function Canvas() {
         y: Math.max(0, row),
         w: data.defaultSize.w,
         h: data.defaultSize.h,
+        parentId: section,
       } as any);
     } catch (error) {
       console.error('Failed to drop component:', error);
@@ -152,260 +142,186 @@ export default function Canvas() {
     e.dataTransfer.dropEffect = 'copy';
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
-
-    setIsSelecting(true);
-    setSelectionBox({ startX, startY, endX: startX, endY: startY });
-    clearSelection();
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isSelecting || !selectionBox || !canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
-
-    setSelectionBox({ ...selectionBox, endX, endY });
-  };
-
-  const handleMouseUp = () => {
-    if (!isSelecting || !selectionBox) return;
-
-    const colWidth = config.width / config.cols;
-    const minX = Math.min(selectionBox.startX, selectionBox.endX);
-    const maxX = Math.max(selectionBox.startX, selectionBox.endX);
-    const minY = Math.min(selectionBox.startY, selectionBox.endY);
-    const maxY = Math.max(selectionBox.startY, selectionBox.endY);
-
-    const selected = components.filter((comp) => {
-      const compLeft = comp.x * colWidth;
-      const compRight = (comp.x + comp.w) * colWidth;
-      const compTop = comp.y * config.rowHeight;
-      const compBottom = (comp.y + comp.h) * config.rowHeight;
-
-      return (
-        compLeft < maxX &&
-        compRight > minX &&
-        compTop < maxY &&
-        compBottom > minY
-      );
-    });
-
-    setSelectedComponents(selected.map((comp) => comp.i));
-    setIsSelecting(false);
-    setSelectionBox(null);
-  };
-
-  const handleComponentClick = (e: React.MouseEvent, id: string) => {
+  const handleResizeStart = (section: 'header' | 'body' | 'footer', e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (e.ctrlKey || e.metaKey) {
-      // Toggle selection with Ctrl/Cmd
-      const newSelection = selectedComponents.includes(id)
-        ? selectedComponents.filter((selectedId) => selectedId !== id)
-        : [...selectedComponents, id];
-      setSelectedComponents(newSelection);
-    } else {
-      // Select only this component
-      setSelectedComponents([id]);
+    setResizing(section);
+    setResizeStartY(e.clientY);
+    const currentHeight = section === 'header' ? headerHeight : section === 'body' ? bodyHeight : footerHeight;
+    setResizeStartHeight(currentHeight);
+  };
+
+  // Global resize listeners
+  useEffect(() => {
+    if (resizing) {
+      const handleMove = (e: MouseEvent) => {
+        const delta = e.clientY - resizeStartY;
+        const newHeight = Math.max(100, resizeStartHeight + delta);
+        setSectionHeight(resizing, newHeight);
+      };
+
+      const handleEnd = () => {
+        setResizing(null);
+      };
+
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleMove);
+        window.removeEventListener('mouseup', handleEnd);
+      };
     }
-  };
+  }, [resizing, resizeStartY, resizeStartHeight, setSectionHeight]);
 
-  const getSelectionBoxStyle = () => {
-    if (!selectionBox) return {};
+  const renderSection = (
+    section: 'Header' | 'Body' | 'Footer',
+    sectionId: 'header' | 'body' | 'footer',
+    height: number,
+    layouts: Layouts,
+    sectionComponents: typeof components,
+    bgColor: string,
+    borderColor: string
+  ) => (
+    <div
+      className={`relative border-2 border-dashed ${borderColor} ${bgColor} ${
+        selectedLayoutSection === section ? 'ring-2 ring-purple-500' : ''
+      }`}
+      style={{ height: `${height}px`, width: config.width }}
+      onClick={(e) => handleSectionClick(section, e)}
+      onDrop={(e) => handleDrop(e, sectionId)}
+      onDragOver={handleDragOver}
+    >
+      <div className="absolute top-2 left-2 text-xs font-bold text-gray-500 pointer-events-none z-10">
+        {section}
+      </div>
 
-    const minX = Math.min(selectionBox.startX, selectionBox.endX);
-    const minY = Math.min(selectionBox.startY, selectionBox.endY);
-    const width = Math.abs(selectionBox.endX - selectionBox.startX);
-    const height = Math.abs(selectionBox.endY - selectionBox.startY);
-
-    return {
-      position: 'absolute' as const,
-      left: minX,
-      top: minY,
-      width,
-      height,
-      border: '2px dashed #3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      pointerEvents: 'none' as const,
-      zIndex: 1000,
-    };
-  };
+      <ResponsiveGridLayout
+        key={`${viewport}-${sectionId}`}
+        className="layout"
+        layouts={layouts}
+        breakpoints={{ lg: 0 }}
+        cols={{ lg: config.cols }}
+        rowHeight={config.rowHeight}
+        width={config.width}
+        onLayoutChange={handleLayoutChange}
+        onDragStop={(layout, oldItem, newItem) => {
+          // Select the component after dragging
+          setSelectedComponents([newItem.i]);
+        }}
+        onResizeStop={(layout, oldItem, newItem) => {
+          // Select the component after resizing
+          setSelectedComponents([newItem.i]);
+        }}
+        isDraggable={true}
+        isResizable={true}
+        compactType={null}
+        preventCollision={false}
+      >
+        {sectionComponents.map((comp) => (
+          <div
+            key={comp.i}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (e.ctrlKey || e.metaKey) {
+                const newSelection = selectedComponents.includes(comp.i)
+                  ? selectedComponents.filter((selectedId) => selectedId !== comp.i)
+                  : [...selectedComponents, comp.i];
+                setSelectedComponents(newSelection);
+              } else {
+                setSelectedComponents([comp.i]);
+              }
+            }}
+            className={`border rounded relative group ${
+              selectedComponents.includes(comp.i)
+                ? 'border-blue-500 border-2'
+                : 'border-transparent hover:border-gray-300'
+            } bg-white`}
+          >
+            <ComponentRenderer component={comp} />
+            <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeComponent(comp.i);
+              }}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
+              title="Delete component"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </ResponsiveGridLayout>
+    </div>
+  );
 
   return (
-    <div className="w-full h-full overflow-auto">
-      <div
-        ref={canvasRef}
-        className="bg-white border-2 border-dashed border-gray-300 relative"
-        style={{
-          width: config.width,
-          height: canvasHeight,
-          margin: '0 auto',
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top center',
-          transition: 'transform 0.2s ease-out'
-        }}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={() => {
-          if (isSelecting) {
-            setIsSelecting(false);
-            setSelectionBox(null);
-          }
-        }}
-      >
-        {/* Selection Box */}
-        {isSelecting && selectionBox && (
-          <div style={getSelectionBoxStyle()} />
+    <div
+      ref={canvasRef}
+      className="flex-1 bg-gray-100 overflow-auto p-8"
+      onClick={handleCanvasClick}
+      style={{ zoom }}
+    >
+      <div className="mx-auto bg-white shadow-lg" style={{ width: config.width }}>
+        {/* Header Section */}
+        {renderSection(
+          'Header',
+          'header',
+          headerHeight,
+          headerLayouts,
+          headerComponents,
+          'bg-white',
+          'border-gray-300'
         )}
 
-      {/* Background Layer - Containers */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <ResponsiveGridLayout
-          key={`background-${viewport}`}
-          className="layout"
-          layouts={backgroundLayouts}
-          breakpoints={{ lg: 0 }}
-          cols={{ lg: config.cols }}
-          rowHeight={config.rowHeight}
-          width={config.width}
-          onLayoutChange={handleLayoutChange}
-          isDraggable={!isMobile || selectedComponents.length === 1}
-          isResizable={!isMobile || selectedComponents.length === 1}
-          compactType={null}
-          preventCollision={true}
+        {/* Header Resize Handle */}
+        <div
+          className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
+          onMouseDown={(e) => handleResizeStart('header', e)}
+          style={{ userSelect: 'none' }}
         >
-          {backgroundComponents.map((comp) => (
-            <div
-              key={comp.i}
-              onClick={(e) => handleComponentClick(e, comp.i)}
-              className="bg-transparent hover:bg-gray-50 rounded cursor-move relative group pointer-events-auto"
-              style={{
-                height: '100%',
-                border: `${comp.props?.borderWidth || 4}px solid black`,
-                ...(selectedComponents.includes(comp.i) ? { boxShadow: '0 0 0 4px #3b82f6' } : {}),
-              }}
-            >
-              <button
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeComponent(comp.i);
-                }}
-                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
-                title="Delete container"
-                style={{ pointerEvents: 'auto' }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </ResponsiveGridLayout>
-      </div>
+          <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
+        </div>
 
-      {/* Middle Layer - Cards & Forms */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0.5 }}>
-        <ResponsiveGridLayout
-          key={`middle-${viewport}`}
-          className="layout"
-          layouts={middleLayouts}
-          breakpoints={{ lg: 0 }}
-          cols={{ lg: config.cols }}
-          rowHeight={config.rowHeight}
-          width={config.width}
-          onLayoutChange={handleLayoutChange}
-          isDraggable={!isMobile || selectedComponents.length === 1}
-          isResizable={!isMobile || selectedComponents.length === 1}
-          compactType={null}
-          preventCollision={true}
-        >
-          {middleComponents.map((comp) => (
-            <div
-              key={comp.i}
-              onClick={(e) => handleComponentClick(e, comp.i)}
-              className="rounded cursor-move relative group pointer-events-auto"
-              style={{
-                height: '100%',
-                ...(selectedComponents.includes(comp.i) ? { boxShadow: '0 0 0 4px #3b82f6' } : {}),
-              }}
-            >
-              {comp.type === 'Card' ? <Card {...comp.props} /> : <Form {...comp.props} />}
-              <button
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeComponent(comp.i);
-                }}
-                className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-xl leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
-                title={`Delete ${comp.type.toLowerCase()}`}
-                style={{ pointerEvents: 'auto' }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </ResponsiveGridLayout>
-      </div>
+        {/* Body Section */}
+        {renderSection(
+          'Body',
+          'body',
+          bodyHeight,
+          bodyLayouts,
+          bodyComponents,
+          'bg-white',
+          'border-gray-300'
+        )}
 
-      {/* Foreground Layer - Regular Components */}
-      <div className="relative pointer-events-none" style={{ zIndex: 1 }}>
-        <ResponsiveGridLayout
-          key={`foreground-${viewport}`}
-          className="layout pointer-events-none"
-          layouts={foregroundLayouts}
-          breakpoints={{ lg: 0 }}
-          cols={{ lg: config.cols }}
-          rowHeight={config.rowHeight}
-          width={config.width}
-          onLayoutChange={handleLayoutChange}
-          isDraggable={!isMobile || selectedComponents.length === 1}
-          isResizable={!isMobile || selectedComponents.length === 1}
-          compactType={null}
-          preventCollision={true}
+        {/* Body Resize Handle */}
+        <div
+          className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
+          onMouseDown={(e) => handleResizeStart('body', e)}
+          style={{ userSelect: 'none' }}
         >
-          {foregroundComponents.map((comp) => (
-            <div
-              key={comp.i}
-              onClick={(e) => handleComponentClick(e, comp.i)}
-              className={`bg-transparent border rounded hover:border-gray-400 cursor-move relative group pointer-events-auto ${
-                selectedComponents.includes(comp.i) ? 'border-blue-500 border-2 ring-2 ring-blue-300' : 'border-transparent'
-              }`}
-              style={{
-                height: '100%',
-              }}
-            >
-              <button
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeComponent(comp.i);
-                }}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
-                title="Delete component"
-              >
-                ×
-              </button>
-              <div className="h-full pointer-events-none flex items-center justify-center">
-                <ComponentRenderer component={comp} />
-              </div>
-            </div>
-          ))}
-        </ResponsiveGridLayout>
-      </div>
+          <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
+        </div>
+
+        {/* Footer Section */}
+        {renderSection(
+          'Footer',
+          'footer',
+          footerHeight,
+          footerLayouts,
+          footerComponents,
+          'bg-white',
+          'border-gray-300'
+        )}
+
+        {/* Footer Resize Handle */}
+        <div
+          className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
+          onMouseDown={(e) => handleResizeStart('footer', e)}
+          style={{ userSelect: 'none' }}
+        >
+          <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
+        </div>
       </div>
     </div>
   );

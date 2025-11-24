@@ -59,17 +59,39 @@ export default function Toolbar() {
   };
 
   const handleExportPNG = async () => {
-    const canvasElement = document.querySelector('.bg-white.border-2.border-dashed') as HTMLElement;
+    // Select the main canvas container that holds all three sections
+    const canvasElement = document.querySelector('.mx-auto.bg-white.shadow-lg') as HTMLElement;
     if (!canvasElement) {
       alert('Canvas not found');
       return;
     }
 
     try {
+      // Hide section labels and resize handles before export
+      const labels = canvasElement.querySelectorAll('.absolute.top-2.left-2');
+      const resizeHandles = document.querySelectorAll('.cursor-ns-resize');
+      const sections = canvasElement.querySelectorAll('.border-dashed');
+
+      labels.forEach((label) => (label as HTMLElement).style.display = 'none');
+      resizeHandles.forEach((handle) => (handle as HTMLElement).style.display = 'none');
+      sections.forEach((section) => {
+        (section as HTMLElement).classList.remove('border-dashed');
+        (section as HTMLElement).style.border = 'none';
+      });
+
       const canvas = await html2canvas(canvasElement, {
         backgroundColor: '#ffffff',
         scale: 2, // Higher quality
         logging: false,
+        useCORS: true,
+      });
+
+      // Restore visibility
+      labels.forEach((label) => (label as HTMLElement).style.display = '');
+      resizeHandles.forEach((handle) => (handle as HTMLElement).style.display = '');
+      sections.forEach((section) => {
+        (section as HTMLElement).classList.add('border-dashed');
+        (section as HTMLElement).style.border = '';
       });
 
       canvas.toBlob((blob) => {
@@ -91,17 +113,39 @@ export default function Toolbar() {
   };
 
   const handleExportPDF = async () => {
-    const canvasElement = document.querySelector('.bg-white.border-2.border-dashed') as HTMLElement;
+    // Select the main canvas container that holds all three sections
+    const canvasElement = document.querySelector('.mx-auto.bg-white.shadow-lg') as HTMLElement;
     if (!canvasElement) {
       alert('Canvas not found');
       return;
     }
 
     try {
+      // Hide section labels and resize handles before export
+      const labels = canvasElement.querySelectorAll('.absolute.top-2.left-2');
+      const resizeHandles = document.querySelectorAll('.cursor-ns-resize');
+      const sections = canvasElement.querySelectorAll('.border-dashed');
+
+      labels.forEach((label) => (label as HTMLElement).style.display = 'none');
+      resizeHandles.forEach((handle) => (handle as HTMLElement).style.display = 'none');
+      sections.forEach((section) => {
+        (section as HTMLElement).classList.remove('border-dashed');
+        (section as HTMLElement).style.border = 'none';
+      });
+
       const canvas = await html2canvas(canvasElement, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
+        useCORS: true,
+      });
+
+      // Restore visibility
+      labels.forEach((label) => (label as HTMLElement).style.display = '');
+      resizeHandles.forEach((handle) => (handle as HTMLElement).style.display = '');
+      sections.forEach((section) => {
+        (section as HTMLElement).classList.add('border-dashed');
+        (section as HTMLElement).style.border = '';
       });
 
       const imgData = canvas.toDataURL('image/png');

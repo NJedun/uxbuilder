@@ -34,20 +34,158 @@ export default function PropertiesPanel() {
         <p className="text-sm font-semibold text-gray-700 mb-2">Type: {component.type}</p>
       </div>
 
-      {/* Container Properties */}
-      {component.type === 'Container' && (
+      {/* NavMenu Properties */}
+      {component.type === 'NavMenu' && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Style
+            </label>
+            <select
+              value={component.props?.variant || 'simple'}
+              onChange={(e) => handlePropChange('variant', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="simple">Simple</option>
+              <option value="withDropdown">With Dropdown</option>
+              <option value="withButton">With CTA Button</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Items Count
+            </label>
+            <input
+              type="number"
+              min="2"
+              max="8"
+              value={component.props?.itemCount || 4}
+              onChange={(e) => handlePropChange('itemCount', parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </>
+      )}
+
+      {/* SearchBar Properties */}
+      {component.type === 'SearchBar' && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Border Width (px)
+            Style
           </label>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={component.props?.borderWidth || 4}
-            onChange={(e) => handlePropChange('borderWidth', parseInt(e.target.value))}
+          <select
+            value={component.props?.variant || 'simple'}
+            onChange={(e) => handlePropChange('variant', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="simple">Simple</option>
+            <option value="withIcon">With Icon</option>
+          </select>
+        </div>
+      )}
+
+      {/* HeaderActions Properties */}
+      {component.type === 'HeaderActions' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Style
+          </label>
+          <select
+            value={component.props?.variant || 'icons'}
+            onChange={(e) => handlePropChange('variant', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="icons">Icons (Cart, User, Notifications)</option>
+            <option value="buttons">Buttons (Login, Sign Up)</option>
+          </select>
+        </div>
+      )}
+
+      {/* HeaderPattern Properties */}
+      {component.type === 'HeaderPattern' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout Style
+          </label>
+          <select
+            value={component.props?.variant || 'simple'}
+            onChange={(e) => handlePropChange('variant', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="simple">Simple (Logo + Nav)</option>
+            <option value="ecommerce">E-commerce (Logo + Search + Icons)</option>
+            <option value="saas">SaaS (Logo + Nav + CTA Buttons)</option>
+            <option value="mobile">Mobile (Logo + Hamburger)</option>
+          </select>
+        </div>
+      )}
+
+      {/* HorizontalLine Properties */}
+      {component.type === 'HorizontalLine' && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Line Width (px)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={component.props?.width || 2}
+              onChange={(e) => handlePropChange('width', parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Vertical Alignment
+            </label>
+            <select
+              value={component.props?.align || 'center'}
+              onChange={(e) => handlePropChange('align', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="top">Top</option>
+              <option value="center">Center</option>
+              <option value="bottom">Bottom</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {/* FooterPattern Properties */}
+      {component.type === 'FooterPattern' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout Style
+          </label>
+          <select
+            value={component.props?.variant || 'simple'}
+            onChange={(e) => handlePropChange('variant', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="simple">Simple (Logo + Nav)</option>
+            <option value="withSocial">With Social Links</option>
+            <option value="multiColumn">Multi-Column</option>
+          </select>
+        </div>
+      )}
+
+      {/* CopyrightText Properties */}
+      {component.type === 'CopyrightText' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Alignment
+          </label>
+          <select
+            value={component.props?.align || 'center'}
+            onChange={(e) => handlePropChange('align', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
         </div>
       )}
 
