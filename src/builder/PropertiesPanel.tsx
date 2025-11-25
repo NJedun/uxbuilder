@@ -59,7 +59,7 @@ export default function PropertiesPanel() {
               type="number"
               min="2"
               max="8"
-              value={component.props?.itemCount || 4}
+              value={component.props?.itemCount || (component.props?.variant === 'withDropdown' ? 3 : 4)}
               onChange={(e) => handlePropChange('itemCount', parseInt(e.target.value))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

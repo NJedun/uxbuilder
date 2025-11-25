@@ -1,15 +1,29 @@
+import { useTheme } from '../../contexts/ThemeContext';
+
 interface CardProps {
   variant?: 'solid' | 'image';
+  useThemeStyles?: boolean;
 }
 
-export default function Card({ variant = 'solid' }: CardProps) {
+export default function Card({ variant = 'solid', useThemeStyles = false }: CardProps) {
+  const { theme } = useTheme();
+  const styles = theme.componentStyles.Card?.solid || {};
   const isImage = variant === 'image';
+
+  const inlineStyles = useThemeStyles ? {
+    backgroundColor: styles.backgroundColor,
+    borderColor: styles.borderColor,
+    borderWidth: styles.borderWidth,
+    borderRadius: styles.borderRadius,
+    padding: styles.padding,
+    boxShadow: styles.shadowColor ? `0 1px 3px ${styles.shadowColor}` : undefined,
+  } : {};
 
   return (
     <div className="w-full h-full" style={{ padding: '5px' }}>
       <div
-        className="w-full h-full rounded relative overflow-hidden"
-        style={{
+        className={`w-full h-full rounded relative overflow-hidden ${useThemeStyles ? '' : 'bg-gray-200'}`}
+        style={useThemeStyles ? inlineStyles : {
           backgroundColor: isImage ? '#e5e7eb' : '#e5e7eb',
         }}
       >

@@ -18,7 +18,15 @@ export default function StyleEditor({
   // Get the current styles based on selected component and variant
   const currentStyles = selectedComponent === 'Global'
     ? null
-    : theme.componentStyles.Button[selectedVariant as 'primary' | 'secondary'];
+    : (theme.componentStyles as any)?.[selectedComponent]?.[selectedVariant];
+
+  // Debug: Log current selection
+  console.log('StyleEditor - Selected:', { selectedComponent, selectedVariant, currentStyles });
+
+  // Get available variants for the selected component
+  const availableVariants = selectedComponent === 'Global'
+    ? []
+    : Object.keys((theme.componentStyles as any)?.[selectedComponent] || {});
 
   const handleStyleChange = (property: string, value: string) => {
     updateComponentStyle(selectedComponent, selectedVariant, {
@@ -28,6 +36,52 @@ export default function StyleEditor({
 
   const handleGlobalStyleChange = (category: string, property: string, value: string) => {
     updateGlobalStyle(category, property, value);
+  };
+
+  // Define which properties are colors for color picker rendering
+  const colorProperties = ['backgroundColor', 'textColor', 'borderColor', 'shadowColor', 'hoverColor'];
+
+  // Render a style input field dynamically
+  const renderStyleInput = (property: string, value: any) => {
+    const isColor = colorProperties.includes(property);
+
+    if (isColor) {
+      return (
+        <div key={property}>
+          <label className="block text-sm font-medium mb-1 capitalize">
+            {property.replace(/([A-Z])/g, ' $1').trim()}
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="color"
+              value={value || '#000000'}
+              onChange={(e) => handleStyleChange(property, e.target.value)}
+              className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
+            />
+            <input
+              type="text"
+              value={value || ''}
+              onChange={(e) => handleStyleChange(property, e.target.value)}
+              className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={property}>
+        <label className="block text-sm font-medium mb-1 capitalize">
+          {property.replace(/([A-Z])/g, ' $1').trim()}
+        </label>
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => handleStyleChange(property, e.target.value)}
+          className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+        />
+      </div>
+    );
   };
 
   return (
@@ -238,212 +292,43 @@ export default function StyleEditor({
                 onChange={(e) => onComponentChange(e.target.value)}
                 className="w-full border border-gray-300 rounded px-3 py-2"
               >
-                <option value="Button">Button</option>
+                {Object.keys(theme.componentStyles).map((componentType) => (
+                  <option key={componentType} value={componentType}>
+                    {componentType}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Variant Selector */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Variant</label>
-              <select
-                value={selectedVariant}
-                onChange={(e) => onVariantChange(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-              >
-                <option value="primary">Primary</option>
-                <option value="secondary">Secondary</option>
-              </select>
-            </div>
-
-            {/* Style Properties */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-gray-700 border-b pb-2">Content</h3>
-
-              {/* Button Text Content */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Button Text</label>
-                <input
-                  type="text"
-                  value={currentStyles.content || ''}
-                  onChange={(e) => handleStyleChange('content', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., SHOP NOW, Learn More, Get Started"
-                />
+            {availableVariants.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">Variant</label>
+                <select
+                  value={selectedVariant}
+                  onChange={(e) => onVariantChange(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                >
+                  {availableVariants.map((variant) => (
+                    <option key={variant} value={variant}>
+                      {variant.charAt(0).toUpperCase() + variant.slice(1)}
+                    </option>
+                  ))}
+                </select>
               </div>
+            )}
 
-              <h3 className="font-semibold text-sm text-gray-700 border-b pb-2 mt-6">Colors</h3>
-
-              {/* Background Color */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Background Color</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={currentStyles.backgroundColor}
-                    onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                    className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentStyles.backgroundColor}
-                    onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                  />
-                </div>
+            {/* Dynamic Style Properties */}
+            {currentStyles && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm text-gray-700 border-b pb-2">
+                  {selectedComponent} Styles
+                </h3>
+                {Object.entries(currentStyles).map(([property, value]) =>
+                  renderStyleInput(property, value)
+                )}
               </div>
-
-              {/* Text Color */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Text Color</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={currentStyles.textColor}
-                    onChange={(e) => handleStyleChange('textColor', e.target.value)}
-                    className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentStyles.textColor}
-                    onChange={(e) => handleStyleChange('textColor', e.target.value)}
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Border Color */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Border Color</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={currentStyles.borderColor}
-                    onChange={(e) => handleStyleChange('borderColor', e.target.value)}
-                    className="h-10 w-16 border border-gray-300 rounded cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={currentStyles.borderColor}
-                    onChange={(e) => handleStyleChange('borderColor', e.target.value)}
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                  />
-                </div>
-              </div>
-
-              <h3 className="font-semibold text-sm text-gray-700 border-b pb-2 mt-6">Border</h3>
-
-              {/* Border Width */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Border Width</label>
-                <input
-                  type="text"
-                  value={currentStyles.borderWidth}
-                  onChange={(e) => handleStyleChange('borderWidth', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 2px"
-                />
-              </div>
-
-              {/* Border Radius */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Border Radius</label>
-                <input
-                  type="text"
-                  value={currentStyles.borderRadius}
-                  onChange={(e) => handleStyleChange('borderRadius', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 0.375rem"
-                />
-              </div>
-
-              <h3 className="font-semibold text-sm text-gray-700 border-b pb-2 mt-6">Spacing</h3>
-
-              {/* Padding Top */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Padding Top</label>
-                <input
-                  type="text"
-                  value={currentStyles.paddingTop}
-                  onChange={(e) => handleStyleChange('paddingTop', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 0.5rem"
-                />
-              </div>
-
-              {/* Padding Bottom */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Padding Bottom</label>
-                <input
-                  type="text"
-                  value={currentStyles.paddingBottom}
-                  onChange={(e) => handleStyleChange('paddingBottom', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 0.5rem"
-                />
-              </div>
-
-              {/* Padding Left */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Padding Left</label>
-                <input
-                  type="text"
-                  value={currentStyles.paddingLeft}
-                  onChange={(e) => handleStyleChange('paddingLeft', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 1rem"
-                />
-              </div>
-
-              {/* Padding Right */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Padding Right</label>
-                <input
-                  type="text"
-                  value={currentStyles.paddingRight}
-                  onChange={(e) => handleStyleChange('paddingRight', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 1rem"
-                />
-              </div>
-
-              <h3 className="font-semibold text-sm text-gray-700 border-b pb-2 mt-6">Typography</h3>
-
-              {/* Font Size */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Font Size</label>
-                <input
-                  type="text"
-                  value={currentStyles.fontSize}
-                  onChange={(e) => handleStyleChange('fontSize', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 1rem"
-                />
-              </div>
-
-              {/* Font Weight */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Font Weight</label>
-                <input
-                  type="text"
-                  value={currentStyles.fontWeight}
-                  onChange={(e) => handleStyleChange('fontWeight', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., 500"
-                />
-              </div>
-
-              {/* Font Family */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Font Family</label>
-                <input
-                  type="text"
-                  value={currentStyles.fontFamily}
-                  onChange={(e) => handleStyleChange('fontFamily', e.target.value)}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                  placeholder="e.g., Inter, sans-serif"
-                />
-              </div>
-            </div>
+            )}
           </>
         )}
       </div>

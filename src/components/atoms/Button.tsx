@@ -34,15 +34,22 @@ export default function Button({ variant = 'primary', align = 'center', useTheme
   // Styled mode (UI mode) - apply theme styles
   const buttonStyles = theme.componentStyles.Button[variant];
 
+  // Use global primary/secondary color as fallback for backgroundColor
+  const backgroundColor = buttonStyles.backgroundColor ||
+    (variant === 'primary' ? theme.globalStyles.colors.primary : theme.globalStyles.colors.secondary);
+
+  // Use white as default text color for buttons
+  const textColor = buttonStyles.textColor || '#FFFFFF';
+
   return (
     <div className={`w-full h-full flex items-center ${alignmentClasses[align]} px-2`}>
       <div
         style={{
           minWidth: '80px',
           height: '32px',
-          backgroundColor: buttonStyles.backgroundColor,
-          color: buttonStyles.textColor,
-          borderColor: buttonStyles.borderColor,
+          backgroundColor: backgroundColor,
+          color: textColor,
+          borderColor: buttonStyles.borderColor || backgroundColor,
           borderWidth: buttonStyles.borderWidth,
           borderStyle: 'solid',
           borderRadius: buttonStyles.borderRadius,

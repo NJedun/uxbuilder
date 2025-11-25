@@ -154,6 +154,13 @@ export default function Toolbar() {
     }
   };
 
+  const handleClearTheme = () => {
+    if (confirm('Reset theme to default? This will clear all custom theme styles.')) {
+      localStorage.removeItem('uxBuilder_theme');
+      window.location.reload();
+    }
+  };
+
   const handleExportPDF = async () => {
     // Select the main canvas container that holds all three sections
     const canvasElement = document.querySelector('.mx-auto.bg-white.shadow-lg') as HTMLElement;
@@ -230,6 +237,13 @@ export default function Toolbar() {
           className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
         >
           New
+        </button>
+
+        <button
+          onClick={handleClearTheme}
+          className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+        >
+          Clear Theme
         </button>
 
         <input

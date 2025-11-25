@@ -22,9 +22,7 @@ export default function App() {
 
   const handleSelectComponent = (type: string, variant?: string) => {
     setSelectedComponentType(type);
-    if (variant) {
-      setSelectedVariant(variant);
-    }
+    setSelectedVariant(variant || 'default');
   };
 
   // Load from localStorage on mount

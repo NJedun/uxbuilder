@@ -1,12 +1,19 @@
+import { useTheme } from '../../contexts/ThemeContext';
+
 interface BadgeProps {
   variant?: 'red' | 'blue' | 'green' | 'yellow';
   size?: 'small' | 'medium' | 'large';
+  useThemeStyles?: boolean;
 }
 
 export default function Badge({
   variant = 'red',
-  size = 'small'
+  size = 'small',
+  useThemeStyles = false
 }: BadgeProps) {
+  const { theme } = useTheme();
+  const styles = theme.componentStyles.Badge?.[variant] || {};
+
   const sizeClasses = {
     small: 'w-2 h-2',
     medium: 'w-3 h-3',
@@ -20,7 +27,14 @@ export default function Badge({
     yellow: 'bg-yellow-500'
   }[variant];
 
+  const inlineStyles = useThemeStyles ? {
+    backgroundColor: styles.backgroundColor,
+  } : {};
+
   return (
-    <div className={`${sizeClasses} ${colorClasses} rounded-full`}></div>
+    <div
+      className={`${sizeClasses} ${useThemeStyles ? '' : colorClasses} rounded-full`}
+      style={inlineStyles}
+    ></div>
   );
 }

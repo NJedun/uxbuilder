@@ -36,15 +36,15 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
   switch (component.type) {
     // Header Components
     case 'NavMenu':
-      return <NavMenu {...component.props} />;
+      return <NavMenu {...component.props} useThemeStyles={useThemeStyles} />;
     case 'SearchBar':
-      return <SearchBar {...component.props} />;
+      return <SearchBar {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HeaderActions':
-      return <HeaderActions {...component.props} />;
+      return <HeaderActions {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HamburgerIcon':
-      return <HamburgerIcon />;
+      return <HamburgerIcon useThemeStyles={useThemeStyles} />;
     case 'HeaderPattern':
-      return <HeaderPattern {...component.props} />;
+      return <HeaderPattern {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HorizontalLine':
       return <HorizontalLine {...component.props} />;
 
@@ -70,27 +70,27 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
 
     // Basic Components
     case 'Card':
-      return <Card {...component.props} />;
+      return <Card {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Form':
       return <Form {...component.props} />;
     case 'Button':
       return <Button {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Title':
-      return <Title {...component.props} />;
+      return <Title {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Logo':
-      return <Logo {...component.props} />;
+      return <Logo {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Image':
       return <Image {...component.props} />;
     case 'Paragraph':
-      return <Paragraph {...component.props} />;
+      return <Paragraph {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Link':
-      return <Link {...component.props} />;
+      return <Link {...component.props} useThemeStyles={useThemeStyles} />;
     case 'List':
       return <List {...component.props} />;
     case 'Input':
-      return <Input {...component.props} />;
+      return <Input {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Textarea':
-      return <Textarea {...component.props} />;
+      return <Textarea {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Dropdown':
       return <Dropdown {...component.props} />;
     case 'SocialLinks':

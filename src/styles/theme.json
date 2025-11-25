@@ -55,6 +55,221 @@
         "fontFamily": "system-ui, -apple-system, sans-serif",
         "content": "Button"
       }
+    },
+    "Title": {
+      "default": {
+        "textColor": "#1F2937",
+        "fontSize": "2rem",
+        "fontWeight": "700",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "lineHeight": "1.2",
+        "marginBottom": "1rem"
+      }
+    },
+    "Paragraph": {
+      "default": {
+        "textColor": "#4B5563",
+        "fontSize": "1rem",
+        "fontWeight": "400",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "lineHeight": "1.6",
+        "marginBottom": "1rem"
+      }
+    },
+    "Link": {
+      "primary": {
+        "textColor": "#3B82F6",
+        "fontSize": "1rem",
+        "fontWeight": "500",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "textDecoration": "underline",
+        "hoverColor": "#2563EB",
+        "backgroundColor": "transparent",
+        "paddingTop": "0.25rem",
+        "paddingBottom": "0.25rem",
+        "paddingLeft": "0.5rem",
+        "paddingRight": "0.5rem",
+        "borderRadius": "0.25rem",
+        "content": "Link"
+      },
+      "secondary": {
+        "textColor": "#6B7280",
+        "fontSize": "1rem",
+        "fontWeight": "500",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "textDecoration": "underline",
+        "hoverColor": "#4B5563",
+        "backgroundColor": "transparent",
+        "paddingTop": "0.25rem",
+        "paddingBottom": "0.25rem",
+        "paddingLeft": "0.5rem",
+        "paddingRight": "0.5rem",
+        "borderRadius": "0.25rem",
+        "content": "Link"
+      }
+    },
+    "Logo": {
+      "default": {
+        "textColor": "#1F2937",
+        "fontSize": "1.5rem",
+        "fontWeight": "700",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "content": "Logo"
+      }
+    },
+    "NavMenu": {
+      "simple": {
+        "textColor": "#4B5563",
+        "fontSize": "1rem",
+        "fontWeight": "500",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "gap": "2rem",
+        "hoverColor": "#1F2937"
+      },
+      "withDropdown": {
+        "textColor": "#4B5563",
+        "fontSize": "1rem",
+        "fontWeight": "500",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "gap": "2rem",
+        "hoverColor": "#1F2937"
+      },
+      "withButton": {
+        "textColor": "#4B5563",
+        "fontSize": "1rem",
+        "fontWeight": "500",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "gap": "2rem",
+        "hoverColor": "#1F2937"
+      }
+    },
+    "Input": {
+      "default": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#1F2937",
+        "borderColor": "#D1D5DB",
+        "borderWidth": "1px",
+        "borderRadius": "0.375rem",
+        "paddingTop": "0.5rem",
+        "paddingBottom": "0.5rem",
+        "paddingLeft": "0.75rem",
+        "paddingRight": "0.75rem",
+        "fontSize": "1rem",
+        "fontFamily": "system-ui, -apple-system, sans-serif"
+      }
+    },
+    "Textarea": {
+      "default": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#1F2937",
+        "borderColor": "#D1D5DB",
+        "borderWidth": "1px",
+        "borderRadius": "0.375rem",
+        "paddingTop": "0.5rem",
+        "paddingBottom": "0.5rem",
+        "paddingLeft": "0.75rem",
+        "paddingRight": "0.75rem",
+        "fontSize": "1rem",
+        "fontFamily": "system-ui, -apple-system, sans-serif"
+      }
+    },
+    "Card": {
+      "solid": {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E5E7EB",
+        "borderWidth": "1px",
+        "borderRadius": "0.5rem",
+        "padding": "1.5rem",
+        "shadowColor": "rgba(0, 0, 0, 0.1)"
+      }
+    },
+    "SearchBar": {
+      "simple": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#1F2937",
+        "borderColor": "#D1D5DB",
+        "borderWidth": "2px",
+        "borderRadius": "0.375rem",
+        "iconColor": "#9CA3AF"
+      },
+      "withIcon": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#1F2937",
+        "borderColor": "#D1D5DB",
+        "borderWidth": "2px",
+        "borderRadius": "0.375rem",
+        "iconColor": "#9CA3AF"
+      }
+    },
+    "HamburgerIcon": {
+      "default": {
+        "barColor": "#1F2937",
+        "barHeight": "2px",
+        "barSpacing": "4px"
+      }
+    },
+    "IconButton": {
+      "outlined": {
+        "borderColor": "#9CA3AF",
+        "borderWidth": "2px",
+        "backgroundColor": "transparent",
+        "iconColor": "#6B7280",
+        "hoverBackgroundColor": "#F3F4F6"
+      },
+      "filled": {
+        "borderColor": "#4B5563",
+        "borderWidth": "2px",
+        "backgroundColor": "#4B5563",
+        "iconColor": "#FFFFFF",
+        "hoverBackgroundColor": "#374151"
+      },
+      "ghost": {
+        "borderColor": "transparent",
+        "borderWidth": "0px",
+        "backgroundColor": "transparent",
+        "iconColor": "#6B7280",
+        "hoverBackgroundColor": "#F3F4F6"
+      }
+    },
+    "Badge": {
+      "red": {
+        "backgroundColor": "#EF4444"
+      },
+      "blue": {
+        "backgroundColor": "#3B82F6"
+      },
+      "green": {
+        "backgroundColor": "#10B981"
+      },
+      "yellow": {
+        "backgroundColor": "#F59E0B"
+      }
+    },
+    "HeaderActions": {
+      "icons": {
+        "gap": "1rem"
+      },
+      "buttons": {
+        "gap": "0.75rem"
+      }
+    },
+    "HeaderPattern": {
+      "simple": {
+        "backgroundColor": "transparent",
+        "padding": "1.5rem"
+      },
+      "ecommerce": {
+        "backgroundColor": "transparent",
+        "padding": "1.5rem"
+      },
+      "saas": {
+        "backgroundColor": "transparent",
+        "padding": "1.5rem"
+      },
+      "mobile": {
+        "backgroundColor": "transparent",
+        "padding": "1rem"
+      }
     }
   }
 }
