@@ -1,0 +1,250 @@
+{
+  "version": "1.0",
+  "description": "AI generation hints for UX Builder components. Use this mapping when generating Next.js/React code from wireframe JSON.",
+  "layoutInstructions": {
+    "gridSystem": "Use Tailwind CSS 12-column grid system",
+    "positioning": "CRITICAL: Each component in JSON has x, y, w, h coordinates. Use these for exact positioning!",
+    "implementation": "Wrap each component in: <div className='grid grid-cols-12 gap-4'><div className='col-start-{x+1} col-span-{w}'>",
+    "examples": {
+      "fullWidth": "x:0, w:12 → <div className='col-span-12'>",
+      "centered10": "x:1, w:10 → <div className='col-start-2 col-span-10'> (1 col padding each side)",
+      "centered8": "x:2, w:8 → <div className='col-start-3 col-span-8'> (2 cols padding each side)",
+      "centered6": "x:3, w:6 → <div className='col-start-4 col-span-6'> (3 cols padding each side)"
+    },
+    "maxWidth": "Use max-w-7xl mx-auto px-4 for main container",
+    "verticalSpacing": "Use component's h (height) value for min-height calculation: h * 50px (rowHeight from metadata)"
+  },
+  "components": {
+    "HeaderPattern": {
+      "semanticRole": "navigation",
+      "description": "Main site header with navigation",
+      "variants": {
+        "simple": {
+          "aiHints": {
+            "logo": "Company logo - render as text or image component with alt text",
+            "navigation": "Generate 4-5 navigation links (e.g., Home, About, Services, Contact)",
+            "responsive": "Mobile: Show hamburger menu, Desktop: Show full navigation"
+          }
+        },
+        "ecommerce": {
+          "aiHints": {
+            "logo": "Brand logo with link to homepage",
+            "searchBar": "Product search input with icon",
+            "navigation": "Main category links (e.g., Shop, New Arrivals, Sale)",
+            "actions": "Shopping cart icon with count badge, user account icon",
+            "responsive": "Mobile: Hamburger + cart icon, Desktop: Full nav + search + icons"
+          }
+        },
+        "saas": {
+          "aiHints": {
+            "logo": "Product logo with tagline",
+            "navigation": "Feature-focused links (e.g., Features, Pricing, Docs, Blog)",
+            "actions": "Login and Sign Up buttons with distinct styling",
+            "responsive": "Maintain CTA visibility on all screen sizes"
+          }
+        }
+      }
+    },
+    "HeroSection": {
+      "semanticRole": "hero",
+      "description": "Main hero/banner section",
+      "aiHints": {
+        "headline": "Generate 1-2 line compelling headline (H1), focus on value proposition",
+        "subheading": "2-3 lines supporting text (p or H2), explain benefits or features",
+        "cta": "1-2 prominent action buttons (e.g., 'Get Started', 'Learn More')",
+        "background": "If hasImageBackground: Use hero image (1920x1080), else: gradient or solid color",
+        "alignment": "left: Text-heavy, professional | center: Minimal, impactful | right: Creative, asymmetric",
+        "content": "Tailor messaging to the pageType and industry from metadata"
+      }
+    },
+    "HeroWithImage": {
+      "semanticRole": "hero",
+      "description": "Hero section with side-by-side image and content",
+      "aiHints": {
+        "image": "Feature image 800x600, relevant to product/service",
+        "headline": "Compelling 1-2 line headline",
+        "subtext": "2-3 sentences of supporting copy",
+        "cta": "Single primary action button",
+        "imagePosition": "left: Image first (F-pattern) | right: Content first (visual hierarchy)",
+        "content": "Match tone to brand/industry"
+      }
+    },
+    "ProductList": {
+      "semanticRole": "product-grid",
+      "description": "Grid or list of product cards",
+      "aiHints": {
+        "products": "Generate array of product objects with: { name, price, description, image, category }",
+        "itemCount": "Number of products to display",
+        "images": "Product images 400x400, use placeholder services like Unsplash (e.g., /400x400/?product)",
+        "pricing": "Format: $XX.XX, use realistic prices for industry",
+        "description": "1-2 sentence product description",
+        "cta": "'Add to Cart' for e-commerce, 'Learn More' for services, 'View Details' for general",
+        "layout": "grid: Cards in responsive grid | list: Horizontal cards with more details"
+      }
+    },
+    "ProductCard": {
+      "semanticRole": "product-item",
+      "description": "Individual product card",
+      "aiHints": {
+        "image": "Product image 400x400",
+        "title": "Product name (H3 or strong)",
+        "description": "1-2 line product description (optional in grid view)",
+        "price": "Formatted price with currency symbol",
+        "cta": "Action button based on context",
+        "variant": "grid: Compact, vertical | list: Expanded, horizontal with more details"
+      }
+    },
+    "ProductDetails": {
+      "semanticRole": "product-detail",
+      "description": "Detailed product view page",
+      "aiHints": {
+        "images": "Product image gallery with 1 main image (800x800) and 4 thumbnails",
+        "title": "Full product name (H1)",
+        "price": "Prominent pricing with currency",
+        "description": "3-5 paragraph detailed description with features/benefits",
+        "rating": "Star rating out of 5 with review count",
+        "variants": "Size/color/variant selector if applicable",
+        "actions": "Primary: 'Add to Cart', Secondary: 'Add to Wishlist' or 'Compare'",
+        "layout": "sideBySide: Desktop-optimized | stacked: Mobile-friendly"
+      }
+    },
+    "ContactForm": {
+      "semanticRole": "contact-form",
+      "description": "Contact form with fields",
+      "aiHints": {
+        "fields": "Generate form with: Name (required), Email (required, validated), Subject, Message (textarea)",
+        "validation": "Implement client-side validation",
+        "submit": "'Send Message' or 'Submit' button",
+        "layout": "standard: Centered form | withInfo: Form + contact details (phone, email, address)",
+        "feedback": "Show success/error states",
+        "a11y": "Include proper labels, ARIA attributes, and focus management"
+      }
+    },
+    "FooterPattern": {
+      "semanticRole": "footer",
+      "description": "Site footer with links and info",
+      "variants": {
+        "simple": {
+          "aiHints": {
+            "logo": "Footer logo (optional)",
+            "links": "Quick links (4-6 items)",
+            "copyright": "© 2024 Company Name. All rights reserved."
+          }
+        },
+        "multiColumn": {
+          "aiHints": {
+            "structure": "Logo on left, 3 link columns in center, subscribe section on right, copyright at bottom",
+            "logo": "Small logo placeholder (gray rectangle with border)",
+            "linkColumns": "3 columns, each with: gray header bar (column title) + 4 blue link placeholders below",
+            "newsletter": "Input field (white with border) + button (gray) side by side",
+            "social": "4 circular gray icons for social links",
+            "copyright": "Gray bar centered at bottom (below horizontal line separator)",
+            "layout": "Horizontal flex layout with gaps, border-top separator",
+            "wireframeStyle": "Use placeholder rectangles/circles, not actual text - matches wireframe aesthetic"
+          }
+        }
+      }
+    },
+    "Logo": {
+      "semanticRole": "branding",
+      "description": "Company logo",
+      "aiHints": {
+        "implementation": "Image with alt text or SVG, wrapped in link to homepage",
+        "fallback": "If no image: Use company name in styled text",
+        "size": "small: 80x32 | medium: 100x40 | large: 120x48",
+        "a11y": "Include descriptive alt text"
+      }
+    },
+    "NavMenu": {
+      "semanticRole": "navigation",
+      "description": "Navigation menu",
+      "aiHints": {
+        "items": "Generate navigation items based on pageType (e.g., Shop, Collections, About)",
+        "itemCount": "Number of menu items (typically 4-6)",
+        "variant": "simple: Text links | withDropdown: Include dropdown menus | withButton: Include CTA button",
+        "responsive": "Mobile: Hamburger menu | Desktop: Horizontal menu",
+        "a11y": "Keyboard navigable, ARIA roles"
+      }
+    },
+    "Button": {
+      "semanticRole": "cta",
+      "description": "Call-to-action button",
+      "aiHints": {
+        "text": "Action-oriented text (e.g., 'Get Started', 'Learn More', 'Add to Cart')",
+        "variant": "primary: Filled, high contrast | secondary: Outlined or ghost",
+        "alignment": "Position based on layout context"
+      }
+    },
+    "Title": {
+      "semanticRole": "heading",
+      "description": "Text heading",
+      "aiHints": {
+        "level": "1: Page title (H1) | 2: Section heading (H2) | 3: Subsection (H3)",
+        "content": "Generate contextually appropriate heading text",
+        "seo": "Only one H1 per page"
+      }
+    },
+    "Card": {
+      "semanticRole": "content-container",
+      "description": "Content card",
+      "aiHints": {
+        "variant": "solid: Background color | image: Background image with overlay",
+        "content": "Can contain any combination of text, images, buttons",
+        "use": "For features, team members, blog posts, testimonials"
+      }
+    },
+    "Form": {
+      "semanticRole": "form",
+      "description": "Generic form",
+      "aiHints": {
+        "fields": "Generate appropriate input fields based on context",
+        "validation": "Include validation logic",
+        "labels": "Show/hide field labels based on showLabels prop",
+        "submit": "Form submit button with loading state"
+      }
+    },
+    "Image": {
+      "semanticRole": "image",
+      "description": "Image element",
+      "aiHints": {
+        "src": "Use placeholder service: unsplash.com/WIDTH/HEIGHT/?KEYWORD",
+        "alt": "Generate descriptive alt text for accessibility",
+        "optimization": "Use Next.js Image component for optimization",
+        "responsive": "Provide srcset for responsive images"
+      }
+    }
+  },
+  "pageTypes": {
+    "homepage": {
+      "description": "Main landing page",
+      "recommendedSections": ["header", "hero", "features", "cta", "footer"],
+      "contentStrategy": "Focus on value proposition, key features, and clear calls-to-action"
+    },
+    "product-listing": {
+      "description": "E-commerce product grid",
+      "recommendedSections": ["header", "filters", "product-grid", "pagination", "footer"],
+      "contentStrategy": "Product discovery, filtering, sorting, quick view"
+    },
+    "product-detail": {
+      "description": "Individual product page",
+      "recommendedSections": ["header", "product-detail", "related-products", "reviews", "footer"],
+      "contentStrategy": "Detailed product info, high-quality images, social proof, upsells"
+    },
+    "landing-page": {
+      "description": "Marketing landing page",
+      "recommendedSections": ["hero", "benefits", "features", "testimonials", "cta", "footer"],
+      "contentStrategy": "Single focused goal, remove navigation distractions, strong CTAs"
+    },
+    "contact": {
+      "description": "Contact page",
+      "recommendedSections": ["header", "contact-form", "contact-info", "map", "footer"],
+      "contentStrategy": "Multiple contact methods, form, location, business hours"
+    },
+    "about": {
+      "description": "About us page",
+      "recommendedSections": ["header", "story", "team", "values", "cta", "footer"],
+      "contentStrategy": "Company story, team members, mission/values, trust signals"
+    }
+  },
+  "generatePromptTemplate": "Create a Next.js 14 page using App Router and TypeScript based on this wireframe JSON. Use Tailwind CSS for styling. Generate realistic placeholder content appropriate for the {industry} industry. All images should use placeholder services. Create reusable components following Next.js best practices. Include proper TypeScript types, accessibility features, and responsive design. The page should be production-ready with proper SEO meta tags."
+}

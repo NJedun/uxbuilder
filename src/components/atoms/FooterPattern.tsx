@@ -2,6 +2,11 @@ import Logo from './Logo';
 import NavMenu from './NavMenu';
 import SocialLinks from './SocialLinks';
 import CopyrightText from './CopyrightText';
+import Title from './Title';
+import Link from './Link';
+import Input from './Input';
+import Button from './Button';
+import HorizontalLine from './HorizontalLine';
 
 interface FooterPatternProps {
   variant?: 'simple' | 'withSocial' | 'multiColumn';
@@ -43,77 +48,32 @@ export default function FooterPattern({
 
         {/* Link Columns */}
         <div className="flex gap-8 flex-1 justify-center">
-          <div className="flex flex-col gap-2">
-            {/* Column 1 - Header */}
-            <div className="h-3 w-16 bg-gray-600 rounded mb-1"></div>
-            {/* Links */}
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
+          {[1, 2, 3].map((col) => (
+            <div key={col} className="flex flex-col gap-2">
+              {/* Column Header */}
+              <div className="h-6 w-16">
+                <Title level={3} align="left" />
+              </div>
+              {/* Links */}
+              {[1, 2, 3, 4].map((link) => (
+                <div key={link} className="w-16 h-8">
+                  <Link variant="primary" align="left" />
+                </div>
+              ))}
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {/* Column 2 - Header */}
-            <div className="h-3 w-16 bg-gray-600 rounded mb-1"></div>
-            {/* Links */}
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {/* Column 3 - Header */}
-            <div className="h-3 w-16 bg-gray-600 rounded mb-1"></div>
-            {/* Links */}
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="h-2.5 w-16 bg-blue-500 rounded"></div>
-              <div className="h-0.5 w-16 bg-blue-500"></div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Subscribe Section */}
         <div className="flex flex-col gap-3 flex-shrink-0">
           {/* Input field and CTA Button on same line */}
           <div className="flex gap-2">
-            <div className="h-8 w-40 border-2 border-gray-300 rounded bg-white"></div>
-            <div className="h-8 w-20 bg-gray-600 rounded"></div>
+            <div className="h-10 w-40">
+              <Input showLabel={false} />
+            </div>
+            <div className="h-10 w-20">
+              <Button variant="primary" align="center" />
+            </div>
           </div>
           {/* Social Links */}
           <div className="mt-2">
@@ -123,7 +83,10 @@ export default function FooterPattern({
       </div>
 
       {/* Bottom Row - Copyright */}
-      <div className="border-t border-gray-300 pt-4">
+      <div className="pt-2">
+        <div className="h-px mb-4">
+          <HorizontalLine width={1} align="center" />
+        </div>
         <CopyrightText align="center" />
       </div>
     </div>

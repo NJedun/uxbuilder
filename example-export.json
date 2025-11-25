@@ -1,0 +1,230 @@
+{
+  "version": "2.0.0",
+  "name": "E-commerce Product Page",
+  "createdAt": "2025-01-24T12:00:00.000Z",
+  "updatedAt": "2025-01-24T12:30:00.000Z",
+  "viewport": "desktop",
+  "canvasSettingsByViewport": {
+    "mobile": {
+      "width": null,
+      "height": null,
+      "cols": null,
+      "headerHeight": 150,
+      "bodyHeight": 800,
+      "footerHeight": 300
+    },
+    "tablet": {
+      "width": null,
+      "height": null,
+      "cols": null,
+      "headerHeight": 150,
+      "bodyHeight": 700,
+      "footerHeight": 250
+    },
+    "desktop": {
+      "width": null,
+      "height": null,
+      "cols": null,
+      "headerHeight": 150,
+      "bodyHeight": 600,
+      "footerHeight": 200
+    }
+  },
+  "componentsByViewport": {
+    "desktop": [
+      {
+        "id": "comp_header_1",
+        "i": "comp_header_1",
+        "type": "HeaderPattern",
+        "props": {
+          "variant": "ecommerce"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 2,
+        "parentId": "header"
+      },
+      {
+        "id": "comp_hero_1",
+        "i": "comp_hero_1",
+        "type": "HeroSection",
+        "props": {
+          "align": "center",
+          "hasImageBackground": true
+        },
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 6,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_products_1",
+        "i": "comp_products_1",
+        "type": "ProductList",
+        "props": {
+          "layout": "grid",
+          "columns": 3,
+          "itemCount": 6
+        },
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 6,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_footer_1",
+        "i": "comp_footer_1",
+        "type": "FooterPattern",
+        "props": {
+          "variant": "multiColumn"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 4,
+        "parentId": "footer"
+      }
+    ],
+    "tablet": [
+      {
+        "id": "comp_header_1",
+        "i": "comp_header_1",
+        "type": "HeaderPattern",
+        "props": {
+          "variant": "ecommerce"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 2,
+        "parentId": "header"
+      },
+      {
+        "id": "comp_hero_1",
+        "i": "comp_hero_1",
+        "type": "HeroSection",
+        "props": {
+          "align": "center",
+          "hasImageBackground": true
+        },
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 6,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_products_1",
+        "i": "comp_products_1",
+        "type": "ProductList",
+        "props": {
+          "layout": "grid",
+          "columns": 2,
+          "itemCount": 6
+        },
+        "x": 0,
+        "y": 6,
+        "w": 8,
+        "h": 8,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_footer_1",
+        "i": "comp_footer_1",
+        "type": "FooterPattern",
+        "props": {
+          "variant": "multiColumn"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 5,
+        "parentId": "footer"
+      }
+    ],
+    "mobile": [
+      {
+        "id": "comp_header_1",
+        "i": "comp_header_1",
+        "type": "HeaderPattern",
+        "props": {
+          "variant": "mobile"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 2,
+        "parentId": "header"
+      },
+      {
+        "id": "comp_hero_1",
+        "i": "comp_hero_1",
+        "type": "HeroSection",
+        "props": {
+          "align": "center",
+          "hasImageBackground": true
+        },
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 8,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_products_1",
+        "i": "comp_products_1",
+        "type": "ProductList",
+        "props": {
+          "layout": "grid",
+          "columns": 1,
+          "itemCount": 6
+        },
+        "x": 0,
+        "y": 8,
+        "w": 4,
+        "h": 12,
+        "parentId": "body"
+      },
+      {
+        "id": "comp_footer_1",
+        "i": "comp_footer_1",
+        "type": "FooterPattern",
+        "props": {
+          "variant": "multiColumn"
+        },
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 6,
+        "parentId": "footer"
+      }
+    ]
+  },
+  "metadata": {
+    "gridSystem": {
+      "mobile": {
+        "columns": 4,
+        "rowHeight": 50
+      },
+      "tablet": {
+        "columns": 8,
+        "rowHeight": 50
+      },
+      "desktop": {
+        "columns": 12,
+        "rowHeight": 50
+      }
+    },
+    "generationHints": {
+      "framework": "Next.js 14 with App Router",
+      "language": "TypeScript",
+      "styling": "Tailwind CSS",
+      "contentType": "placeholder",
+      "imageService": "Unsplash",
+      "promptSuggestion": "Create a Next.js 14 page using App Router and TypeScript based on this wireframe JSON. Use Tailwind CSS for styling. Generate realistic placeholder content. Use Unsplash for images (https://source.unsplash.com/WIDTHxHEIGHT/?KEYWORD). Create reusable components following Next.js best practices. Include proper TypeScript types, accessibility features (WCAG 2.1 AA), responsive design, and SEO meta tags."
+    }
+  }
+}

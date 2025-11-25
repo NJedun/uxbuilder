@@ -1,3 +1,6 @@
+import Link from './Link';
+import Button from './Button';
+
 interface NavMenuProps {
   variant?: 'simple' | 'withDropdown' | 'withButton';
   itemCount?: number;
@@ -10,9 +13,8 @@ export default function NavMenu({
   const renderSimple = () => (
     <nav className="flex gap-6 items-center h-full">
       {Array.from({ length: itemCount }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-0.5">
-          <div className="h-2.5 rounded bg-blue-500" style={{ width: '60px' }} />
-          <div className="h-0.5 bg-blue-500" style={{ width: '60px' }} />
+        <div key={i} className="w-16">
+          <Link variant="primary" align="left" />
         </div>
       ))}
     </nav>
@@ -22,9 +24,8 @@ export default function NavMenu({
     <nav className="flex gap-6 items-center h-full">
       {Array.from({ length: itemCount }).map((_, i) => (
         <div key={i} className="flex items-center gap-1">
-          <div className="flex flex-col gap-0.5">
-            <div className="h-2.5 rounded bg-blue-500" style={{ width: '60px' }} />
-            <div className="h-0.5 bg-blue-500" style={{ width: '60px' }} />
+          <div className="w-16">
+            <Link variant="primary" align="left" />
           </div>
           <div className="w-3 h-3 border-l-2 border-b-2 border-blue-500 transform rotate-[-45deg] mt-[-2px]"></div>
         </div>
@@ -35,12 +36,13 @@ export default function NavMenu({
   const renderWithButton = () => (
     <nav className="flex gap-6 items-center h-full">
       {Array.from({ length: itemCount - 1 }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-0.5">
-          <div className="h-2.5 rounded bg-blue-500" style={{ width: '60px' }} />
-          <div className="h-0.5 bg-blue-500" style={{ width: '60px' }} />
+        <div key={i} className="w-16">
+          <Link variant="primary" align="left" />
         </div>
       ))}
-      <div className="h-8 rounded bg-gray-600" style={{ width: '80px' }} />
+      <div className="w-20">
+        <Button variant="primary" align="left" />
+      </div>
     </nav>
   );
 

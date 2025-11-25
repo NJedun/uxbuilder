@@ -1,3 +1,7 @@
+import Title from './Title';
+import Paragraph from './Paragraph';
+import Button from './Button';
+
 interface HeroSectionProps {
   align?: 'left' | 'center' | 'right';
   hasImageBackground?: boolean;
@@ -7,18 +11,9 @@ export default function HeroSection({
   align = 'center',
   hasImageBackground = false
 }: HeroSectionProps) {
-  const justifyClass = {
-    left: 'justify-start',
-    center: 'justify-center',
-    right: 'justify-end',
-  }[align];
-
   const backgroundClass = hasImageBackground
     ? ''
     : 'bg-gradient-to-r from-gray-100 to-gray-200';
-
-  const textColor = 'bg-gray-700';
-  const subtextColor = 'bg-gray-500';
 
   return (
     <div className={`w-full h-full relative overflow-hidden ${backgroundClass}`}>
@@ -39,18 +34,18 @@ export default function HeroSection({
       {/* Content */}
       <div className={`w-full h-full relative z-10 flex flex-col items-center justify-center px-12 py-16`}>
         {/* Main Heading - H1 style */}
-        <div className={`flex ${justifyClass} mb-6 w-full`}>
-          <div className={`h-4 ${textColor} rounded`} style={{ width: '70%' }}></div>
+        <div className="w-full h-10 mb-6">
+          <Title level={1} align={align} />
         </div>
 
-        {/* Subheading - H3 style */}
-        <div className={`flex ${justifyClass} mb-8 w-full`}>
-          <div className={`h-2 ${subtextColor} rounded`} style={{ width: '50%' }}></div>
+        {/* Subheading - Paragraph style */}
+        <div className="w-full h-8 mb-8">
+          <Paragraph lines={2} />
         </div>
 
         {/* Single CTA Button */}
-        <div className={`flex ${justifyClass} w-full`}>
-          <div className="h-12 w-40 bg-gray-600 rounded"></div>
+        <div className="w-40 h-12">
+          <Button variant="primary" align={align} />
         </div>
       </div>
     </div>
