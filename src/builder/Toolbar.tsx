@@ -2,10 +2,13 @@ import { useBuilderStore } from '../store/builderStore';
 import { useRef } from 'react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function Toolbar() {
   const { projectName, setProjectName, exportProject, importProject, clearProject, saveToLocalStorage } = useBuilderStore();
+  const { theme, updateTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const themeInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
     const projectData = exportProject();
@@ -111,6 +114,43 @@ export default function Toolbar() {
     } catch (error) {
       console.error('Failed to export PNG:', error);
       alert('Failed to export PNG');
+    }
+  };
+
+  const handleExportTheme = () => {
+    const json = JSON.stringify(theme, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_theme_${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportTheme = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = e.target?.result as string;
+        const themeData = JSON.parse(json);
+        updateTheme(themeData);
+        alert('Theme imported successfully!');
+      } catch (error) {
+        alert('Failed to import theme. Invalid JSON file.');
+        console.error('Theme import error:', error);
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset input so same file can be imported again
+    if (themeInputRef.current) {
+      themeInputRef.current.value = '';
     }
   };
 
@@ -247,6 +287,38 @@ export default function Toolbar() {
           className="sm:hidden px-3 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-xs whitespace-nowrap"
         >
           PDF
+        </button>
+
+        {/* Theme Export/Import */}
+        <div className="hidden sm:block w-px h-8 bg-gray-300"></div>
+
+        <input
+          ref={themeInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleImportTheme}
+          className="hidden"
+          id="import-theme-input"
+        />
+        <label
+          htmlFor="import-theme-input"
+          className="px-3 sm:px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors font-medium text-xs sm:text-sm cursor-pointer whitespace-nowrap"
+        >
+          Import Theme
+        </label>
+
+        <button
+          onClick={handleExportTheme}
+          className="hidden sm:block px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors font-medium text-sm whitespace-nowrap"
+        >
+          Export Theme
+        </button>
+
+        <button
+          onClick={handleExportTheme}
+          className="sm:hidden px-3 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors font-medium text-xs whitespace-nowrap"
+        >
+          Theme
         </button>
       </div>
     </div>

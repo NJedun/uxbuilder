@@ -2,12 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { Layouts, Responsive, WidthProvider } from 'react-grid-layout';
 import { useBuilderStore, viewportConfigs } from '../store/builderStore';
 import ComponentRenderer from '../components/ComponentRenderer';
+import { useTheme } from '../contexts/ThemeContext';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-export default function Canvas() {
+interface CanvasProps {
+  readOnly?: boolean;
+}
+
+export default function Canvas({ readOnly = false }: CanvasProps) {
+  const { theme } = useTheme();
   const {
     viewport,
     canvasSettingsByViewport,
@@ -181,19 +187,40 @@ export default function Canvas() {
     sectionComponents: typeof components,
     bgColor: string,
     borderColor: string
-  ) => (
-    <div
-      className={`relative border-2 border-dashed ${borderColor} ${bgColor} ${
-        selectedLayoutSection === section ? 'ring-2 ring-purple-500' : ''
-      }`}
-      style={{ height: `${height}px`, width: config.width }}
-      onClick={(e) => handleSectionClick(section, e)}
-      onDrop={(e) => handleDrop(e, sectionId)}
-      onDragOver={handleDragOver}
-    >
-      <div className="absolute top-2 left-2 text-xs font-bold text-gray-500 pointer-events-none z-10">
-        {section}
-      </div>
+  ) => {
+    // Get section-specific background color from theme
+    let sectionBgColor = '';
+    if (readOnly) {
+      if (sectionId === 'header') {
+        sectionBgColor = theme.globalStyles.colors.headerBackground;
+      } else if (sectionId === 'body') {
+        sectionBgColor = theme.globalStyles.colors.bodyBackground;
+      } else if (sectionId === 'footer') {
+        sectionBgColor = theme.globalStyles.colors.footerBackground;
+      }
+    }
+
+    return (
+      <div
+        className={`relative ${
+          readOnly ? 'border-0' : `border-2 border-dashed ${borderColor}`
+        } ${bgColor} ${
+          !readOnly && selectedLayoutSection === section ? 'ring-2 ring-purple-500' : ''
+        }`}
+        style={{
+          height: `${height}px`,
+          width: config.width,
+          backgroundColor: sectionBgColor || undefined
+        }}
+        onClick={(e) => !readOnly && handleSectionClick(section, e)}
+        onDrop={(e) => !readOnly && handleDrop(e, sectionId)}
+        onDragOver={!readOnly ? handleDragOver : undefined}
+      >
+      {!readOnly && (
+        <div className="absolute top-2 left-2 text-xs font-bold text-gray-500 pointer-events-none z-10">
+          {section}
+        </div>
+      )}
 
       <ResponsiveGridLayout
         key={`${viewport}-${sectionId}`}
@@ -212,8 +239,8 @@ export default function Canvas() {
           // Select the component after resizing
           setSelectedComponents([newItem.i]);
         }}
-        isDraggable={true}
-        isResizable={true}
+        isDraggable={!readOnly}
+        isResizable={!readOnly}
         compactType={null}
         preventCollision={true}
       >
@@ -221,6 +248,7 @@ export default function Canvas() {
           <div
             key={comp.i}
             onClick={(e) => {
+              if (readOnly) return;
               e.stopPropagation();
               if (e.ctrlKey || e.metaKey) {
                 const newSelection = selectedComponents.includes(comp.i)
@@ -232,37 +260,48 @@ export default function Canvas() {
               }
             }}
             className={`border rounded relative group ${
-              selectedComponents.includes(comp.i)
+              readOnly
+                ? 'border-transparent'
+                : selectedComponents.includes(comp.i)
                 ? 'border-blue-500 border-2'
                 : 'border-transparent hover:border-gray-300'
-            } bg-white`}
+            } ${readOnly ? '' : 'bg-white'}`}
           >
-            <ComponentRenderer component={comp} />
-            <button
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                removeComponent(comp.i);
-              }}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
-              title="Delete component"
-            >
-              ×
-            </button>
+            <ComponentRenderer component={comp} useThemeStyles={readOnly} />
+            {!readOnly && (
+              <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeComponent(comp.i);
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
+                title="Delete component"
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
       </ResponsiveGridLayout>
     </div>
-  );
+    );
+  };
 
   return (
     <div
       ref={canvasRef}
-      className="flex-1 bg-gray-100 overflow-auto p-8"
+      className="flex-1 overflow-auto p-8 bg-gray-100"
       onClick={handleCanvasClick}
       style={{ zoom }}
     >
-      <div className="mx-auto bg-white shadow-lg" style={{ width: config.width }}>
+      <div
+        className="mx-auto shadow-lg"
+        style={{
+          width: config.width,
+          backgroundColor: readOnly ? theme.globalStyles.colors.background : '#ffffff'
+        }}
+      >
         {/* Header Section */}
         {renderSection(
           'Header',
@@ -270,18 +309,20 @@ export default function Canvas() {
           headerHeight,
           headerLayouts,
           headerComponents,
-          'bg-white',
+          '',
           'border-gray-300'
         )}
 
         {/* Header Resize Handle */}
-        <div
-          className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
-          onMouseDown={(e) => handleResizeStart('header', e)}
-          style={{ userSelect: 'none' }}
-        >
-          <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
-        </div>
+        {!readOnly && (
+          <div
+            className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
+            onMouseDown={(e) => handleResizeStart('header', e)}
+            style={{ userSelect: 'none' }}
+          >
+            <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
+          </div>
+        )}
 
         {/* Body Section */}
         {renderSection(
@@ -290,18 +331,20 @@ export default function Canvas() {
           bodyHeight,
           bodyLayouts,
           bodyComponents,
-          'bg-white',
+          '',
           'border-gray-300'
         )}
 
         {/* Body Resize Handle */}
-        <div
-          className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
-          onMouseDown={(e) => handleResizeStart('body', e)}
-          style={{ userSelect: 'none' }}
-        >
-          <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
-        </div>
+        {!readOnly && (
+          <div
+            className="w-full h-2 bg-gray-300 hover:bg-gray-400 cursor-ns-resize flex items-center justify-center pointer-events-auto relative z-50"
+            onMouseDown={(e) => handleResizeStart('body', e)}
+            style={{ userSelect: 'none' }}
+          >
+            <div className="w-12 h-1 bg-gray-500 rounded pointer-events-none"></div>
+          </div>
+        )}
 
         {/* Footer Section */}
         {renderSection(
@@ -310,7 +353,7 @@ export default function Canvas() {
           footerHeight,
           footerLayouts,
           footerComponents,
-          'bg-white',
+          '',
           'border-gray-300'
         )}
 

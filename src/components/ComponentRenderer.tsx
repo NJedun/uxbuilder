@@ -29,9 +29,10 @@ import ContactForm from './atoms/ContactForm';
 
 interface ComponentRendererProps {
   component: ComponentDefinition;
+  useThemeStyles?: boolean;
 }
 
-export default function ComponentRenderer({ component }: ComponentRendererProps) {
+export default function ComponentRenderer({ component, useThemeStyles = false }: ComponentRendererProps) {
   switch (component.type) {
     // Header Components
     case 'NavMenu':
@@ -73,7 +74,7 @@ export default function ComponentRenderer({ component }: ComponentRendererProps)
     case 'Form':
       return <Form {...component.props} />;
     case 'Button':
-      return <Button {...component.props} />;
+      return <Button {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Title':
       return <Title {...component.props} />;
     case 'Logo':
