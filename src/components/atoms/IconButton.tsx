@@ -30,11 +30,12 @@ export default function IconButton({
     backgroundColor: styles.backgroundColor,
     borderColor: styles.borderColor,
     borderWidth: styles.borderWidth,
+    borderRadius: styles.borderRadius,
   } : {};
 
   return (
     <div
-      className={`${sizeClasses} ${useThemeStyles ? '' : variantClasses} rounded flex items-center justify-center cursor-pointer transition-colors`}
+      className={`${sizeClasses} ${useThemeStyles ? '' : variantClasses} ${useThemeStyles ? '' : 'rounded'} flex items-center justify-center cursor-pointer transition-colors`}
       style={inlineStyles}
     >
       {/* Icon placeholder - represented by a small square */}

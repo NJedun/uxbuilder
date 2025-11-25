@@ -39,7 +39,7 @@ export default function StyleEditor({
   };
 
   // Define which properties are colors for color picker rendering
-  const colorProperties = ['backgroundColor', 'textColor', 'borderColor', 'shadowColor', 'hoverColor'];
+  const colorProperties = ['backgroundColor', 'textColor', 'borderColor', 'shadowColor', 'hoverColor', 'iconColor', 'hoverBackgroundColor'];
 
   // Render a style input field dynamically
   const renderStyleInput = (property: string, value: any) => {

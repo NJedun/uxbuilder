@@ -46,13 +46,13 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
     case 'HeaderPattern':
       return <HeaderPattern {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HorizontalLine':
-      return <HorizontalLine {...component.props} />;
+      return <HorizontalLine {...component.props} useThemeStyles={useThemeStyles} />;
 
     // Footer Components
     case 'FooterPattern':
-      return <FooterPattern {...component.props} />;
+      return <FooterPattern {...component.props} useThemeStyles={useThemeStyles} />;
     case 'CopyrightText':
-      return <CopyrightText {...component.props} />;
+      return <CopyrightText {...component.props} useThemeStyles={useThemeStyles} />;
 
     // Content Patterns
     case 'ProductCard':
@@ -94,7 +94,7 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
     case 'Dropdown':
       return <Dropdown {...component.props} />;
     case 'SocialLinks':
-      return <SocialLinks {...component.props} />;
+      return <SocialLinks {...component.props} useThemeStyles={useThemeStyles} />;
     default:
       return <div>Unknown component</div>;
   }
