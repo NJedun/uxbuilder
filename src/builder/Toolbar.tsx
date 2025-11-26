@@ -1,6 +1,6 @@
 import { useBuilderStore } from '../store/builderStore';
 import { useRef } from 'react';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -63,7 +63,7 @@ export default function Toolbar() {
 
   const handleExportPNG = async () => {
     // Select the main canvas container that holds all three sections
-    const canvasElement = document.querySelector('.mx-auto.bg-white.shadow-lg') as HTMLElement;
+    const canvasElement = document.getElementById('ux-builder-canvas');
     if (!canvasElement) {
       alert('Canvas not found');
       return;
@@ -82,13 +82,20 @@ export default function Toolbar() {
         (section as HTMLElement).style.border = 'none';
       });
 
-      const canvas = await html2canvas(canvasElement, {
+      // Scroll to top to ensure proper capture
+      window.scrollTo(0, 0);
+
+      // Wait for any pending style updates and scroll
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const dataUrl = await toPng(canvasElement, {
         backgroundColor: '#ffffff',
-        scale: 2, // Higher quality
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: false,
+        pixelRatio: 2, // Higher quality
+        cacheBust: true,
+        style: {
+          margin: '0',
+          padding: '0',
+        }
       });
 
       // Restore visibility
@@ -99,18 +106,13 @@ export default function Toolbar() {
         (section as HTMLElement).style.border = '';
       });
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
-      });
+      // Download the image
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to export PNG:', error);
       alert('Failed to export PNG');
@@ -163,7 +165,7 @@ export default function Toolbar() {
 
   const handleExportPDF = async () => {
     // Select the main canvas container that holds all three sections
-    const canvasElement = document.querySelector('.mx-auto.bg-white.shadow-lg') as HTMLElement;
+    const canvasElement = document.getElementById('ux-builder-canvas');
     if (!canvasElement) {
       alert('Canvas not found');
       return;
@@ -182,13 +184,20 @@ export default function Toolbar() {
         (section as HTMLElement).style.border = 'none';
       });
 
-      const canvas = await html2canvas(canvasElement, {
+      // Scroll to top to ensure proper capture
+      window.scrollTo(0, 0);
+
+      // Wait for any pending style updates and scroll
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const dataUrl = await toPng(canvasElement, {
         backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: false,
+        pixelRatio: 2,
+        cacheBust: true,
+        style: {
+          margin: '0',
+          padding: '0',
+        }
       });
 
       // Restore visibility
@@ -199,9 +208,13 @@ export default function Toolbar() {
         (section as HTMLElement).style.border = '';
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
+      // Get image dimensions
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => { img.onload = resolve; });
+
+      const imgWidth = img.width;
+      const imgHeight = img.height;
 
       // Calculate PDF dimensions (A4 or custom based on canvas aspect ratio)
       const pdf = new jsPDF({
@@ -210,7 +223,7 @@ export default function Toolbar() {
         format: [imgWidth, imgHeight],
       });
 
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.pdf`);
     } catch (error) {
       console.error('Failed to export PDF:', error);

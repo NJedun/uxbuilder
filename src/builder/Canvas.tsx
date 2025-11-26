@@ -391,6 +391,7 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
       onClick={handleCanvasClick}
     >
       <div
+        id="ux-builder-canvas"
         className="mx-auto shadow-lg"
         style={{
           width: config.width,
