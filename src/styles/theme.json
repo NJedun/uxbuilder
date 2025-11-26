@@ -81,7 +81,7 @@
         "fontWeight": "600",
         "fontFamily": "system-ui, -apple-system, sans-serif",
         "lineHeight": "1.4",
-        "marginBottom": "0.75rem",
+        "marginBottom": "0.5rem",
         "content": "Heading 3"
       },
       "h4": {
@@ -90,7 +90,7 @@
         "fontWeight": "600",
         "fontFamily": "system-ui, -apple-system, sans-serif",
         "lineHeight": "1.4",
-        "marginBottom": "0.625rem",
+        "marginBottom": "0rem",
         "content": "Heading 4"
       },
       "h5": {
@@ -99,7 +99,7 @@
         "fontWeight": "600",
         "fontFamily": "system-ui, -apple-system, sans-serif",
         "lineHeight": "1.5",
-        "marginBottom": "0.5rem",
+        "marginBottom": "0rem",
         "content": "Heading 5"
       }
     },
@@ -110,7 +110,8 @@
         "fontWeight": "400",
         "fontFamily": "system-ui, -apple-system, sans-serif",
         "lineHeight": "1.6",
-        "marginBottom": "1rem"
+        "marginBottom": "0.2rem",
+        "content": "This is a paragraph of text that provides information to the reader."
       }
     },
     "Link": {
@@ -344,6 +345,99 @@
       "multiColumn": {
         "backgroundColor": "transparent",
         "padding": "1.5rem"
+      }
+    },
+    "HeroSection": {
+      "default": {
+        "backgroundColor": "#F3F4F6",
+        "padding": "3rem",
+        "backgroundImageUrl": ""
+      }
+    },
+    "HeroWithImage": {
+      "default": {
+        "backgroundColor": "#F3F4F6",
+        "padding": "3rem"
+      }
+    },
+    "ContactForm": {
+      "default": {
+        "backgroundColor": "#FFFFFF",
+        "padding": "2rem"
+      }
+    },
+    "Image": {
+      "default": {
+        "imageUrl": "",
+        "alt": "Image",
+        "borderRadius": "0.5rem"
+      }
+    },
+    "ProductCard": {
+      "grid": {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E5E7EB",
+        "borderWidth": "1px",
+        "borderRadius": "0.5rem",
+        "padding": "1rem"
+      },
+      "list": {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E5E7EB",
+        "borderWidth": "1px",
+        "borderRadius": "0.5rem",
+        "padding": "1rem"
+      }
+    },
+    "ProductList": {
+      "grid": {
+        "backgroundColor": "transparent",
+        "gap": "1rem",
+        "padding": "1rem"
+      },
+      "list": {
+        "backgroundColor": "transparent",
+        "gap": "1rem",
+        "padding": "1rem"
+      }
+    },
+    "ProductDetails": {
+      "sideBySide": {
+        "backgroundColor": "#FFFFFF",
+        "padding": "1.5rem",
+        "gap": "2rem"
+      },
+      "stacked": {
+        "backgroundColor": "#FFFFFF",
+        "padding": "1.5rem",
+        "gap": "1.5rem"
+      }
+    },
+    "Rating": {
+      "default": {
+        "filledColor": "#FBBF24",
+        "emptyColor": "#D1D5DB",
+        "gap": "0.25rem"
+      }
+    },
+    "SizeSelector": {
+      "outlined": {
+        "borderColor": "#9CA3AF",
+        "selectedBorderColor": "#4B5563",
+        "borderWidth": "2px",
+        "backgroundColor": "transparent",
+        "selectedBackgroundColor": "transparent",
+        "borderRadius": "0.25rem",
+        "gap": "0.5rem"
+      },
+      "filled": {
+        "borderColor": "transparent",
+        "selectedBorderColor": "transparent",
+        "borderWidth": "2px",
+        "backgroundColor": "#D1D5DB",
+        "selectedBackgroundColor": "#4B5563",
+        "borderRadius": "0.25rem",
+        "gap": "0.5rem"
       }
     }
   }

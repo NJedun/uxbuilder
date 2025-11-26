@@ -35,7 +35,7 @@ export default function Title({ level = 1, align = 'left', useThemeStyles = fals
   };
 
   return (
-    <div className={`w-full h-full flex items-center ${alignmentClasses[align]} p-2`}>
+    <div className={`w-full h-full flex items-center ${alignmentClasses[align]} py-2`}>
       {useThemeStyles ? (
         // UI Mode - Display actual text content with theme styles
         <div

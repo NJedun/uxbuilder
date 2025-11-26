@@ -62,6 +62,83 @@ const compositeComponentChildren: Record<string, Record<string, Array<{ type: st
       { type: 'CopyrightText' },
     ],
   },
+  HeroSection: {
+    default: [
+      { type: 'Title', variant: 'h1' },
+      { type: 'Paragraph' },
+      { type: 'Button', variant: 'primary' },
+    ],
+  },
+  HeroWithImage: {
+    default: [
+      { type: 'Image' },
+      { type: 'Title', variant: 'h1' },
+      { type: 'Paragraph' },
+      { type: 'Button', variant: 'primary' },
+    ],
+  },
+  ContactForm: {
+    default: [
+      { type: 'Title', variant: 'h1' },
+      { type: 'Title', variant: 'h3', count: 4 }, // Field labels
+      { type: 'Input', count: 4 },
+      { type: 'Button', variant: 'primary' },
+    ],
+  },
+  ProductCard: {
+    grid: [
+      { type: 'Image' },
+      { type: 'Title', variant: 'h3' }, // Product title
+      { type: 'Paragraph' },
+      { type: 'Title', variant: 'h4' }, // Price
+      { type: 'Button', variant: 'primary' },
+    ],
+    list: [
+      { type: 'Image' },
+      { type: 'Title', variant: 'h3' }, // Product title
+      { type: 'Paragraph' },
+      { type: 'Title', variant: 'h4' }, // Price
+      { type: 'Button', variant: 'primary' },
+    ],
+  },
+  ProductList: {
+    grid: [
+      { type: 'ProductCard', variant: 'grid', count: 6 },
+      { type: 'Image', count: 6 },
+      { type: 'Title', variant: 'h3', count: 6 },
+      { type: 'Paragraph', count: 6 },
+      { type: 'Title', variant: 'h4', count: 6 },
+      { type: 'Button', variant: 'primary', count: 6 },
+    ],
+    list: [
+      { type: 'ProductCard', variant: 'list', count: 4 },
+      { type: 'Image', count: 4 },
+      { type: 'Title', variant: 'h3', count: 4 },
+      { type: 'Paragraph', count: 4 },
+      { type: 'Title', variant: 'h4', count: 4 },
+      { type: 'Button', variant: 'primary', count: 4 },
+    ],
+  },
+  ProductDetails: {
+    sideBySide: [
+      { type: 'Image', count: 5 }, // 1 main + 4 thumbnails
+      { type: 'Title', variant: 'h1' }, // Product name
+      { type: 'Title', variant: 'h4' }, // Price
+      { type: 'Rating' },
+      { type: 'Paragraph' },
+      { type: 'SizeSelector' },
+      { type: 'Button', variant: 'primary' },
+      { type: 'IconButton', variant: 'outlined', count: 1 },
+    ],
+    stacked: [
+      { type: 'Image' },
+      { type: 'Title', variant: 'h1' }, // Product name
+      { type: 'Title', variant: 'h4' }, // Price
+      { type: 'Paragraph' },
+      { type: 'Button', variant: 'primary' },
+      { type: 'IconButton', variant: 'outlined', count: 1 },
+    ],
+  },
 };
 
 export default function ComponentList({
@@ -77,10 +154,12 @@ export default function ComponentList({
 
   components.forEach((comp) => {
     // Add the top-level component
-    flattenedComponents.push({ type: comp.type, variant: comp.props?.variant, parentComponent: comp });
+    // Some components use 'variant' prop, others use 'layout' prop
+    const componentVariant = comp.props?.variant || comp.props?.layout;
+    flattenedComponents.push({ type: comp.type, variant: componentVariant, parentComponent: comp });
 
     // If it's a composite component, add its children
-    const variant = comp.props?.variant || 'default';
+    const variant = componentVariant || 'default';
     const children = compositeComponentChildren[comp.type]?.[variant];
 
     if (children) {

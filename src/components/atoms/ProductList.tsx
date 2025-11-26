@@ -1,21 +1,37 @@
 import ProductCard from './ProductCard';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface ProductListProps {
   layout?: 'grid' | 'list';
   columns?: number;
   itemCount?: number;
+  useThemeStyles?: boolean;
 }
 
 export default function ProductList({
   layout = 'grid',
   columns = 3,
-  itemCount = 6
+  itemCount = 6,
+  useThemeStyles = false
 }: ProductListProps) {
+  const { theme } = useTheme();
+  const styles = theme.componentStyles.ProductList?.[layout] || {};
+
+  const containerStyles = useThemeStyles ? {
+    backgroundColor: styles.backgroundColor,
+    padding: styles.padding,
+  } : {};
+
+  const gapStyle = useThemeStyles && styles.gap ? { gap: styles.gap } : {};
+
   if (layout === 'list') {
     return (
-      <div className="w-full h-full flex flex-col gap-4 p-4">
+      <div
+        className={`w-full h-full flex flex-col ${useThemeStyles ? '' : 'gap-4 p-4'}`}
+        style={{ ...containerStyles, ...gapStyle }}
+      >
         {Array.from({ length: itemCount }).map((_, i) => (
-          <ProductCard key={i} variant="list" />
+          <ProductCard key={i} variant="list" useThemeStyles={useThemeStyles} />
         ))}
       </div>
     );
@@ -30,9 +46,12 @@ export default function ProductList({
   }[columns] || 'grid-cols-3';
 
   return (
-    <div className={`w-full h-full grid ${gridCols} gap-4 p-4`}>
+    <div
+      className={`w-full h-full grid ${gridCols} ${useThemeStyles ? '' : 'gap-4 p-4'}`}
+      style={{ ...containerStyles, ...gapStyle }}
+    >
       {Array.from({ length: itemCount }).map((_, i) => (
-        <ProductCard key={i} variant="grid" />
+        <ProductCard key={i} variant="grid" useThemeStyles={useThemeStyles} />
       ))}
     </div>
   );

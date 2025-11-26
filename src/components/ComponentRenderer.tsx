@@ -56,17 +56,17 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
 
     // Content Patterns
     case 'ProductCard':
-      return <ProductCard {...component.props} />;
+      return <ProductCard {...component.props} useThemeStyles={useThemeStyles} />;
     case 'ProductList':
-      return <ProductList {...component.props} />;
+      return <ProductList {...component.props} useThemeStyles={useThemeStyles} />;
     case 'ProductDetails':
-      return <ProductDetails {...component.props} />;
+      return <ProductDetails {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HeroSection':
-      return <HeroSection {...component.props} />;
+      return <HeroSection {...component.props} useThemeStyles={useThemeStyles} />;
     case 'HeroWithImage':
-      return <HeroWithImage {...component.props} />;
+      return <HeroWithImage {...component.props} useThemeStyles={useThemeStyles} />;
     case 'ContactForm':
-      return <ContactForm {...component.props} />;
+      return <ContactForm {...component.props} useThemeStyles={useThemeStyles} />;
 
     // Basic Components
     case 'Card':
@@ -80,7 +80,7 @@ export default function ComponentRenderer({ component, useThemeStyles = false }:
     case 'Logo':
       return <Logo {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Image':
-      return <Image {...component.props} />;
+      return <Image {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Paragraph':
       return <Paragraph {...component.props} useThemeStyles={useThemeStyles} />;
     case 'Link':

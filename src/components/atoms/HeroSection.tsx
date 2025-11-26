@@ -1,24 +1,46 @@
 import Title from './Title';
 import Paragraph from './Paragraph';
 import Button from './Button';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface HeroSectionProps {
   align?: 'left' | 'center' | 'right';
   hasImageBackground?: boolean;
+  useThemeStyles?: boolean;
 }
 
 export default function HeroSection({
   align = 'center',
-  hasImageBackground = false
+  hasImageBackground = false,
+  useThemeStyles = false
 }: HeroSectionProps) {
+  const { theme } = useTheme();
+  const styles = theme.componentStyles.HeroSection?.default || {};
+
   const backgroundClass = hasImageBackground
     ? ''
     : 'bg-gradient-to-r from-gray-100 to-gray-200';
 
+  // Check if there's a background image URL in the theme
+  const backgroundImageUrl = useThemeStyles ? styles.backgroundImageUrl : null;
+
+  const inlineStyles = useThemeStyles ? {
+    backgroundColor: styles.backgroundColor,
+    padding: styles.padding,
+    ...(backgroundImageUrl && {
+      backgroundImage: `url(${backgroundImageUrl})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }),
+  } : {};
+
   return (
-    <div className={`w-full h-full relative overflow-hidden ${backgroundClass}`}>
-      {/* Image background pattern */}
-      {hasImageBackground && (
+    <div
+      className={`w-full h-full relative overflow-hidden ${useThemeStyles ? '' : backgroundClass}`}
+      style={inlineStyles}
+    >
+      {/* Image background pattern (UX mode only) */}
+      {hasImageBackground && !useThemeStyles && (
         <>
           {/* Diagonal stripes pattern to represent image */}
           <div className="absolute inset-0 image-pattern" />
@@ -35,17 +57,17 @@ export default function HeroSection({
       <div className={`w-full h-full relative z-10 flex flex-col items-center justify-center px-12 py-16`}>
         {/* Main Heading - H1 style */}
         <div className="w-full h-10 mb-6">
-          <Title level={1} align={align} />
+          <Title level={1} align={align} useThemeStyles={useThemeStyles} />
         </div>
 
         {/* Subheading - Paragraph style */}
         <div className="w-full h-8 mb-8">
-          <Paragraph lines={2} />
+          <Paragraph lines={2} align={align} useThemeStyles={useThemeStyles} />
         </div>
 
         {/* Single CTA Button */}
         <div className="w-40 h-12">
-          <Button variant="primary" align={align} />
+          <Button variant="primary" align={align} useThemeStyles={useThemeStyles} />
         </div>
       </div>
     </div>

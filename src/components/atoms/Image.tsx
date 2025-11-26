@@ -1,4 +1,33 @@
-export default function Image() {
+import { useTheme } from '../../contexts/ThemeContext';
+
+interface ImageProps {
+  useThemeStyles?: boolean;
+}
+
+export default function Image({ useThemeStyles = false }: ImageProps) {
+  const { theme } = useTheme();
+  const styles = theme.componentStyles.Image?.default || {};
+
+  // Check if there's an image URL in the theme
+  const imageUrl = useThemeStyles ? styles.imageUrl : null;
+
+  if (useThemeStyles && imageUrl) {
+    // UI Mode with image URL - display actual image
+    return (
+      <div className="w-full h-full relative overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={styles.alt || 'Image'}
+          className="w-full h-full object-cover"
+          style={{
+            borderRadius: styles.borderRadius,
+          }}
+        />
+      </div>
+    );
+  }
+
+  // UX Mode - display placeholder wireframe
   return (
     <div className="w-full h-full bg-gray-100 border-2 border-gray-400 relative overflow-hidden">
       {/* Diagonal lines pattern for wireframe image representation */}
