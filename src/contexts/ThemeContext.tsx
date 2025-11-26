@@ -39,14 +39,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   });
 
   const updateTheme = (newTheme: Partial<typeof defaultTheme>) => {
-    setTheme(prev => ({
+    setTheme((prev: typeof defaultTheme) => ({
       ...prev,
       ...newTheme
     }));
   };
 
   const updateComponentStyle = (component: string, variant: string, styles: any) => {
-    setTheme(prev => ({
+    setTheme((prev: typeof defaultTheme) => ({
       ...prev,
       componentStyles: {
         ...prev.componentStyles,
@@ -62,7 +62,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   const updateGlobalStyle = (category: string, property: string, value: string) => {
-    setTheme(prev => ({
+    setTheme((prev: typeof defaultTheme) => ({
       ...prev,
       globalStyles: {
         ...prev.globalStyles,

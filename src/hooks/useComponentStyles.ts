@@ -20,12 +20,12 @@ export function useComponentStyles(
   styles: StyleConfig;
 } {
   const { theme } = useTheme();
-  const styles = theme.componentStyles[componentName]?.[variant] || {};
+  const styles = (theme.componentStyles as any)[componentName]?.[variant] || {};
 
   const containerStyles = useThemeStyles
     ? styleKeys.reduce((acc, key) => {
         if (styles[key] !== undefined) {
-          acc[key] = styles[key];
+          (acc as any)[key] = styles[key];
         }
         return acc;
       }, {} as CSSProperties)
