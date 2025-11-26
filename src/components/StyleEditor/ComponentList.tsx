@@ -1,6 +1,7 @@
 import { useBuilderStore } from '../../store/builderStore';
 import { PlacedComponent } from '../../types/builder';
 import { useState } from 'react';
+import { getComponentVariant } from '../../utils/componentHelpers';
 
 interface ComponentListProps {
   onSelectComponent: (type: string, variant?: string) => void;
@@ -154,13 +155,11 @@ export default function ComponentList({
 
   components.forEach((comp) => {
     // Add the top-level component
-    // Some components use 'variant' prop, others use 'layout' prop
-    const componentVariant = comp.props?.variant || comp.props?.layout;
+    const componentVariant = getComponentVariant(comp);
     flattenedComponents.push({ type: comp.type, variant: componentVariant, parentComponent: comp });
 
     // If it's a composite component, add its children
-    const variant = componentVariant || 'default';
-    const children = compositeComponentChildren[comp.type]?.[variant];
+    const children = compositeComponentChildren[comp.type]?.[componentVariant];
 
     if (children) {
       children.forEach((child, index) => {

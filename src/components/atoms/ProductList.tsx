@@ -1,5 +1,6 @@
 import ProductCard from './ProductCard';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useComponentStyles } from '../../hooks/useComponentStyles';
+import { cx } from '../../utils/classNames';
 
 interface ProductListProps {
   layout?: 'grid' | 'list';
@@ -14,20 +15,17 @@ export default function ProductList({
   itemCount = 6,
   useThemeStyles = false
 }: ProductListProps) {
-  const { theme } = useTheme();
-  const styles = theme.componentStyles.ProductList?.[layout] || {};
-
-  const containerStyles = useThemeStyles ? {
-    backgroundColor: styles.backgroundColor,
-    padding: styles.padding,
-  } : {};
-
-  const gapStyle = useThemeStyles && styles.gap ? { gap: styles.gap } : {};
+  const { containerStyles, gapStyle } = useComponentStyles(
+    'ProductList',
+    layout,
+    useThemeStyles,
+    ['backgroundColor', 'padding']
+  );
 
   if (layout === 'list') {
     return (
       <div
-        className={`w-full h-full flex flex-col ${useThemeStyles ? '' : 'gap-4 p-4'}`}
+        className={`w-full h-full flex flex-col ${cx(useThemeStyles, 'gap-4 p-4')}`}
         style={{ ...containerStyles, ...gapStyle }}
       >
         {Array.from({ length: itemCount }).map((_, i) => (
@@ -47,7 +45,7 @@ export default function ProductList({
 
   return (
     <div
-      className={`w-full h-full grid ${gridCols} ${useThemeStyles ? '' : 'gap-4 p-4'}`}
+      className={`w-full h-full grid ${gridCols} ${cx(useThemeStyles, 'gap-4 p-4')}`}
       style={{ ...containerStyles, ...gapStyle }}
     >
       {Array.from({ length: itemCount }).map((_, i) => (

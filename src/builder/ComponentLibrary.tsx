@@ -232,11 +232,23 @@ export default function ComponentLibrary() {
 
   const handleDragStart = (e: React.DragEvent, item: ComponentItem) => {
     e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('application/json', JSON.stringify({
+
+    // Store component data for drag preview
+    const dragData = {
       type: item.type,
       defaultProps: item.defaultProps,
       defaultSize: item.defaultSize,
-    }));
+    };
+
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+
+    // Also store in window for access during dragover
+    (window as any).__draggedComponentSize = item.defaultSize;
+  };
+
+  const handleDragEnd = () => {
+    // Clean up
+    delete (window as any).__draggedComponentSize;
   };
 
   const handleAddComponent = (item: ComponentItem) => {
@@ -314,6 +326,7 @@ export default function ComponentLibrary() {
                     key={`${group.title}-${item.type}-${item.label}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, item)}
+                    onDragEnd={handleDragEnd}
                     onClick={() => handleAddComponent(item)}
                     className="w-full px-3 py-2 bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-500 transition-colors text-left text-sm font-medium text-gray-700 cursor-grab active:cursor-grabbing"
                   >

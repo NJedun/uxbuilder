@@ -5,7 +5,8 @@ import Button from './Button';
 import IconButton from './IconButton';
 import Rating from './Rating';
 import SizeSelector from './SizeSelector';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useComponentStyles } from '../../hooks/useComponentStyles';
+import { cx } from '../../utils/classNames';
 
 interface ProductDetailsProps {
   layout?: 'sideBySide' | 'stacked';
@@ -16,20 +17,17 @@ export default function ProductDetails({
   layout = 'sideBySide',
   useThemeStyles = false
 }: ProductDetailsProps) {
-  const { theme } = useTheme();
-  const styles = theme.componentStyles.ProductDetails?.[layout] || {};
-
-  const containerStyles = useThemeStyles ? {
-    backgroundColor: styles.backgroundColor,
-    padding: styles.padding,
-  } : {};
-
-  const gapStyle = useThemeStyles && styles.gap ? { gap: styles.gap } : {};
+  const { containerStyles, gapStyle } = useComponentStyles(
+    'ProductDetails',
+    layout,
+    useThemeStyles,
+    ['backgroundColor', 'padding']
+  );
 
   if (layout === 'stacked') {
     return (
       <div
-        className={`w-full h-full flex flex-col ${useThemeStyles ? '' : 'gap-6 p-6'}`}
+        className={`w-full h-full flex flex-col ${cx(useThemeStyles, 'gap-6 p-6')}`}
         style={{ ...containerStyles, ...gapStyle }}
       >
         {/* Product Images */}
@@ -40,23 +38,23 @@ export default function ProductDetails({
         {/* Product Info */}
         <div className="flex flex-col gap-4">
           {/* Title */}
-          <div className={useThemeStyles ? '' : 'h-8'}>
+          <div className={cx(useThemeStyles, 'h-8')}>
             <Title level={1} align="left" useThemeStyles={useThemeStyles} />
           </div>
 
           {/* Price */}
-          <div className={useThemeStyles ? '' : 'h-8'}>
+          <div className={cx(useThemeStyles, 'h-8')}>
             <Title level={4} align="left" useThemeStyles={useThemeStyles} />
           </div>
 
           {/* Description */}
-          <div className={useThemeStyles ? '' : 'h-12'}>
+          <div className={cx(useThemeStyles, 'h-12')}>
             <Paragraph lines={3} align="left" useThemeStyles={useThemeStyles} />
           </div>
 
           {/* Actions */}
           <div className="flex gap-3 mt-2">
-            <div className={useThemeStyles ? 'flex-1' : 'h-10 flex-1'}>
+            <div className={cx(useThemeStyles, 'h-10', 'flex-1')}>
               <Button variant="primary" align="center" useThemeStyles={useThemeStyles} />
             </div>
             <IconButton variant="outlined" size="medium" useThemeStyles={useThemeStyles} />
@@ -69,7 +67,7 @@ export default function ProductDetails({
   // Side by side layout
   return (
     <div
-      className={`w-full h-full flex ${useThemeStyles ? '' : 'gap-8 p-6'}`}
+      className={`w-full h-full flex ${cx(useThemeStyles, 'gap-8 p-6')}`}
       style={{ ...containerStyles, ...gapStyle }}
     >
       {/* Left: Product Images */}
@@ -89,12 +87,12 @@ export default function ProductDetails({
       {/* Right: Product Info */}
       <div className="flex-1 flex flex-col gap-4">
         {/* Title */}
-        <div className={useThemeStyles ? '' : 'h-8'}>
+        <div className={cx(useThemeStyles, 'h-8')}>
           <Title level={1} align="left" useThemeStyles={useThemeStyles} />
         </div>
 
         {/* Price */}
-        <div className={useThemeStyles ? '' : 'h-8'}>
+        <div className={cx(useThemeStyles, 'h-8')}>
           <Title level={4} align="left" useThemeStyles={useThemeStyles} />
         </div>
 
@@ -102,7 +100,7 @@ export default function ProductDetails({
         <Rating maxStars={5} filledStars={4} size="medium" useThemeStyles={useThemeStyles} />
 
         {/* Description */}
-        <div className={useThemeStyles ? 'mt-2' : 'h-16 mt-2'}>
+        <div className={cx(useThemeStyles, 'h-16', 'mt-2')}>
           <Paragraph lines={4} align="left" useThemeStyles={useThemeStyles} />
         </div>
 
@@ -113,7 +111,7 @@ export default function ProductDetails({
 
         {/* Actions */}
         <div className="flex gap-3 mt-4">
-          <div className={useThemeStyles ? 'flex-1' : 'h-12 flex-1'}>
+          <div className={cx(useThemeStyles, 'h-12', 'flex-1')}>
             <Button variant="primary" align="center" useThemeStyles={useThemeStyles} />
           </div>
           <IconButton variant="outlined" size="large" useThemeStyles={useThemeStyles} />

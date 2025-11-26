@@ -221,7 +221,7 @@ export default function Toolbar() {
   return (
     <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-        <h1 className="text-lg sm:text-xl font-bold text-gray-800">Zont UX Builder</h1>
+        <h1 className="text-lg sm:text-xl font-bold text-gray-800">UX Builder</h1>
         <input
           type="text"
           value={projectName}

@@ -20,7 +20,6 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
     componentsByViewport,
     selectedComponents,
     selectedLayoutSection,
-    zoom,
     updateLayout,
     removeComponent,
     addComponent,
@@ -37,6 +36,7 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
   const [resizing, setResizing] = useState<'header' | 'body' | 'footer' | null>(null);
   const [resizeStartY, setResizeStartY] = useState(0);
   const [resizeStartHeight, setResizeStartHeight] = useState(0);
+  const [dragPreview, setDragPreview] = useState<{ section: string; col: number; row: number; width: number; height: number } | null>(null);
 
   const config = {
     ...baseConfig,
@@ -115,37 +115,84 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
 
   const handleDrop = (e: React.DragEvent, section: 'header' | 'body' | 'footer') => {
     e.preventDefault();
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
 
-      const colWidth = config.width / config.cols;
-      const col = Math.floor(x / colWidth);
-      const row = Math.floor(y / config.rowHeight);
+      // Use the preview position if available (should always be available)
+      if (dragPreview && dragPreview.section === section) {
+        const id = `${data.type}-${Date.now()}`;
 
-      const id = `${data.type}-${Date.now()}`;
-
-      addComponent({
-        i: id,
-        id,
-        type: data.type,
-        props: data.defaultProps,
-        x: Math.max(0, Math.min(col, config.cols - data.defaultSize.w)),
-        y: Math.max(0, row),
-        w: data.defaultSize.w,
-        h: data.defaultSize.h,
-        parentId: section,
-      } as any);
+        addComponent({
+          i: id,
+          id,
+          type: data.type,
+          props: data.defaultProps,
+          x: dragPreview.col,
+          y: dragPreview.row,
+          w: dragPreview.width,
+          h: dragPreview.height,
+          parentId: section,
+        } as any);
+      }
     } catch (error) {
       console.error('Failed to drop component:', error);
+    } finally {
+      // Clean up
+      setDragPreview(null);
+      delete (window as any).__draggedComponentSize;
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, section: 'header' | 'body' | 'footer') => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+
+    // Get component size from window (set during drag start)
+    const componentSize = (window as any).__draggedComponentSize;
+    if (!componentSize) return;
+
+    const sectionElement = e.currentTarget as HTMLElement;
+    const rect = sectionElement.getBoundingClientRect();
+
+    // Calculate position relative to viewport (for visual preview)
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Account for grid margins when calculating grid position
+    const marginX = 10;
+    const marginY = 10;
+
+    // React-grid-layout calculates column width as: (containerWidth - (cols - 1) * marginX) / cols
+    const totalMarginWidth = (config.cols - 1) * marginX;
+    const colWidth = (config.width - totalMarginWidth) / config.cols;
+
+    // Calculate which grid cell we're over, accounting for margins
+    const col = Math.floor(x / (colWidth + marginX));
+    const row = Math.floor(y / (config.rowHeight + marginY));
+
+    setDragPreview({
+      section,
+      col: Math.max(0, Math.min(col, config.cols - componentSize.w)),
+      row: Math.max(0, row),
+      width: componentSize.w,
+      height: componentSize.h,
+    });
+  };
+
+  const handleDragLeave = (e: React.DragEvent, section: 'header' | 'body' | 'footer') => {
+    // Only clear preview if leaving this specific section
+    // Check if we're actually leaving the section (not just moving to a child element)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const isLeavingSection =
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom;
+
+    if (isLeavingSection && dragPreview?.section === section) {
+      setDragPreview(null);
+    }
   };
 
   const handleResizeStart = (section: 'header' | 'body' | 'footer', e: React.MouseEvent) => {
@@ -214,12 +261,50 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
         }}
         onClick={(e) => !readOnly && handleSectionClick(section, e)}
         onDrop={(e) => !readOnly && handleDrop(e, sectionId)}
-        onDragOver={!readOnly ? handleDragOver : undefined}
+        onDragOver={!readOnly ? (e) => handleDragOver(e, sectionId) : undefined}
+        onDragLeave={!readOnly ? (e) => handleDragLeave(e, sectionId) : undefined}
       >
       {!readOnly && (
         <div className="absolute top-2 left-2 text-xs font-bold text-gray-500 pointer-events-none z-10">
           {section}
         </div>
+      )}
+
+      {/* Drag Preview Overlay */}
+      {!readOnly && dragPreview && dragPreview.section === sectionId && (
+        (() => {
+          // Calculate preview position accounting for grid margins
+          const marginX = 10;
+          const marginY = 10;
+
+          // React-grid-layout calculates column width as: (containerWidth - (cols - 1) * marginX) / cols
+          const totalMarginWidth = (config.cols - 1) * marginX;
+          const colWidth = (config.width - totalMarginWidth) / config.cols;
+
+          const left = (dragPreview.col * (colWidth + marginX));
+          const top = (dragPreview.row * (config.rowHeight + marginY));
+          const width = (dragPreview.width * colWidth) + ((dragPreview.width - 1) * marginX);
+          const height = (dragPreview.height * config.rowHeight) + ((dragPreview.height - 1) * marginY);
+
+          return (
+            <div
+              className="absolute bg-blue-500 bg-opacity-20 border-2 border-blue-500 border-dashed pointer-events-none z-20 rounded"
+              style={{
+                left: `${left}px`,
+                top: `${top}px`,
+                width: `${width}px`,
+                height: `${height}px`,
+              }}
+            >
+              <div className="absolute top-1 left-1 text-xs font-bold text-blue-700 bg-white bg-opacity-75 px-1 rounded">
+                {dragPreview.width}x{dragPreview.height}
+              </div>
+              <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg">
+                Col: {dragPreview.col}, Row: {dragPreview.row}
+              </div>
+            </div>
+          );
+        })()
       )}
 
       <ResponsiveGridLayout
@@ -230,6 +315,7 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
         cols={{ lg: config.cols }}
         rowHeight={config.rowHeight}
         width={config.width}
+        margin={[10, 10]}
         onLayoutChange={handleLayoutChange}
         onDragStop={(layout, oldItem, newItem) => {
           // Select the component after dragging
@@ -269,17 +355,27 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
           >
             <ComponentRenderer component={comp} useThemeStyles={readOnly} />
             {!readOnly && (
-              <button
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeComponent(comp.i);
-                }}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
-                title="Delete component"
-              >
-                ×
-              </button>
+              <>
+                {/* Position Display */}
+                {selectedComponents.includes(comp.i) && (
+                  <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-[1000] pointer-events-none">
+                    Col: {comp.x}, Row: {comp.y}
+                  </div>
+                )}
+
+                {/* Delete Button */}
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeComponent(comp.i);
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-[1000] cursor-pointer shadow-lg"
+                  title="Delete component"
+                >
+                  ×
+                </button>
+              </>
             )}
           </div>
         ))}
@@ -293,7 +389,6 @@ export default function Canvas({ readOnly = false }: CanvasProps) {
       ref={canvasRef}
       className="flex-1 overflow-auto p-8 bg-gray-100"
       onClick={handleCanvasClick}
-      style={{ zoom }}
     >
       <div
         className="mx-auto shadow-lg"
