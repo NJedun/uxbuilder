@@ -22,6 +22,33 @@ export interface GlobalStyles {
   containerBorderStyle?: string;
   containerBorderColor?: string;
 
+  // Header defaults
+  headerBackgroundColor?: string;
+  headerPadding?: string;
+  headerBorderWidth?: string;
+  headerBorderStyle?: string;
+  headerBorderColor?: string;
+  headerMaxWidth?: string;
+  headerJustifyContent?: string;
+  headerAlignItems?: string;
+
+  // Logo defaults
+  logoColor?: string;
+  logoFontSize?: string;
+  logoFontWeight?: string;
+
+  // Nav link defaults
+  navLinkColor?: string;
+  navLinkFontSize?: string;
+  navLinkFontWeight?: string;
+  navLinkGap?: string;
+  navLinkHoverColor?: string;
+
+  // Nav divider defaults
+  navDividerColor?: string;
+  navDividerHeight?: string;
+  navDividerMargin?: string;
+
   // Title defaults
   titleColor?: string;
   titleFontSize?: string;
@@ -54,6 +81,43 @@ export interface GlobalStyles {
   columnBackgroundColor?: string;
   columnPadding?: string;
   columnBorderRadius?: string;
+
+  // Link defaults
+  linkColor?: string;
+  linkFontSize?: string;
+  linkFontWeight?: string;
+  linkTextDecoration?: string;
+  linkHoverColor?: string;
+
+  // LinkList defaults
+  linkListLabelColor?: string;
+  linkListLabelFontSize?: string;
+  linkListLabelFontWeight?: string;
+  linkListLabelMarginBottom?: string;
+  linkListItemColor?: string;
+  linkListItemFontSize?: string;
+  linkListItemGap?: string;
+
+  // IconBox defaults
+  iconBoxIconSize?: string;
+  iconBoxIconColor?: string;
+  iconBoxTitleColor?: string;
+  iconBoxTitleFontSize?: string;
+  iconBoxTitleFontWeight?: string;
+  iconBoxDescriptionColor?: string;
+  iconBoxDescriptionFontSize?: string;
+
+  // Footer defaults
+  footerBackgroundColor?: string;
+  footerPadding?: string;
+  footerTextColor?: string;
+  footerCopyrightColor?: string;
+  footerCopyrightFontSize?: string;
+
+  // Divider defaults
+  dividerColor?: string;
+  dividerHeight?: string;
+  dividerMargin?: string;
 }
 
 export interface VisualProjectData {
@@ -84,6 +148,7 @@ interface VisualBuilderState {
   setDraggedComponentType: (type: string | null) => void;
   reorderComponents: (components: VisualComponent[]) => void;
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => void;
+  moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => void;
 
   exportProject: () => VisualProjectData;
   importProject: (data: VisualProjectData) => void;
@@ -101,6 +166,28 @@ const defaultGlobalStyles: GlobalStyles = {
   containerBackgroundColor: '#1a1a2e',
   containerPadding: '60px 40px',
   containerBorderRadius: '0',
+
+  // Header defaults
+  headerBackgroundColor: '#ffffff',
+  headerPadding: '16px 40px',
+  headerJustifyContent: 'space-between',
+  headerAlignItems: 'center',
+
+  // Logo defaults
+  logoColor: '#1a1a1a',
+  logoFontSize: '24px',
+  logoFontWeight: '700',
+
+  // Nav link defaults
+  navLinkColor: '#1a1a1a',
+  navLinkFontSize: '14px',
+  navLinkFontWeight: '500',
+  navLinkGap: '32px',
+
+  // Nav divider defaults
+  navDividerColor: '#cccccc',
+  navDividerHeight: '20px',
+  navDividerMargin: '0 8px',
 
   // Title defaults
   titleColor: '#ffffff',
@@ -129,6 +216,42 @@ const defaultGlobalStyles: GlobalStyles = {
   // Column defaults
   columnPadding: '16px',
   columnBorderRadius: '8px',
+
+  // Link defaults
+  linkColor: '#4f46e5',
+  linkFontSize: '14px',
+  linkFontWeight: '500',
+  linkTextDecoration: 'none',
+  linkHoverColor: '#3730a3',
+
+  // LinkList defaults
+  linkListLabelColor: '#ffffff',
+  linkListLabelFontSize: '14px',
+  linkListLabelFontWeight: '700',
+  linkListLabelMarginBottom: '12px',
+  linkListItemColor: 'rgba(255,255,255,0.7)',
+  linkListItemFontSize: '13px',
+  linkListItemGap: '8px',
+
+  // IconBox defaults
+  iconBoxIconSize: '48px',
+  iconBoxTitleColor: '#1a1a2e',
+  iconBoxTitleFontSize: '18px',
+  iconBoxTitleFontWeight: '600',
+  iconBoxDescriptionColor: '#666666',
+  iconBoxDescriptionFontSize: '14px',
+
+  // Footer defaults
+  footerBackgroundColor: '#1a2744',
+  footerPadding: '50px 60px',
+  footerTextColor: '#ffffff',
+  footerCopyrightColor: 'rgba(255,255,255,0.5)',
+  footerCopyrightFontSize: '12px',
+
+  // Divider defaults
+  dividerColor: '#e5e7eb',
+  dividerHeight: '1px',
+  dividerMargin: '20px 0',
 };
 
 export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
@@ -227,6 +350,51 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => {
     set({ globalStyles: { ...get().globalStyles, ...updates } });
+    get().saveToLocalStorage();
+  },
+
+  moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => {
+    const state = get();
+
+    const moveInArray = (arr: VisualComponent[]): VisualComponent[] => {
+      const index = arr.findIndex(comp => comp.id === id);
+      if (index === -1) return arr;
+
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= arr.length) return arr;
+
+      const newArr = [...arr];
+      const [removed] = newArr.splice(index, 1);
+      newArr.splice(newIndex, 0, removed);
+      return newArr;
+    };
+
+    if (!parentId) {
+      // Moving at root level
+      set({ components: moveInArray(state.components) });
+    } else {
+      // Moving within a parent's children
+      const moveInTree = (components: VisualComponent[]): VisualComponent[] => {
+        return components.map(comp => {
+          if (comp.id === parentId && comp.children) {
+            return {
+              ...comp,
+              children: moveInArray(comp.children)
+            };
+          }
+          if (comp.children) {
+            return {
+              ...comp,
+              children: moveInTree(comp.children)
+            };
+          }
+          return comp;
+        });
+      };
+
+      set({ components: moveInTree(state.components) });
+    }
+
     get().saveToLocalStorage();
   },
 

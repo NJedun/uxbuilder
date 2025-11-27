@@ -100,6 +100,123 @@ export default function VisualComponentRenderer({
     const props = component.props || {};
     const styles = component.customStyles || {};
 
+    if (component.type === 'Header') {
+      const navLinks = props.navLinks || [];
+
+      return (
+        <header
+          style={{
+            display: 'flex',
+            backgroundColor: getStyle(styles.backgroundColor, 'headerBackgroundColor'),
+            padding: getStyle(styles.padding, 'headerPadding'),
+            justifyContent: getStyle(styles.justifyContent, 'headerJustifyContent') || 'space-between',
+            alignItems: getStyle(styles.alignItems, 'headerAlignItems') || 'center',
+            maxWidth: styles.maxWidth || globalStyles.headerMaxWidth,
+            margin: styles.margin,
+            width: styles.width || '100%',
+            boxSizing: 'border-box',
+            // Border styles
+            borderWidth: getStyle(styles.borderWidth, 'headerBorderWidth'),
+            borderStyle: getStyle(styles.borderStyle, 'headerBorderStyle'),
+            borderColor: getStyle(styles.borderColor, 'headerBorderColor'),
+          }}
+        >
+          {/* Logo */}
+          {props.showLogo !== false && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {props.logoImageUrl ? (
+                <img
+                  src={props.logoImageUrl}
+                  alt={props.logoText || 'Logo'}
+                  style={{
+                    height: styles.logoHeight || '32px',
+                    width: 'auto',
+                  }}
+                />
+              ) : (
+                <span
+                  style={{
+                    color: getStyle(styles.logoColor, 'logoColor'),
+                    fontSize: getStyle(styles.logoFontSize, 'logoFontSize'),
+                    fontWeight: getStyle(styles.logoFontWeight, 'logoFontWeight'),
+                  }}
+                >
+                  {props.logoText || 'Logo'}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Navigation Links + Divider + Language Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px' }}>
+            {/* Navigation Links */}
+            {props.showNavLinks !== false && navLinks.length > 0 && (
+              <nav
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px',
+                }}
+              >
+                {navLinks.map((link: { text: string; url: string }, index: number) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    onClick={(e) => e.preventDefault()}
+                    style={{
+                      color: getStyle(styles.navLinkColor, 'navLinkColor'),
+                      fontSize: getStyle(styles.navLinkFontSize, 'navLinkFontSize'),
+                      fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {link.text}
+                  </a>
+                ))}
+              </nav>
+            )}
+
+            {/* Vertical Divider */}
+            {props.showNavDivider && (
+              <div
+                style={{
+                  width: '1px',
+                  height: styles.navDividerHeight || '20px',
+                  backgroundColor: styles.navDividerColor || getStyle(styles.navLinkColor, 'navLinkColor') || '#cccccc',
+                  margin: styles.navDividerMargin || '0 8px',
+                }}
+              />
+            )}
+
+            {/* Language Selector */}
+            {props.showLanguageSelector && props.languages && props.languages.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: getStyle(styles.navLinkColor, 'navLinkColor'),
+                  fontSize: getStyle(styles.navLinkFontSize, 'navLinkFontSize'),
+                  fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
+                  cursor: 'pointer',
+                }}
+              >
+                <span>{props.selectedLanguage || props.languages[0]?.code}</span>
+                <span style={{ fontSize: '10px' }}>▼</span>
+              </div>
+            )}
+          </div>
+        </header>
+      );
+    }
+
     if (component.type === 'HeroSection') {
       // Calculate margin based on container alignment
       const getContainerMargin = () => {
@@ -164,6 +281,7 @@ export default function VisualComponentRenderer({
               maxWidth: styles.subtitleMaxWidth || '600px',
               margin: styles.textAlign === 'center' ? '0 auto' : 0,
               marginBlockEnd: getStyle(styles.subtitleMarginBottom, 'subtitleMarginBottom'),
+              whiteSpace: 'pre-line',
             }}
           >
             {props.subtitle || 'This is a paragraph of text that provides information to the reader.'}
@@ -191,6 +309,45 @@ export default function VisualComponentRenderer({
           )}
         </div>
       );
+    }
+
+    if (component.type === 'Image') {
+      const imageElement = (
+        <img
+          src={props.src || 'https://via.placeholder.com/400x300?text=Add+Image+URL'}
+          alt={props.alt || 'Image'}
+          style={{
+            width: styles.width || '100%',
+            maxWidth: styles.maxWidth,
+            height: styles.height || 'auto',
+            objectFit: (styles.objectFit as any) || 'cover',
+            borderRadius: styles.borderRadius,
+            margin: styles.margin,
+            display: 'block',
+            // Border styles
+            borderWidth: styles.borderWidth,
+            borderStyle: styles.borderStyle,
+            borderColor: styles.borderColor,
+          }}
+        />
+      );
+
+      // Wrap in link if linkUrl is provided
+      if (props.linkUrl) {
+        return (
+          <a
+            href={props.linkUrl}
+            target={props.openInNewTab ? '_blank' : '_self'}
+            rel={props.openInNewTab ? 'noopener noreferrer' : undefined}
+            onClick={(e) => e.preventDefault()}
+            style={{ display: 'block' }}
+          >
+            {imageElement}
+          </a>
+        );
+      }
+
+      return imageElement;
     }
 
     if (component.type === 'Row') {
@@ -231,6 +388,288 @@ export default function VisualComponentRenderer({
             />
           ))}
         </div>
+      );
+    }
+
+    if (component.type === 'LinkList') {
+      const links = props.links || [];
+      const isVertical = props.layout !== 'horizontal';
+
+      return (
+        <div
+          style={{
+            padding: styles.padding,
+            backgroundColor: styles.backgroundColor,
+          }}
+        >
+          {/* Label */}
+          {props.label && (
+            <div
+              style={{
+                color: getStyle(styles.labelColor, 'linkListLabelColor'),
+                fontSize: getStyle(styles.labelFontSize, 'linkListLabelFontSize'),
+                fontWeight: getStyle(styles.labelFontWeight, 'linkListLabelFontWeight'),
+                marginBottom: getStyle(styles.labelMarginBottom, 'linkListLabelMarginBottom'),
+              }}
+            >
+              {props.label}
+            </div>
+          )}
+          {/* Links */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: isVertical ? 'column' : 'row',
+              gap: getStyle(styles.itemGap, 'linkListItemGap'),
+              flexWrap: 'wrap',
+            }}
+          >
+            {links.map((link: { text: string; url: string }, index: number) => (
+              <a
+                key={index}
+                href={link.url}
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  color: getStyle(styles.itemColor, 'linkListItemColor'),
+                  fontSize: getStyle(styles.itemFontSize, 'linkListItemFontSize'),
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {link.text}
+              </a>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (component.type === 'IconBox') {
+      const isTopLayout = props.layout === 'top';
+      const isLeftLayout = props.layout === 'left';
+
+      return (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: isTopLayout ? 'column' : 'row',
+            alignItems: isTopLayout ? (styles.textAlign === 'center' ? 'center' : 'flex-start') : 'flex-start',
+            gap: '16px',
+            padding: styles.padding,
+            backgroundColor: styles.backgroundColor,
+            borderRadius: styles.borderRadius,
+            textAlign: styles.textAlign as any,
+          }}
+        >
+          {/* Icon */}
+          <div
+            style={{
+              flexShrink: 0,
+              order: isLeftLayout ? 0 : (props.layout === 'right' ? 1 : 0),
+            }}
+          >
+            {props.iconImageUrl ? (
+              <img
+                src={props.iconImageUrl}
+                alt=""
+                style={{
+                  width: getStyle(styles.iconSize, 'iconBoxIconSize'),
+                  height: getStyle(styles.iconSize, 'iconBoxIconSize'),
+                  objectFit: 'contain',
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: getStyle(styles.iconSize, 'iconBoxIconSize'),
+                  display: 'block',
+                }}
+              >
+                {props.icon || '🚀'}
+              </span>
+            )}
+          </div>
+          {/* Content */}
+          <div style={{ order: isLeftLayout ? 1 : (props.layout === 'right' ? 0 : 1) }}>
+            {props.title && (
+              <div
+                style={{
+                  color: getStyle(styles.titleColor, 'iconBoxTitleColor'),
+                  fontSize: getStyle(styles.titleFontSize, 'iconBoxTitleFontSize'),
+                  fontWeight: getStyle(styles.titleFontWeight, 'iconBoxTitleFontWeight'),
+                  marginBottom: styles.titleMarginBottom || '8px',
+                }}
+              >
+                {props.title}
+              </div>
+            )}
+            {props.description && (
+              <div
+                style={{
+                  color: getStyle(styles.descriptionColor, 'iconBoxDescriptionColor'),
+                  fontSize: getStyle(styles.descriptionFontSize, 'iconBoxDescriptionFontSize'),
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {props.description}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (component.type === 'Text') {
+      return (
+        <p
+          style={{
+            color: getStyle(styles.color, 'subtitleColor'),
+            fontSize: getStyle(styles.fontSize, 'subtitleFontSize'),
+            fontWeight: getStyle(styles.fontWeight, 'subtitleFontWeight'),
+            lineHeight: styles.lineHeight || '1.6',
+            textAlign: styles.textAlign as any,
+            padding: styles.padding,
+            margin: styles.margin || 0,
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {props.content || 'Text content here...'}
+        </p>
+      );
+    }
+
+    if (component.type === 'Button') {
+      const buttonElement = (
+        <button
+          style={{
+            backgroundColor: getStyle(styles.backgroundColor, 'buttonBackgroundColor'),
+            color: getStyle(styles.textColor, 'buttonTextColor'),
+            padding: getStyle(styles.padding, 'buttonPadding'),
+            borderRadius: getStyle(styles.borderRadius, 'buttonBorderRadius'),
+            fontSize: getStyle(styles.fontSize, 'buttonFontSize'),
+            fontWeight: getStyle(styles.fontWeight, 'buttonFontWeight'),
+            borderWidth: styles.borderWidth || '0',
+            borderStyle: styles.borderStyle || 'solid',
+            borderColor: styles.borderColor,
+            width: styles.width || 'auto',
+            cursor: 'pointer',
+            display: 'inline-block',
+            textAlign: 'center',
+          }}
+        >
+          {props.text || 'Button'}
+        </button>
+      );
+
+      if (props.url && props.url !== '#') {
+        return (
+          <div style={{ textAlign: styles.textAlign as any }}>
+            <a
+              href={props.url}
+              target={props.openInNewTab ? '_blank' : '_self'}
+              rel={props.openInNewTab ? 'noopener noreferrer' : undefined}
+              onClick={(e) => e.preventDefault()}
+              style={{ textDecoration: 'none' }}
+            >
+              {buttonElement}
+            </a>
+          </div>
+        );
+      }
+
+      return <div style={{ textAlign: styles.textAlign as any }}>{buttonElement}</div>;
+    }
+
+    if (component.type === 'Divider') {
+      return (
+        <div
+          style={{
+            width: styles.width || '100%',
+            margin: getStyle(styles.margin, 'dividerMargin'),
+          }}
+        >
+          {props.showLine !== false && (
+            <hr
+              style={{
+                border: 'none',
+                borderTop: `${getStyle(styles.height, 'dividerHeight')} solid ${getStyle(styles.color, 'dividerColor')}`,
+                margin: 0,
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    if (component.type === 'Footer') {
+      const columns = props.columns || [];
+
+      return (
+        <footer
+          style={{
+            backgroundColor: getStyle(styles.backgroundColor, 'footerBackgroundColor'),
+            padding: getStyle(styles.padding, 'footerPadding'),
+            width: '100%',
+          }}
+        >
+          {/* Footer Columns */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: styles.columnGap || '40px',
+              marginBottom: props.showCopyright !== false ? '30px' : 0,
+            }}
+          >
+            {columns.map((col: { label: string; links: { text: string; url: string }[] }, index: number) => (
+              <div key={index} style={{ minWidth: '150px' }}>
+                {/* Column Label */}
+                <div
+                  style={{
+                    color: getStyle(styles.labelColor, 'footerTextColor'),
+                    fontSize: getStyle(styles.labelFontSize, 'linkListLabelFontSize'),
+                    fontWeight: getStyle(styles.labelFontWeight, 'linkListLabelFontWeight'),
+                    marginBottom: '12px',
+                  }}
+                >
+                  {col.label}
+                </div>
+                {/* Column Links */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {col.links.map((link, linkIndex) => (
+                    <a
+                      key={linkIndex}
+                      href={link.url}
+                      onClick={(e) => e.preventDefault()}
+                      style={{
+                        color: getStyle(styles.linkColor, 'linkListItemColor'),
+                        fontSize: getStyle(styles.linkFontSize, 'linkListItemFontSize'),
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {link.text}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Copyright */}
+          {props.showCopyright !== false && (
+            <div
+              style={{
+                color: getStyle(styles.copyrightColor, 'footerCopyrightColor'),
+                fontSize: getStyle(styles.copyrightFontSize, 'footerCopyrightFontSize'),
+                padding: styles.copyrightPadding || '20px 0 0 0',
+                borderTop: styles.copyrightBorderColor ? `1px solid ${styles.copyrightBorderColor}` : 'none',
+              }}
+            >
+              {props.copyright || '© 2024 Company Name. All Rights Reserved.'}
+            </div>
+          )}
+        </footer>
       );
     }
 

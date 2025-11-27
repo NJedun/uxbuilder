@@ -4,10 +4,14 @@ import { useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore
 export default function GlobalStylePanel({ onClose }: { onClose: () => void }) {
   const { globalStyles, updateGlobalStyles } = useVisualBuilderStore();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    header: true,
+    logo: false,
+    navLink: false,
     container: true,
     title: true,
     subtitle: true,
     button: true,
+    link: false,
     layout: false,
   });
 
@@ -130,6 +134,59 @@ export default function GlobalStylePanel({ onClose }: { onClose: () => void }) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
+          {/* Header Defaults */}
+          {renderSection('Header Defaults', 'header', (
+            <>
+              {renderColorInput('Background Color', 'headerBackgroundColor', '#ffffff')}
+              {renderTextInput('Padding', 'headerPadding', 'e.g., 16px 40px')}
+              {renderTextInput('Max Width', 'headerMaxWidth', 'e.g., 1200px')}
+              {renderSelectInput('Justify Content', 'headerJustifyContent', [
+                { value: 'flex-start', label: 'Start' },
+                { value: 'center', label: 'Center' },
+                { value: 'flex-end', label: 'End' },
+                { value: 'space-between', label: 'Space Between' },
+                { value: 'space-around', label: 'Space Around' },
+              ], 'Select alignment')}
+              {renderSelectInput('Align Items', 'headerAlignItems', [
+                { value: 'flex-start', label: 'Top' },
+                { value: 'center', label: 'Center' },
+                { value: 'flex-end', label: 'Bottom' },
+                { value: 'stretch', label: 'Stretch' },
+              ], 'Select alignment')}
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-xs font-medium text-gray-500 mb-2">Border</p>
+                {renderTextInput('Border Width', 'headerBorderWidth', 'e.g., 1px')}
+                {renderSelectInput('Border Style', 'headerBorderStyle', [
+                  { value: 'none', label: 'None' },
+                  { value: 'solid', label: 'Solid' },
+                  { value: 'dashed', label: 'Dashed' },
+                  { value: 'dotted', label: 'Dotted' },
+                ], 'Select style')}
+                {renderColorInput('Border Color', 'headerBorderColor', '#e5e7eb')}
+              </div>
+            </>
+          ))}
+
+          {/* Logo Defaults */}
+          {renderSection('Logo Defaults', 'logo', (
+            <>
+              {renderColorInput('Color', 'logoColor', '#1a1a1a')}
+              {renderTextInput('Font Size', 'logoFontSize', 'e.g., 24px')}
+              {renderSelectInput('Font Weight', 'logoFontWeight', fontWeightOptions, 'Select weight')}
+            </>
+          ))}
+
+          {/* Nav Link Defaults */}
+          {renderSection('Navigation Link Defaults', 'navLink', (
+            <>
+              {renderColorInput('Color', 'navLinkColor', '#1a1a1a')}
+              {renderTextInput('Font Size', 'navLinkFontSize', 'e.g., 14px')}
+              {renderSelectInput('Font Weight', 'navLinkFontWeight', fontWeightOptions, 'Select weight')}
+              {renderTextInput('Gap Between Links', 'navLinkGap', 'e.g., 32px')}
+              {renderColorInput('Hover Color', 'navLinkHoverColor', '#4f46e5')}
+            </>
+          ))}
+
           {/* Container Defaults */}
           {renderSection('Container Defaults', 'container', (
             <>
@@ -182,6 +239,21 @@ export default function GlobalStylePanel({ onClose }: { onClose: () => void }) {
               {renderTextInput('Border Radius', 'buttonBorderRadius', 'e.g., 8px')}
               {renderTextInput('Font Size', 'buttonFontSize', 'e.g., 15px')}
               {renderSelectInput('Font Weight', 'buttonFontWeight', fontWeightOptions, 'Select weight')}
+            </>
+          ))}
+
+          {/* Link Defaults */}
+          {renderSection('Link Defaults', 'link', (
+            <>
+              {renderColorInput('Color', 'linkColor', '#4f46e5')}
+              {renderTextInput('Font Size', 'linkFontSize', 'e.g., 14px')}
+              {renderSelectInput('Font Weight', 'linkFontWeight', fontWeightOptions, 'Select weight')}
+              {renderSelectInput('Text Decoration', 'linkTextDecoration', [
+                { value: 'none', label: 'None' },
+                { value: 'underline', label: 'Underline' },
+                { value: 'underline dotted', label: 'Dotted Underline' },
+              ], 'Select decoration')}
+              {renderColorInput('Hover Color', 'linkHoverColor', '#3730a3')}
             </>
           ))}
 

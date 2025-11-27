@@ -1,7 +1,63 @@
 import { useState } from 'react';
 import { useVisualBuilderStore, VisualComponent } from '../store/visualBuilderStore';
+import ComponentTree from './ComponentTree';
 
 const componentTemplates = [
+  {
+    type: 'Header',
+    label: 'Header / Navigation',
+    icon: '📍',
+    canBeChild: false,
+    defaultProps: {
+      logoText: 'Logo',
+      logoImageUrl: '',
+      navLinks: [
+        { text: 'Home', url: '#' },
+        { text: 'About', url: '#' },
+        { text: 'Services', url: '#' },
+        { text: 'Contact', url: '#' },
+      ],
+      showLogo: true,
+      showNavLinks: true,
+      // Language selector
+      showLanguageSelector: false,
+      languages: [
+        { code: 'EN', label: 'English' },
+        { code: 'LV', label: 'Latvian' },
+      ],
+      selectedLanguage: 'EN',
+      // Divider between nav and language
+      showNavDivider: false,
+    },
+    defaultStyles: {
+      // All empty - will fallback to global styles
+      backgroundColor: '',
+      padding: '',
+      // Logo styles
+      logoColor: '',
+      logoFontSize: '',
+      logoFontWeight: '',
+      // Nav link styles
+      navLinkColor: '',
+      navLinkFontSize: '',
+      navLinkFontWeight: '',
+      navLinkGap: '',
+      // Layout
+      justifyContent: '',
+      alignItems: '',
+      // Container
+      maxWidth: '',
+      margin: '',
+      // Border
+      borderWidth: '',
+      borderStyle: '',
+      borderColor: '',
+      // Divider styles
+      navDividerColor: '',
+      navDividerHeight: '',
+      navDividerMargin: '',
+    },
+  },
   {
     type: 'HeroSection',
     label: 'Hero Section',
@@ -38,6 +94,30 @@ const componentTemplates = [
     },
   },
   {
+    type: 'Image',
+    label: 'Image',
+    icon: '🖼️',
+    canBeChild: true,
+    defaultProps: {
+      src: '',
+      alt: 'Image description',
+      linkUrl: '',
+      openInNewTab: false,
+    },
+    defaultStyles: {
+      width: '100%',
+      maxWidth: '',
+      height: 'auto',
+      objectFit: 'cover',
+      borderRadius: '',
+      margin: '',
+      // Border
+      borderWidth: '',
+      borderStyle: '',
+      borderColor: '',
+    },
+  },
+  {
     type: 'Row',
     label: 'Row / Grid Layout',
     icon: '⊞',
@@ -60,6 +140,155 @@ const componentTemplates = [
       borderStyle: '',
       borderColor: '',
       borderRadius: '',
+    },
+  },
+  {
+    type: 'LinkList',
+    label: 'Link List',
+    icon: '📋',
+    canBeChild: true,
+    defaultProps: {
+      label: 'Quick Links',
+      links: [
+        { text: 'Home', url: '#' },
+        { text: 'About', url: '#' },
+        { text: 'Contact', url: '#' },
+      ],
+      layout: 'vertical', // vertical or horizontal
+    },
+    defaultStyles: {
+      labelColor: '',
+      labelFontSize: '',
+      labelFontWeight: '',
+      labelMarginBottom: '',
+      itemColor: '',
+      itemFontSize: '',
+      itemGap: '',
+      padding: '',
+      backgroundColor: '',
+    },
+  },
+  {
+    type: 'IconBox',
+    label: 'Icon Box / Feature',
+    icon: '✨',
+    canBeChild: true,
+    defaultProps: {
+      icon: '🚀',
+      iconImageUrl: '',
+      title: 'Feature Title',
+      description: 'A brief description of this feature or service.',
+      layout: 'top', // top, left, right
+    },
+    defaultStyles: {
+      backgroundColor: '',
+      padding: '',
+      borderRadius: '',
+      iconSize: '',
+      iconColor: '',
+      titleColor: '',
+      titleFontSize: '',
+      titleFontWeight: '',
+      titleMarginBottom: '',
+      descriptionColor: '',
+      descriptionFontSize: '',
+      textAlign: 'left',
+    },
+  },
+  {
+    type: 'Text',
+    label: 'Text / Paragraph',
+    icon: '📝',
+    canBeChild: true,
+    defaultProps: {
+      content: 'This is a paragraph of text. You can use this component for body content, descriptions, or any other text.',
+    },
+    defaultStyles: {
+      color: '',
+      fontSize: '',
+      fontWeight: '',
+      lineHeight: '',
+      textAlign: 'left',
+      padding: '',
+      margin: '',
+    },
+  },
+  {
+    type: 'Button',
+    label: 'Button',
+    icon: '🔘',
+    canBeChild: true,
+    defaultProps: {
+      text: 'Click Me',
+      url: '#',
+      openInNewTab: false,
+      variant: 'primary', // primary, secondary, outline, ghost
+    },
+    defaultStyles: {
+      backgroundColor: '',
+      textColor: '',
+      padding: '',
+      borderRadius: '',
+      fontSize: '',
+      fontWeight: '',
+      borderWidth: '',
+      borderStyle: '',
+      borderColor: '',
+      width: '',
+      textAlign: 'center',
+    },
+  },
+  {
+    type: 'Divider',
+    label: 'Divider / Spacer',
+    icon: '➖',
+    canBeChild: true,
+    defaultProps: {
+      showLine: true,
+    },
+    defaultStyles: {
+      color: '',
+      height: '',
+      margin: '',
+      width: '100%',
+    },
+  },
+  {
+    type: 'Footer',
+    label: 'Footer',
+    icon: '🦶',
+    canBeChild: false,
+    defaultProps: {
+      columns: [
+        {
+          label: 'Quick Links',
+          links: [{ text: 'Home', url: '#' }, { text: 'About', url: '#' }],
+        },
+        {
+          label: 'Services',
+          links: [{ text: 'Service 1', url: '#' }, { text: 'Service 2', url: '#' }],
+        },
+        {
+          label: 'Contact',
+          links: [{ text: 'Email Us', url: '#' }, { text: 'Call Us', url: '#' }],
+        },
+      ],
+      copyright: '© 2024 Company Name. All Rights Reserved.',
+      showCopyright: true,
+    },
+    defaultStyles: {
+      backgroundColor: '',
+      padding: '',
+      columnGap: '',
+      labelColor: '',
+      labelFontSize: '',
+      labelFontWeight: '',
+      linkColor: '',
+      linkFontSize: '',
+      copyrightColor: '',
+      copyrightFontSize: '',
+      copyrightPadding: '',
+      copyrightBorderColor: '',
     },
   },
 ];
@@ -118,8 +347,8 @@ export default function VisualComponentLibrary() {
   };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto h-full">
-      <div className="p-4">
+    <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto h-full flex flex-col">
+      <div className="p-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
         <p className="text-xs text-gray-500 mb-4">Click to add to canvas</p>
 
@@ -187,6 +416,11 @@ export default function VisualComponentLibrary() {
             <p className="text-xs text-gray-500 mb-2">Select a Row component to add children</p>
           </div>
         )}
+      </div>
+
+      {/* Component Tree - shows structure and allows reordering */}
+      <div className="flex-1 border-t border-gray-200 overflow-y-auto">
+        <ComponentTree />
       </div>
     </div>
   );

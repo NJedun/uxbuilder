@@ -12,6 +12,26 @@ export default function VisualStylePanel() {
     columns: true,
     columnStyles: false,
     layout: true,
+    // Header sections
+    headerContent: true,
+    headerContainer: true,
+    headerLogo: false,
+    headerNav: false,
+    // Image sections
+    imageContent: true,
+    imageStyles: true,
+    // New component sections
+    linkListContent: true,
+    linkListStyles: false,
+    iconBoxContent: true,
+    iconBoxStyles: false,
+    textContent: true,
+    textStyles: false,
+    buttonContent: true,
+    buttonStyles: false,
+    dividerStyles: true,
+    footerContent: true,
+    footerStyles: false,
   });
 
   // Find the selected component
@@ -342,6 +362,322 @@ export default function VisualStylePanel() {
         </>
       ))}
 
+      {/* Header Content Section */}
+      {selectedComponent.type === 'Header' && renderSection('Content', 'headerContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Logo Text</label>
+            <input
+              type="text"
+              value={props.logoText || ''}
+              onChange={(e) => handlePropChange('logoText', e.target.value)}
+              placeholder="Enter logo text..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Logo Image URL</label>
+            <input
+              type="text"
+              value={props.logoImageUrl || ''}
+              onChange={(e) => handlePropChange('logoImageUrl', e.target.value)}
+              placeholder="https://example.com/logo.png"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">If set, image will be used instead of text</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showLogo"
+              checked={props.showLogo !== false}
+              onChange={(e) => handlePropChange('showLogo', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="showLogo" className="text-xs font-medium text-gray-600">Show Logo</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showNavLinks"
+              checked={props.showNavLinks !== false}
+              onChange={(e) => handlePropChange('showNavLinks', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="showNavLinks" className="text-xs font-medium text-gray-600">Show Navigation Links</label>
+          </div>
+
+          {/* Navigation Links Editor */}
+          <div className="pt-2 border-t border-gray-100">
+            <label className="block text-xs font-medium text-gray-600 mb-2">Navigation Links</label>
+            {(props.navLinks || []).map((link: { text: string; url: string }, index: number) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={link.text}
+                  onChange={(e) => {
+                    const newLinks = [...(props.navLinks || [])];
+                    newLinks[index] = { ...newLinks[index], text: e.target.value };
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  placeholder="Link text"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  value={link.url}
+                  onChange={(e) => {
+                    const newLinks = [...(props.navLinks || [])];
+                    newLinks[index] = { ...newLinks[index], url: e.target.value };
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  placeholder="URL"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    const newLinks = (props.navLinks || []).filter((_: any, i: number) => i !== index);
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newLinks = [...(props.navLinks || []), { text: 'New Link', url: '#' }];
+                handlePropChange('navLinks', newLinks);
+              }}
+              className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+            >
+              + Add Link
+            </button>
+          </div>
+
+          {/* Divider & Language Selector */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Divider & Language</p>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="showNavDivider"
+                checked={props.showNavDivider || false}
+                onChange={(e) => handlePropChange('showNavDivider', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="showNavDivider" className="text-xs font-medium text-gray-600">Show Divider</label>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="showLanguageSelector"
+                checked={props.showLanguageSelector || false}
+                onChange={(e) => handlePropChange('showLanguageSelector', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="showLanguageSelector" className="text-xs font-medium text-gray-600">Show Language Selector</label>
+            </div>
+
+            {props.showLanguageSelector && (
+              <>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Selected Language</label>
+                  <input
+                    type="text"
+                    value={props.selectedLanguage || 'EN'}
+                    onChange={(e) => handlePropChange('selectedLanguage', e.target.value)}
+                    placeholder="EN"
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Languages</label>
+                {(props.languages || []).map((lang: { code: string; label: string }, index: number) => (
+                  <div key={index} className="flex gap-2 mb-1">
+                    <input
+                      type="text"
+                      value={lang.code}
+                      onChange={(e) => {
+                        const newLangs = [...(props.languages || [])];
+                        newLangs[index] = { ...newLangs[index], code: e.target.value };
+                        handlePropChange('languages', newLangs);
+                      }}
+                      placeholder="Code"
+                      className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={lang.label}
+                      onChange={(e) => {
+                        const newLangs = [...(props.languages || [])];
+                        newLangs[index] = { ...newLangs[index], label: e.target.value };
+                        handlePropChange('languages', newLangs);
+                      }}
+                      placeholder="Label"
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => {
+                        const newLangs = (props.languages || []).filter((_: any, i: number) => i !== index);
+                        handlePropChange('languages', newLangs);
+                      }}
+                      className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const newLangs = [...(props.languages || []), { code: 'NEW', label: 'New Language' }];
+                    handlePropChange('languages', newLangs);
+                  }}
+                  className="w-full px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 mt-1"
+                >
+                  + Add Language
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      ))}
+
+      {/* Header Container Section */}
+      {selectedComponent.type === 'Header' && renderSection('Container', 'headerContainer', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#ffffff')}
+          {renderTextInput('Padding', 'padding', 'e.g., 16px 40px')}
+          {renderTextInput('Width', 'width', 'e.g., 100%, 800px')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 1200px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 auto')}
+          {renderSelectInput('Justify Content', 'justifyContent', [
+            { value: 'flex-start', label: 'Start' },
+            { value: 'center', label: 'Center' },
+            { value: 'flex-end', label: 'End' },
+            { value: 'space-between', label: 'Space Between' },
+            { value: 'space-around', label: 'Space Around' },
+          ], 'Select alignment')}
+          {renderSelectInput('Align Items', 'alignItems', [
+            { value: 'flex-start', label: 'Top' },
+            { value: 'center', label: 'Center' },
+            { value: 'flex-end', label: 'Bottom' },
+            { value: 'stretch', label: 'Stretch' },
+          ], 'Select alignment')}
+
+          {/* Border Controls */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Border</p>
+            {renderTextInput('Border Width', 'borderWidth', 'e.g., 1px')}
+            {renderSelectInput('Border Style', 'borderStyle', borderStyleOptions, 'Select style')}
+            {renderColorInput('Border Color', 'borderColor', '#e5e7eb')}
+          </div>
+        </>
+      ))}
+
+      {/* Header Logo Styles */}
+      {selectedComponent.type === 'Header' && renderSection('Logo Styles', 'headerLogo', (
+        <>
+          {renderColorInput('Logo Color', 'logoColor', '#1a1a1a')}
+          {renderTextInput('Logo Font Size', 'logoFontSize', 'e.g., 24px')}
+          {renderSelectInput('Logo Font Weight', 'logoFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Logo Image Height', 'logoHeight', 'e.g., 32px, 40px')}
+        </>
+      ))}
+
+      {/* Header Nav Link Styles */}
+      {selectedComponent.type === 'Header' && renderSection('Navigation Styles', 'headerNav', (
+        <>
+          {renderColorInput('Link Color', 'navLinkColor', '#1a1a1a')}
+          {renderTextInput('Link Font Size', 'navLinkFontSize', 'e.g., 14px')}
+          {renderSelectInput('Link Font Weight', 'navLinkFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Link Gap', 'navLinkGap', 'e.g., 32px, 2rem')}
+
+          {/* Divider Styles */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Divider</p>
+            {renderColorInput('Divider Color', 'navDividerColor', '#cccccc')}
+            {renderTextInput('Divider Height', 'navDividerHeight', 'e.g., 20px')}
+            {renderTextInput('Divider Margin', 'navDividerMargin', 'e.g., 0 8px')}
+          </div>
+        </>
+      ))}
+
+      {/* Image Content Section */}
+      {selectedComponent.type === 'Image' && renderSection('Content', 'imageContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Image URL</label>
+            <input
+              type="text"
+              value={props.src || ''}
+              onChange={(e) => handlePropChange('src', e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Alt Text</label>
+            <input
+              type="text"
+              value={props.alt || ''}
+              onChange={(e) => handlePropChange('alt', e.target.value)}
+              placeholder="Image description for accessibility"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Link Settings</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Link URL (optional)</label>
+              <input
+                type="text"
+                value={props.linkUrl || ''}
+                onChange={(e) => handlePropChange('linkUrl', e.target.value)}
+                placeholder="https://example.com"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="openInNewTab"
+                checked={props.openInNewTab || false}
+                onChange={(e) => handlePropChange('openInNewTab', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="openInNewTab" className="text-xs font-medium text-gray-600">Open in new tab</label>
+            </div>
+          </div>
+        </>
+      ))}
+
+      {/* Image Styles Section */}
+      {selectedComponent.type === 'Image' && renderSection('Styles', 'imageStyles', (
+        <>
+          {renderTextInput('Width', 'width', 'e.g., 100%, 300px, auto')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 500px')}
+          {renderTextInput('Height', 'height', 'e.g., auto, 200px')}
+          {renderSelectInput('Object Fit', 'objectFit', [
+            { value: 'cover', label: 'Cover' },
+            { value: 'contain', label: 'Contain' },
+            { value: 'fill', label: 'Fill' },
+            { value: 'none', label: 'None' },
+            { value: 'scale-down', label: 'Scale Down' },
+          ], 'Select fit')}
+          {renderTextInput('Border Radius', 'borderRadius', 'e.g., 8px, 50%')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 auto, 10px')}
+
+          {/* Border Controls */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Border</p>
+            {renderTextInput('Border Width', 'borderWidth', 'e.g., 1px, 2px')}
+            {renderSelectInput('Border Style', 'borderStyle', borderStyleOptions, 'Select style')}
+            {renderColorInput('Border Color', 'borderColor', '#cccccc')}
+          </div>
+        </>
+      ))}
+
       {/* Row/Grid Columns - Only for Row */}
       {selectedComponent.type === 'Row' && renderSection('Columns', 'columns', (
         <>
@@ -547,6 +883,406 @@ export default function VisualStylePanel() {
             {renderSelectInput('Border Style', 'borderStyle', borderStyleOptions, 'Select style')}
             {renderColorInput('Border Color', 'borderColor', '#cccccc')}
             {renderTextInput('Border Radius', 'borderRadius', 'e.g., 8px')}
+          </div>
+        </>
+      ))}
+
+      {/* LinkList Content */}
+      {selectedComponent.type === 'LinkList' && renderSection('Content', 'linkListContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Label</label>
+            <input
+              type="text"
+              value={props.label || ''}
+              onChange={(e) => handlePropChange('label', e.target.value)}
+              placeholder="Section label..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {renderSelectInput('Layout', 'layout', [
+            { value: 'vertical', label: 'Vertical' },
+            { value: 'horizontal', label: 'Horizontal' },
+          ], 'Select layout')}
+
+          <div className="pt-2 border-t border-gray-100">
+            <label className="block text-xs font-medium text-gray-600 mb-2">Links</label>
+            {(props.links || []).map((link: { text: string; url: string }, index: number) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={link.text}
+                  onChange={(e) => {
+                    const newLinks = [...(props.links || [])];
+                    newLinks[index] = { ...newLinks[index], text: e.target.value };
+                    handlePropChange('links', newLinks);
+                  }}
+                  placeholder="Link text"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  value={link.url}
+                  onChange={(e) => {
+                    const newLinks = [...(props.links || [])];
+                    newLinks[index] = { ...newLinks[index], url: e.target.value };
+                    handlePropChange('links', newLinks);
+                  }}
+                  placeholder="URL"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    const newLinks = (props.links || []).filter((_: any, i: number) => i !== index);
+                    handlePropChange('links', newLinks);
+                  }}
+                  className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newLinks = [...(props.links || []), { text: 'New Link', url: '#' }];
+                handlePropChange('links', newLinks);
+              }}
+              className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+            >
+              + Add Link
+            </button>
+          </div>
+        </>
+      ))}
+
+      {/* LinkList Styles */}
+      {selectedComponent.type === 'LinkList' && renderSection('Styles', 'linkListStyles', (
+        <>
+          {renderColorInput('Label Color', 'labelColor', '#ffffff')}
+          {renderTextInput('Label Font Size', 'labelFontSize', 'e.g., 14px')}
+          {renderSelectInput('Label Font Weight', 'labelFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Label Margin Bottom', 'labelMarginBottom', 'e.g., 12px')}
+          {renderColorInput('Link Color', 'itemColor', 'rgba(255,255,255,0.7)')}
+          {renderTextInput('Link Font Size', 'itemFontSize', 'e.g., 13px')}
+          {renderTextInput('Link Gap', 'itemGap', 'e.g., 8px')}
+          {renderTextInput('Padding', 'padding', 'e.g., 20px')}
+          {renderColorInput('Background', 'backgroundColor', 'transparent')}
+        </>
+      ))}
+
+      {/* IconBox Content */}
+      {selectedComponent.type === 'IconBox' && renderSection('Content', 'iconBoxContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Icon (emoji)</label>
+            <input
+              type="text"
+              value={props.icon || ''}
+              onChange={(e) => handlePropChange('icon', e.target.value)}
+              placeholder="🚀"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Icon Image URL</label>
+            <input
+              type="text"
+              value={props.iconImageUrl || ''}
+              onChange={(e) => handlePropChange('iconImageUrl', e.target.value)}
+              placeholder="https://example.com/icon.png"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">If set, image will be used instead of emoji</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+            <input
+              type="text"
+              value={props.title || ''}
+              onChange={(e) => handlePropChange('title', e.target.value)}
+              placeholder="Feature Title"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <textarea
+              value={props.description || ''}
+              onChange={(e) => handlePropChange('description', e.target.value)}
+              placeholder="Description text..."
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {renderSelectInput('Layout', 'layout', [
+            { value: 'top', label: 'Icon on Top' },
+            { value: 'left', label: 'Icon on Left' },
+            { value: 'right', label: 'Icon on Right' },
+          ], 'Select layout')}
+        </>
+      ))}
+
+      {/* IconBox Styles */}
+      {selectedComponent.type === 'IconBox' && renderSection('Styles', 'iconBoxStyles', (
+        <>
+          {renderTextInput('Icon Size', 'iconSize', 'e.g., 48px, 64px')}
+          {renderColorInput('Title Color', 'titleColor', '#1a1a2e')}
+          {renderTextInput('Title Font Size', 'titleFontSize', 'e.g., 18px')}
+          {renderSelectInput('Title Font Weight', 'titleFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Title Margin Bottom', 'titleMarginBottom', 'e.g., 8px')}
+          {renderColorInput('Description Color', 'descriptionColor', '#666666')}
+          {renderTextInput('Description Font Size', 'descriptionFontSize', 'e.g., 14px')}
+          {renderSelectInput('Text Align', 'textAlign', [
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ], 'Select alignment')}
+          {renderTextInput('Padding', 'padding', 'e.g., 20px')}
+          {renderColorInput('Background', 'backgroundColor', 'transparent')}
+          {renderTextInput('Border Radius', 'borderRadius', 'e.g., 8px')}
+        </>
+      ))}
+
+      {/* Text Content */}
+      {selectedComponent.type === 'Text' && renderSection('Content', 'textContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Text Content</label>
+            <textarea
+              value={props.content || ''}
+              onChange={(e) => handlePropChange('content', e.target.value)}
+              placeholder="Enter your text..."
+              rows={5}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">Use line breaks for paragraphs</p>
+          </div>
+        </>
+      ))}
+
+      {/* Text Styles */}
+      {selectedComponent.type === 'Text' && renderSection('Styles', 'textStyles', (
+        <>
+          {renderColorInput('Color', 'color', '#666666')}
+          {renderTextInput('Font Size', 'fontSize', 'e.g., 16px')}
+          {renderSelectInput('Font Weight', 'fontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Line Height', 'lineHeight', 'e.g., 1.6, 24px')}
+          {renderSelectInput('Text Align', 'textAlign', [
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+            { value: 'justify', label: 'Justify' },
+          ], 'Select alignment')}
+          {renderTextInput('Padding', 'padding', 'e.g., 20px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0, 20px 0')}
+        </>
+      ))}
+
+      {/* Button Content */}
+      {selectedComponent.type === 'Button' && renderSection('Content', 'buttonContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Button Text</label>
+            <input
+              type="text"
+              value={props.text || ''}
+              onChange={(e) => handlePropChange('text', e.target.value)}
+              placeholder="Click Me"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">URL</label>
+            <input
+              type="text"
+              value={props.url || ''}
+              onChange={(e) => handlePropChange('url', e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="btnOpenInNewTab"
+              checked={props.openInNewTab || false}
+              onChange={(e) => handlePropChange('openInNewTab', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="btnOpenInNewTab" className="text-xs font-medium text-gray-600">Open in new tab</label>
+          </div>
+        </>
+      ))}
+
+      {/* Button Styles */}
+      {selectedComponent.type === 'Button' && renderSection('Styles', 'buttonStyles', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#4f46e5')}
+          {renderColorInput('Text Color', 'textColor', '#ffffff')}
+          {renderTextInput('Padding', 'padding', 'e.g., 12px 28px')}
+          {renderTextInput('Border Radius', 'borderRadius', 'e.g., 8px')}
+          {renderTextInput('Font Size', 'fontSize', 'e.g., 15px')}
+          {renderSelectInput('Font Weight', 'fontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Width', 'width', 'e.g., auto, 100%')}
+          {renderSelectInput('Alignment', 'textAlign', [
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ], 'Select alignment')}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Border</p>
+            {renderTextInput('Border Width', 'borderWidth', 'e.g., 1px, 2px')}
+            {renderSelectInput('Border Style', 'borderStyle', borderStyleOptions, 'Select style')}
+            {renderColorInput('Border Color', 'borderColor', '#4f46e5')}
+          </div>
+        </>
+      ))}
+
+      {/* Divider Styles */}
+      {selectedComponent.type === 'Divider' && renderSection('Styles', 'dividerStyles', (
+        <>
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="checkbox"
+              id="showLine"
+              checked={props.showLine !== false}
+              onChange={(e) => handlePropChange('showLine', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="showLine" className="text-xs font-medium text-gray-600">Show Line</label>
+          </div>
+          {renderColorInput('Line Color', 'color', '#e5e7eb')}
+          {renderTextInput('Line Height', 'height', 'e.g., 1px, 2px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 20px 0, 40px 0')}
+          {renderTextInput('Width', 'width', 'e.g., 100%, 50%')}
+        </>
+      ))}
+
+      {/* Footer Content */}
+      {selectedComponent.type === 'Footer' && renderSection('Content', 'footerContent', (
+        <>
+          {(props.columns || []).map((col: { label: string; links: { text: string; url: string }[] }, colIndex: number) => (
+            <div key={colIndex} className="mb-4 pb-4 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <input
+                  type="text"
+                  value={col.label}
+                  onChange={(e) => {
+                    const newColumns = [...(props.columns || [])];
+                    newColumns[colIndex] = { ...newColumns[colIndex], label: e.target.value };
+                    handlePropChange('columns', newColumns);
+                  }}
+                  placeholder="Column Label"
+                  className="flex-1 px-2 py-1 text-xs font-semibold border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    const newColumns = (props.columns || []).filter((_: any, i: number) => i !== colIndex);
+                    handlePropChange('columns', newColumns);
+                  }}
+                  className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  ×
+                </button>
+              </div>
+              {col.links.map((link, linkIndex) => (
+                <div key={linkIndex} className="flex gap-1 mb-1">
+                  <input
+                    type="text"
+                    value={link.text}
+                    onChange={(e) => {
+                      const newColumns = [...(props.columns || [])];
+                      newColumns[colIndex].links[linkIndex] = { ...link, text: e.target.value };
+                      handlePropChange('columns', newColumns);
+                    }}
+                    placeholder="Link text"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={link.url}
+                    onChange={(e) => {
+                      const newColumns = [...(props.columns || [])];
+                      newColumns[colIndex].links[linkIndex] = { ...link, url: e.target.value };
+                      handlePropChange('columns', newColumns);
+                    }}
+                    placeholder="URL"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={() => {
+                      const newColumns = [...(props.columns || [])];
+                      newColumns[colIndex].links = col.links.filter((_, i) => i !== linkIndex);
+                      handlePropChange('columns', newColumns);
+                    }}
+                    className="px-1 text-xs text-red-500 hover:text-red-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  const newColumns = [...(props.columns || [])];
+                  newColumns[colIndex].links = [...col.links, { text: 'New Link', url: '#' }];
+                  handlePropChange('columns', newColumns);
+                }}
+                className="w-full mt-1 px-2 py-1 text-xs bg-gray-50 text-gray-600 rounded hover:bg-gray-100"
+              >
+                + Add Link
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newColumns = [...(props.columns || []), { label: 'New Column', links: [] }];
+              handlePropChange('columns', newColumns);
+            }}
+            className="w-full px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+          >
+            + Add Column
+          </button>
+
+          <div className="pt-4 border-t border-gray-100 mt-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Copyright Text</label>
+            <input
+              type="text"
+              value={props.copyright || ''}
+              onChange={(e) => handlePropChange('copyright', e.target.value)}
+              placeholder="© 2024 Company Name"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="showCopyright"
+                checked={props.showCopyright !== false}
+                onChange={(e) => handlePropChange('showCopyright', e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              />
+              <label htmlFor="showCopyright" className="text-xs font-medium text-gray-600">Show Copyright</label>
+            </div>
+          </div>
+        </>
+      ))}
+
+      {/* Footer Styles */}
+      {selectedComponent.type === 'Footer' && renderSection('Styles', 'footerStyles', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#1a2744')}
+          {renderTextInput('Padding', 'padding', 'e.g., 50px 60px')}
+          {renderTextInput('Column Gap', 'columnGap', 'e.g., 40px')}
+          {renderColorInput('Label Color', 'labelColor', '#ffffff')}
+          {renderTextInput('Label Font Size', 'labelFontSize', 'e.g., 14px')}
+          {renderSelectInput('Label Font Weight', 'labelFontWeight', fontWeightOptions, 'Select weight')}
+          {renderColorInput('Link Color', 'linkColor', 'rgba(255,255,255,0.7)')}
+          {renderTextInput('Link Font Size', 'linkFontSize', 'e.g., 13px')}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Copyright Bar</p>
+            {renderColorInput('Copyright Color', 'copyrightColor', 'rgba(255,255,255,0.5)')}
+            {renderTextInput('Copyright Font Size', 'copyrightFontSize', 'e.g., 12px')}
+            {renderTextInput('Copyright Padding', 'copyrightPadding', 'e.g., 20px 0 0 0')}
+            {renderColorInput('Copyright Border Color', 'copyrightBorderColor', 'rgba(255,255,255,0.1)')}
           </div>
         </>
       ))}
