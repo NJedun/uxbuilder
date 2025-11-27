@@ -407,6 +407,55 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       updatedAt: new Date().toISOString(),
       instructions: {
         note: 'This project uses global styles as the primary styling method. Component customStyles should remain empty unless a specific component needs to override the global defaults. When editing, prefer updating globalStyles over individual component styles for consistent design across all components.',
+
+        aiStyleGuideExtraction: {
+          purpose: 'When given a reference image (screenshot of a website), extract the visual style guide and apply it to globalStyles. DO NOT guess colors - carefully inspect each section of the image.',
+
+          extractionProcess: [
+            '1. HEADER SECTION: Look at the top navigation bar. Note the background color, logo color/style, navigation link colors, and spacing.',
+            '2. HERO/CONTENT SECTIONS: Identify primary background colors, title text colors, subtitle/body text colors, and button styles.',
+            '3. BUTTONS: Extract background color, text color, border-radius (rounded vs square), padding size, and any borders.',
+            '4. TYPOGRAPHY: Note font weights (bold headings vs light body), sizes, and color contrast patterns.',
+            '5. FOOTER SECTION: Carefully inspect - footers often have DIFFERENT backgrounds than the main content. Check column label colors, link colors, copyright bar separately.',
+            '6. ACCENT COLORS: Identify the brand\'s primary color (often used in buttons, links, highlights).',
+            '7. DIVIDERS/BORDERS: Look for separator lines, their colors and thickness.'
+          ],
+
+          commonMistakes: [
+            'Assuming footer has same dark/light theme as header - always check separately',
+            'Missing subtle background color differences between sections',
+            'Not noticing copyright bar has different background than main footer',
+            'Confusing hover states with default colors',
+            'Missing border colors on buttons or inputs'
+          ],
+
+          colorExtractionTips: [
+            'White backgrounds: #ffffff',
+            'Off-white/light gray: #f5f5f5, #f0f0f0, #fafafa',
+            'Dark backgrounds: Check if true black #000000 or dark gray #1a1a1a or navy #1a2744',
+            'Gray text: Usually #666666, #888888, or #999999',
+            'Use rgba() for semi-transparent colors like muted footer links'
+          ]
+        },
+
+        globalStylesReference: {
+          header: ['headerBackgroundColor', 'headerPadding', 'headerBorderWidth', 'headerBorderStyle', 'headerBorderColor', 'headerMaxWidth', 'headerJustifyContent', 'headerAlignItems'],
+          logo: ['logoColor', 'logoFontSize', 'logoFontWeight'],
+          navigation: ['navLinkColor', 'navLinkFontSize', 'navLinkFontWeight', 'navLinkGap', 'navLinkHoverColor', 'navDividerColor', 'navDividerHeight', 'navDividerMargin'],
+          titles: ['titleColor', 'titleFontSize', 'titleFontWeight', 'titleMarginBottom'],
+          subtitles: ['subtitleColor', 'subtitleFontSize', 'subtitleFontWeight', 'subtitleMarginBottom'],
+          buttons: ['buttonBackgroundColor', 'buttonTextColor', 'buttonPadding', 'buttonBorderRadius', 'buttonFontSize', 'buttonFontWeight', 'buttonBorderWidth', 'buttonBorderStyle', 'buttonBorderColor'],
+          container: ['containerBackgroundColor', 'containerBackgroundImage', 'containerBackgroundSize', 'containerBackgroundPosition', 'containerBackgroundRepeat', 'containerPadding', 'containerBorderRadius', 'containerBorderWidth', 'containerBorderStyle', 'containerBorderColor'],
+          rows: ['rowGap', 'rowPadding', 'rowBackgroundColor'],
+          columns: ['columnBackgroundColor', 'columnPadding', 'columnBorderRadius'],
+          links: ['linkColor', 'linkFontSize', 'linkFontWeight', 'linkTextDecoration', 'linkHoverColor'],
+          linkLists: ['linkListLabelColor', 'linkListLabelFontSize', 'linkListLabelFontWeight', 'linkListLabelMarginBottom', 'linkListItemColor', 'linkListItemFontSize', 'linkListItemGap'],
+          iconBox: ['iconBoxIconSize', 'iconBoxIconColor', 'iconBoxTitleColor', 'iconBoxTitleFontSize', 'iconBoxTitleFontWeight', 'iconBoxDescriptionColor', 'iconBoxDescriptionFontSize'],
+          footer: ['footerBackgroundColor', 'footerPadding', 'footerTextColor', 'footerCopyrightColor', 'footerCopyrightFontSize'],
+          dividers: ['dividerColor', 'dividerHeight', 'dividerMargin']
+        },
+
+        outputFormat: 'After extracting styles from an image, update ONLY the globalStyles object. Keep component customStyles empty unless a specific component needs to differ from global defaults.'
       },
       components: state.components,
       globalStyles: state.globalStyles,
