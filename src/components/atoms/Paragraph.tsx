@@ -4,9 +4,10 @@ interface ParagraphProps {
   lines?: number;
   align?: 'left' | 'center' | 'right';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
-export default function Paragraph({ lines = 3, align = 'left', useThemeStyles = false }: ParagraphProps) {
+export default function Paragraph({ lines = 3, align = 'left', useThemeStyles = false, content }: ParagraphProps) {
   const { theme } = useTheme();
   const styles = theme.componentStyles.Paragraph?.default || {};
 
@@ -31,14 +32,14 @@ export default function Paragraph({ lines = 3, align = 'left', useThemeStyles = 
     marginBottom: styles.marginBottom,
   } : {};
 
-  // Check if there's content in the theme
-  const content = useThemeStyles ? styles.content : null;
+  // Check if there's content in props or theme
+  const displayContent = content || styles.content;
 
-  if (useThemeStyles && content) {
+  if (useThemeStyles && displayContent) {
     // UI Mode with content - display actual text
     return (
       <p className={`w-full h-full ${alignmentClasses[align]}`} style={inlineStyles}>
-        {content}
+        {displayContent}
       </p>
     );
   }

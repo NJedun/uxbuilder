@@ -3,11 +3,13 @@ import { useTheme } from '../../contexts/ThemeContext';
 interface CopyrightTextProps {
   align?: 'left' | 'center' | 'right';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
 export default function CopyrightText({
   align = 'center',
-  useThemeStyles = false
+  useThemeStyles = false,
+  content
 }: CopyrightTextProps) {
   const { theme } = useTheme();
   const styles = theme.componentStyles.CopyrightText?.default || {};
@@ -30,7 +32,7 @@ export default function CopyrightText({
             fontFamily: styles.fontFamily,
           }}
         >
-          {styles.content || '© 2024 Your Company. All rights reserved.'}
+          {content || styles.content || '© 2024 Your Company. All rights reserved.'}
         </div>
       ) : (
         // UX Mode - Display placeholder bar

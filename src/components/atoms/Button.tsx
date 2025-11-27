@@ -6,9 +6,10 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
   align?: 'left' | 'center' | 'right';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
-export default function Button({ variant = 'primary', align = 'center', useThemeStyles = false }: ButtonProps) {
+export default function Button({ variant = 'primary', align = 'center', useThemeStyles = false, content }: ButtonProps) {
   const { theme } = useTheme();
 
   const alignmentClasses = {
@@ -66,7 +67,7 @@ export default function Button({ variant = 'primary', align = 'center', useTheme
           whiteSpace: 'nowrap'
         }}
       >
-        {buttonStyles.content || 'Button'}
+        {content || buttonStyles.content || 'Button'}
       </div>
     </div>
   );

@@ -4,9 +4,10 @@ interface LinkProps {
   variant?: 'primary' | 'secondary';
   align?: 'left' | 'center' | 'right';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
-export default function Link({ variant = 'primary', align = 'left', useThemeStyles = false }: LinkProps) {
+export default function Link({ variant = 'primary', align = 'left', useThemeStyles = false, content }: LinkProps) {
   const { theme } = useTheme();
   const styles = theme.componentStyles.Link?.[variant] || {};
 
@@ -41,7 +42,7 @@ export default function Link({ variant = 'primary', align = 'left', useThemeStyl
             whiteSpace: 'nowrap',
           }}
         >
-          {styles.content || 'Link'}
+          {content || styles.content || 'Link'}
         </div>
       ) : (
         // UX Mode - Display placeholder rectangles

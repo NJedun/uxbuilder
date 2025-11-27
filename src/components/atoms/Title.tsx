@@ -4,9 +4,10 @@ interface TitleProps {
   level?: 1 | 2 | 3 | 4 | 5;
   align?: 'left' | 'center' | 'right';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
-export default function Title({ level = 1, align = 'left', useThemeStyles = false }: TitleProps) {
+export default function Title({ level = 1, align = 'left', useThemeStyles = false, content }: TitleProps) {
   const { theme } = useTheme();
   const variantMap = { 1: 'h1', 2: 'h2', 3: 'h3', 4: 'h4', 5: 'h5' } as const;
   const variant = variantMap[level];
@@ -48,7 +49,7 @@ export default function Title({ level = 1, align = 'left', useThemeStyles = fals
             marginBottom: styles.marginBottom,
           }}
         >
-          {styles.content || 'Title'}
+          {content || styles.content || 'Title'}
         </div>
       ) : (
         // UX Mode - Display placeholder bar

@@ -3,9 +3,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 interface LogoProps {
   size?: 'small' | 'medium' | 'large';
   useThemeStyles?: boolean;
+  content?: string;
 }
 
-export default function Logo({ size = 'medium', useThemeStyles = false }: LogoProps) {
+export default function Logo({ size = 'medium', useThemeStyles = false, content }: LogoProps) {
   const { theme } = useTheme();
   const styles = theme.componentStyles.Logo?.default || {};
 
@@ -16,19 +17,19 @@ export default function Logo({ size = 'medium', useThemeStyles = false }: LogoPr
   };
 
   const config = sizeConfig[size];
-  const content = styles.content || '';
+  const displayContent = content || styles.content || '';
 
   // Check if content is a URL (image)
-  const isImageUrl = content.startsWith('http://') || content.startsWith('https://') || content.startsWith('data:image/');
+  const isImageUrl = displayContent.startsWith('http://') || displayContent.startsWith('https://') || displayContent.startsWith('data:image/');
 
   return (
     <div className="w-full h-full flex items-center justify-center p-2">
-      {useThemeStyles && content ? (
+      {useThemeStyles && displayContent ? (
         // UI Mode with content - display image or text
         isImageUrl ? (
           // Display image
           <img
-            src={content}
+            src={displayContent}
             alt="Logo"
             style={{
               width: config.width,
@@ -47,7 +48,7 @@ export default function Logo({ size = 'medium', useThemeStyles = false }: LogoPr
               whiteSpace: 'nowrap',
             }}
           >
-            {content}
+            {displayContent}
           </div>
         )
       ) : (
