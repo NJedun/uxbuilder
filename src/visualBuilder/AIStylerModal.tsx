@@ -20,13 +20,16 @@ RULES:
    - Use paddingTop, paddingRight, paddingBottom, paddingLeft instead of padding
    - Use borderWidth, borderStyle, borderColor instead of border`;
 
-const IMAGE_STYLE_PROMPT = `You are a UI design expert. Analyze this website screenshot and extract a style guide.
+const IMAGE_STYLE_PROMPT = `You are a UI design expert. Analyze this website screenshot and extract a complete style guide.
 
-Return ONLY a valid JSON object with these globalStyles (use hex colors):
+Return ONLY a valid JSON object with these globalStyles (use hex colors, px values):
 {
   "globalStyles": {
     "headerBackgroundColor": "#...",
     "headerPadding": "12px 40px",
+    "headerBorderWidth": "0",
+    "headerBorderStyle": "solid",
+    "headerBorderColor": "#...",
     "logoColor": "#...",
     "logoFontSize": "20px",
     "logoFontWeight": "800",
@@ -35,37 +38,63 @@ Return ONLY a valid JSON object with these globalStyles (use hex colors):
     "navLinkFontWeight": "500",
     "navLinkGap": "24px",
     "titleColor": "#...",
-    "titleFontSize": "28px",
+    "titleFontSize": "32px",
     "titleFontWeight": "700",
-    "titleMarginBottom": "12px",
+    "titleMarginBottom": "16px",
     "subtitleColor": "#...",
-    "subtitleFontSize": "14px",
+    "subtitleFontSize": "16px",
     "subtitleFontWeight": "400",
-    "subtitleMarginBottom": "20px",
+    "subtitleMarginBottom": "24px",
     "buttonBackgroundColor": "#...",
     "buttonTextColor": "#...",
     "buttonPadding": "14px 32px",
-    "buttonBorderRadius": "0",
+    "buttonBorderRadius": "0px or 4px or 8px or 9999px",
     "buttonFontSize": "14px",
     "buttonFontWeight": "600",
+    "buttonBorderWidth": "0",
+    "buttonBorderStyle": "solid",
+    "buttonBorderColor": "#...",
     "containerBackgroundColor": "#...",
     "containerPadding": "40px",
+    "containerBorderRadius": "0px or 8px or 16px",
+    "rowGap": "24px",
+    "rowPadding": "40px",
+    "rowBackgroundColor": "#...",
+    "columnPadding": "16px",
+    "columnBorderRadius": "0px or 8px or 12px",
+    "columnBackgroundColor": "#...",
     "footerBackgroundColor": "#...",
     "footerPadding": "40px 60px",
     "footerTextColor": "#...",
     "linkColor": "#...",
+    "linkListLabelColor": "#...",
+    "linkListLabelFontSize": "12px",
+    "linkListLabelFontWeight": "700",
+    "linkListItemColor": "#...",
+    "linkListItemFontSize": "14px",
+    "iconBoxIconColor": "#...",
+    "iconBoxTitleColor": "#...",
+    "iconBoxDescriptionColor": "#...",
     "dividerColor": "#...",
-    "dividerHeight": "2px"
+    "dividerHeight": "1px or 2px"
   }
 }
 
+EXTRACTION GUIDE - Look carefully at:
+1. CORNERS: Are elements rounded (8px, 12px, 16px) or sharp (0px)? Buttons fully rounded = 9999px
+2. SHADOWS: Note if cards/buttons have shadows (we'll use border colors to simulate)
+3. SPACING: Estimate padding/gaps - tight (12-16px), medium (24-32px), or spacious (40-60px)
+4. COLORS: Extract exact colors - backgrounds, text, buttons, borders, links
+5. TYPOGRAPHY: Bold headers (700-800), medium nav (500-600), light body (400)
+6. BORDERS: Check for subtle borders on cards, inputs, sections
+7. LAYOUT: Note column background colors if different from container
+
 IMPORTANT RULES:
 1. Extract ACTUAL colors from the image - use hex codes like #1a365d
-2. Look carefully at: header/nav, main content, buttons, footer, text hierarchy
-3. Return ONLY valid JSON - no markdown, no explanation
-4. Use ONLY the exact property names shown above - do not add margin, padding, or border shorthand properties
+2. Return ONLY valid JSON - no markdown, no explanation
+3. Use ONLY the exact property names shown above
 
-Return ONLY the JSON, no explanation.`;
+Return ONLY the JSON.`;
 
 // Attempt to repair common JSON issues from AI responses
 function repairJson(jsonStr: string): string {

@@ -691,8 +691,14 @@ export default function VisualStylePanel() {
                 const newWidths = Array.from({ length: newColumns }, (_, i) =>
                   currentWidths[i] || `${Math.floor(100 / newColumns)}%`
                 );
-                handlePropChange('columns', newColumns);
-                handlePropChange('columnWidths', newWidths);
+                // Update both columns and columnWidths in a single call
+                updateComponent(selectedComponentId!, {
+                  props: {
+                    ...selectedComponent.props,
+                    columns: newColumns,
+                    columnWidths: newWidths,
+                  },
+                });
               }}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
