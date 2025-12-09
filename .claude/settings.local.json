@@ -4,7 +4,8 @@
       "Bash(npm create:*)",
       "Bash(npm install:*)",
       "Bash(cat:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(del \"c:\\Project\\uxBuilder\\src\\config\\firebase.ts\")"
     ],
     "deny": [],
     "ask": []

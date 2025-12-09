@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import VisualCanvas from '../visualBuilder/VisualCanvas';
 import VisualComponentLibrary from '../visualBuilder/VisualComponentLibrary';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
+import AIStylerModal from '../visualBuilder/AIStylerModal';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
@@ -20,8 +20,8 @@ export default function VisualBuilder() {
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [showGlobalStyles, setShowGlobalStyles] = useState(false);
+  const [showAIStyler, setShowAIStyler] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const themeInputRef = useRef<HTMLInputElement>(null);
 
   const handleExportJSON = () => {
     const projectData = exportProject();
@@ -146,15 +146,7 @@ export default function VisualBuilder() {
         {/* Toolbar */}
         <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-800">Visual Builder</h1>
-              <Link
-                to="/ux-builder"
-                className="px-3 py-1.5 text-xs sm:text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Switch to UX Builder
-              </Link>
-            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-800">Visual Builder</h1>
             <input
               type="text"
               value={projectName}
@@ -213,6 +205,14 @@ export default function VisualBuilder() {
               className="px-3 sm:px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
             >
               Global Styles
+            </button>
+
+            <button
+              onClick={() => setShowAIStyler(true)}
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md hover:from-purple-600 hover:to-pink-600 transition-all font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+            >
+              <span>✨</span>
+              Style with AI
             </button>
           </div>
         </div>
@@ -273,6 +273,14 @@ export default function VisualBuilder() {
         {/* Global Styles Modal */}
         {showGlobalStyles && (
           <GlobalStylePanel onClose={() => setShowGlobalStyles(false)} />
+        )}
+
+        {/* AI Styler Modal */}
+        {showAIStyler && (
+          <AIStylerModal
+            isOpen={showAIStyler}
+            onClose={() => setShowAIStyler(false)}
+          />
         )}
       </div>
   );

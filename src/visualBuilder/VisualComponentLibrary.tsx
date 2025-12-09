@@ -328,7 +328,11 @@ export default function VisualComponentLibrary() {
   const selectedRow = selectedComponent?.type === 'Row' ? selectedComponent : null;
   const rowComponents = findRowComponents(components);
 
-  const handleAddComponent = (template: typeof componentTemplates[0], toColumn?: number, toRowId?: string) => {
+  const handleAddComponent = (
+    template: typeof componentTemplates[0],
+    toColumn?: number,
+    toRowId?: string
+  ) => {
     const newComponent: VisualComponent = {
       id: `${template.type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: template.type,
@@ -350,18 +354,19 @@ export default function VisualComponentLibrary() {
     <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto h-full flex flex-col">
       <div className="p-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
+
         <p className="text-xs text-gray-500 mb-4">Click to add to canvas</p>
 
         <div className="space-y-2">
           {componentTemplates.map((template) => (
-            <button
+            <div
               key={template.type}
+              className="relative group w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors border border-gray-200 hover:border-blue-300 flex items-center gap-3 cursor-pointer"
               onClick={() => handleAddComponent(template)}
-              className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors border border-gray-200 hover:border-blue-300 flex items-center gap-3"
             >
               <span className="text-xl">{template.icon}</span>
-              <span className="font-medium">{template.label}</span>
-            </button>
+              <span className="font-medium flex-1">{template.label}</span>
+            </div>
           ))}
         </div>
 
@@ -401,7 +406,7 @@ export default function VisualComponentLibrary() {
                       className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors border border-gray-200 hover:border-green-300 flex items-center gap-2"
                     >
                       <span>{template.icon}</span>
-                      <span className="font-medium">+ {template.label}</span>
+                      <span className="font-medium flex-1">+ {template.label}</span>
                     </button>
                   ))}
               </div>
