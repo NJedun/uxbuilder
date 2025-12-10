@@ -181,8 +181,7 @@ function mergeStyles(original: any, styled: any): any {
 }
 
 export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
-  const { exportProject, importProject, updateGlobalStyles } = useVisualBuilderStore();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('groq_api_key') || '');
+  const { exportProject, importProject, setGlobalStyles } = useVisualBuilderStore();
   const [prompt, setPrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -190,6 +189,11 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
   const [status, setStatus] = useState('');
   const [mode, setMode] = useState<StyleMode>('prompt');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Azure OpenAI configuration from environment variables
+  const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
+  const azureEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
+  const apiVersion = '2024-12-01-preview';
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,44 +237,43 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
     }
   };
 
-  // Text-only styling with llama-3.3-70b
-  const callGroqText = async (userPrompt: string): Promise<string> => {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Text-only styling with Azure OpenAI
+  const callAzureText = async (userPrompt: string): Promise<string> => {
+    const deploymentName = 'gpt-5.1-chat';
+    const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'api-key': apiKey,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: STYLE_PROMPT },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.3,
-        max_tokens: 32000,
+        max_completion_tokens: 16000,
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Groq API error: ${response.status}`);
+      throw new Error(err.error?.message || `Azure OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     return data.choices[0]?.message?.content || '';
   };
 
-  // Vision-based style extraction with Llama 4 Scout (multimodal)
-  const callGroqVision = async (imageBase64: string): Promise<string> => {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  // Vision-based style extraction with Azure OpenAI (using vision-capable model)
+  const callAzureVision = async (imageBase64: string): Promise<string> => {
+    const deploymentName = 'gpt-4o';
+    const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'api-key': apiKey,
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         messages: [
           {
             role: 'user',
@@ -283,14 +286,13 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
             ],
           },
         ],
-        temperature: 0.3,
-        max_tokens: 4000,
+        max_completion_tokens: 4000,
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Groq Vision API error: ${response.status}`);
+      throw new Error(err.error?.message || `Azure OpenAI Vision API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -299,7 +301,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
   const handleStyleWithPrompt = async () => {
     if (!apiKey.trim()) {
-      setError('Please enter your Groq API key');
+      setError('Azure OpenAI API key not configured. Please set VITE_AZURE_OPENAI_KEY in .env file.');
       return;
     }
     if (!prompt.trim()) {
@@ -312,8 +314,6 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
     setStatus('Preparing layout...');
 
     try {
-      localStorage.setItem('groq_api_key', apiKey);
-
       const projectData = exportProject();
       const stylesOnly = extractStylesOnly(projectData);
       const projectJson = JSON.stringify(stylesOnly);
@@ -321,7 +321,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
       setStatus('AI is styling...');
 
       const userPrompt = `Style this layout JSON:\n${projectJson}\n\nStyle: ${prompt}`;
-      const responseText = await callGroqText(userPrompt);
+      const responseText = await callAzureText(userPrompt);
 
       setStatus('Processing response...');
 
@@ -366,7 +366,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
   const handleExtractFromImage = async () => {
     if (!apiKey.trim()) {
-      setError('Please enter your Groq API key');
+      setError('Azure OpenAI API key not configured. Please set VITE_AZURE_OPENAI_KEY in .env file.');
       return;
     }
     if (!referenceImage) {
@@ -379,10 +379,8 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
     setStatus('Analyzing image...');
 
     try {
-      localStorage.setItem('groq_api_key', apiKey);
-
       setStatus('Extracting style guide...');
-      const responseText = await callGroqVision(referenceImage);
+      const responseText = await callAzureVision(referenceImage);
 
       setStatus('Processing response...');
 
@@ -404,11 +402,11 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
         extractedStyles = JSON.parse(repairedJson);
       }
 
-      // Apply to globalStyles
+      // Apply to globalStyles - fully replace to avoid conflicts with manual changes
       if (extractedStyles.globalStyles) {
         setStatus('Applying style guide...');
         const sanitizedGlobalStyles = sanitizeStyles(extractedStyles.globalStyles);
-        updateGlobalStyles(sanitizedGlobalStyles);
+        setGlobalStyles(sanitizedGlobalStyles);
       } else {
         throw new Error('Could not extract styles from image');
       }
@@ -475,28 +473,6 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
                 <span className="mr-1">🖼️</span> Extract from Image
               </button>
             </div>
-          </div>
-
-          {/* API Key */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Groq API Key
-              <a
-                href="https://console.groq.com/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 text-xs text-blue-500 hover:text-blue-600"
-              >
-                (Get free key)
-              </a>
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="gsk_..."
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
-            />
           </div>
 
           {/* Prompt Mode */}

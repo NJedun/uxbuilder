@@ -166,6 +166,7 @@ interface VisualBuilderState {
   setDraggedComponentType: (type: string | null) => void;
   reorderComponents: (components: VisualComponent[]) => void;
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => void;
+  setGlobalStyles: (styles: GlobalStyles) => void;
   moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => void;
 
   exportProject: () => VisualProjectData;
@@ -386,6 +387,11 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => {
     set({ globalStyles: { ...get().globalStyles, ...updates } });
+    get().saveToLocalStorage();
+  },
+
+  setGlobalStyles: (styles: GlobalStyles) => {
+    set({ globalStyles: styles });
     get().saveToLocalStorage();
   },
 

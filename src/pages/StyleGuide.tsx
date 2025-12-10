@@ -1120,14 +1120,18 @@ interface AIStylerModalProps {
 }
 
 function AIStylerModal({ isOpen, onClose, targetCategory }: AIStylerModalProps) {
-  const { updateGlobalStyles } = useVisualBuilderStore();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('groq_api_key') || '');
+  const { updateGlobalStyles, setGlobalStyles } = useVisualBuilderStore();
   const [prompt, setPrompt] = useState('');
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [mode, setMode] = useState<'prompt' | 'image'>('image');
+
+  // Azure OpenAI configuration from environment variables
+  const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
+  const azureEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
+  const apiVersion = '2024-12-01-preview';
 
   const targetInfo = targetCategory ? STYLE_CATEGORIES[targetCategory] : null;
 
@@ -1235,7 +1239,7 @@ Return format:
 
   const handleExtractFromImage = async () => {
     if (!apiKey.trim()) {
-      setError('Please enter your Groq API key');
+      setError('Please enter your Azure OpenAI API key');
       return;
     }
     if (!referenceImage) {
@@ -1248,17 +1252,16 @@ Return format:
     setStatus('Analyzing image...');
 
     try {
-      localStorage.setItem('groq_api_key', apiKey);
-
       setStatus('Extracting styles...');
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      // Azure OpenAI endpoint for vision-capable model
+      const deploymentName = 'gpt-4o';
+      const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'api-key': apiKey,
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
           messages: [
             {
               role: 'user',
@@ -1268,8 +1271,7 @@ Return format:
               ],
             },
           ],
-          temperature: 0.3,
-          max_tokens: 4000,
+          max_completion_tokens: 4000,
         }),
       });
 
@@ -1297,7 +1299,8 @@ Return format:
 
       if (extractedStyles.globalStyles) {
         setStatus('Applying styles...');
-        updateGlobalStyles(extractedStyles.globalStyles);
+        // Fully replace styles to avoid conflicts with manual changes
+        setGlobalStyles(extractedStyles.globalStyles);
       } else {
         throw new Error('Could not extract styles from image');
       }
@@ -1315,7 +1318,7 @@ Return format:
 
   const handleStyleWithPrompt = async () => {
     if (!apiKey.trim()) {
-      setError('Please enter your Groq API key');
+      setError('Please enter your Azure OpenAI API key');
       return;
     }
     if (!prompt.trim()) {
@@ -1328,8 +1331,6 @@ Return format:
     setStatus('Generating styles...');
 
     try {
-      localStorage.setItem('groq_api_key', apiKey);
-
       const systemPrompt = targetCategory && targetInfo
         ? `You are a UI stylist. Generate CSS styles based on the description.
            Focus on: ${targetInfo.label}
@@ -1338,20 +1339,20 @@ Return format:
         : `You are a UI stylist. Generate a complete style guide based on the description.
            Return ONLY valid JSON with globalStyles object containing colors, sizes, spacing, etc.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      // Azure OpenAI endpoint for text model
+      const deploymentName = 'gpt-5.1-chat';
+      const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'api-key': apiKey,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: prompt },
           ],
-          temperature: 0.3,
-          max_tokens: 4000,
+          max_completion_tokens: 4000,
         }),
       });
 
@@ -1448,28 +1449,6 @@ Return format:
                 <span className="mr-1">📝</span> Describe Style
               </button>
             </div>
-          </div>
-
-          {/* API Key */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Groq API Key
-              <a
-                href="https://console.groq.com/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 text-xs text-blue-500 hover:text-blue-600"
-              >
-                (Get free key)
-              </a>
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="gsk_..."
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
-            />
           </div>
 
           {/* Image Mode */}
