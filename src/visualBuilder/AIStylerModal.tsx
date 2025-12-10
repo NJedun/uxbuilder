@@ -283,11 +283,36 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
         extractedStyles = JSON.parse(repairedJson);
       }
 
-      // Apply to globalStyles - fully replace to avoid conflicts with manual changes
+      // Apply to globalStyles - merge with existing to preserve SeedProduct styles
       if (extractedStyles.globalStyles) {
         setStatus('Applying style guide...');
-        const sanitizedGlobalStyles = sanitizeStyles(extractedStyles.globalStyles);
-        setGlobalStyles(sanitizedGlobalStyles);
+        const extracted = extractedStyles.globalStyles;
+
+        // Use primaryColor as fallback for seed product colors if not explicitly set
+        const primaryColor = extracted.primaryColor || extracted.buttonBackgroundColor;
+        if (primaryColor) {
+          // Ensure seed product colors use primary color if not explicitly set by AI
+          if (!extracted.seedProductRatingBarColor) {
+            extracted.seedProductRatingBarColor = primaryColor;
+          }
+          if (!extracted.seedProductTitleColor) {
+            extracted.seedProductTitleColor = extracted.headingColor || primaryColor;
+          }
+          if (!extracted.seedProductCardTitleColor) {
+            extracted.seedProductCardTitleColor = primaryColor;
+          }
+          if (!extracted.seedProductCardIconColor) {
+            extracted.seedProductCardIconColor = primaryColor;
+          }
+        }
+
+        const sanitizedGlobalStyles = sanitizeStyles(extracted);
+
+        // Merge with existing global styles to preserve any properties not extracted
+        const currentGlobalStyles = exportProject().globalStyles;
+        const mergedGlobalStyles = { ...currentGlobalStyles, ...sanitizedGlobalStyles };
+
+        setGlobalStyles(mergedGlobalStyles);
       } else {
         throw new Error('Could not extract styles from image');
       }

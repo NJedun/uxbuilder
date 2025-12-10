@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useVisualBuilderStore, VisualComponent } from '../store/visualBuilderStore';
+import { useVisualBuilderStore, VisualComponent, defaultSeedProductData } from '../store/visualBuilderStore';
 import ComponentTree from './ComponentTree';
 
 const componentTemplates = [
@@ -289,6 +289,31 @@ const componentTemplates = [
       copyrightFontSize: '',
       copyrightPadding: '',
       copyrightBorderColor: '',
+    },
+  },
+  {
+    type: 'SeedProduct',
+    label: 'Seed Product Card',
+    icon: '🌱',
+    canBeChild: true,
+    defaultProps: {
+      seedProductData: { ...defaultSeedProductData },
+    },
+    defaultStyles: {
+      // All empty - will fallback to global styles
+      titleColor: '',
+      titleFontSize: '',
+      descriptionColor: '',
+      ratingBarColor: '',
+      ratingBarBgColor: '',
+      cardBgColor: '',
+      cardBorderColor: '',
+      cardTitleColor: '',
+      cardIconColor: '',
+      labelColor: '',
+      valueColor: '',
+      padding: '',
+      backgroundColor: '',
     },
   },
 ];

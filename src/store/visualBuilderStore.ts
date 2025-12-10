@@ -136,6 +136,78 @@ export interface GlobalStyles {
   dividerColor?: string;
   dividerHeight?: string;
   dividerMargin?: string;
+
+  // SeedProduct defaults
+  seedProductTitleColor?: string;
+  seedProductTitleFontSize?: string;
+  seedProductDescriptionColor?: string;
+  seedProductDescriptionFontSize?: string;
+  seedProductRatingBarColor?: string;
+  seedProductRatingBarBgColor?: string;
+  seedProductCardBgColor?: string;
+  seedProductCardBorderColor?: string;
+  seedProductCardTitleColor?: string;
+  seedProductCardIconColor?: string;
+  seedProductLabelColor?: string;
+  seedProductValueColor?: string;
+}
+
+// SeedProduct data types
+export interface SeedProductRating {
+  label: string;
+  value: number; // 1-9 scale
+}
+
+export interface SeedProductAttribute {
+  label: string;
+  value: string;
+}
+
+export interface SeedProductData {
+  productName: string;
+  description: string;
+  heroImage?: string;
+  agronomicsIcon?: string;
+  fieldPerformanceIcon?: string;
+  diseaseResistanceIcon?: string;
+  ratings: SeedProductRating[];
+  agronomics: SeedProductAttribute[];
+  fieldPerformance: SeedProductAttribute[];
+  diseaseResistance: SeedProductAttribute[];
+}
+
+export const defaultSeedProductData: SeedProductData = {
+  productName: 'Product Name',
+  description: 'Product description goes here.',
+  heroImage: '',
+  agronomicsIcon: '',
+  fieldPerformanceIcon: '',
+  diseaseResistanceIcon: '',
+  ratings: [
+    { label: 'Emergence', value: 1 },
+    { label: 'Standability', value: 2 },
+    { label: 'Stress Tolerance', value: 3 },
+    { label: 'SDS', value: 2 },
+    { label: 'IDC', value: 4 },
+    { label: 'Shattering', value: 1 },
+    { label: 'White Mold', value: 3 },
+    { label: 'BSR', value: 2 },
+  ],
+  agronomics: [
+    { label: 'Relative Maturity', value: '0.0' },
+    { label: 'Plant Height', value: 'Med' },
+    { label: 'Plant Type', value: 'Med-bushy' },
+  ],
+  fieldPerformance: [
+    { label: 'Fine Soil', value: 'VG' },
+    { label: 'Medium Soil', value: 'VG' },
+    { label: 'No-Till', value: 'G' },
+  ],
+  diseaseResistance: [
+    { label: 'Root Rot', value: '5' },
+    { label: 'White Mold', value: '4' },
+    { label: 'Stem Rot', value: 'R' },
+  ],
 }
 
 export interface VisualProjectData {
@@ -289,6 +361,20 @@ const defaultGlobalStyles: GlobalStyles = {
   dividerColor: '#e5e7eb',
   dividerHeight: '1px',
   dividerMargin: '20px 0',
+
+  // SeedProduct defaults
+  seedProductTitleColor: '#003087',
+  seedProductTitleFontSize: '32px',
+  seedProductDescriptionColor: '#666666',
+  seedProductDescriptionFontSize: '16px',
+  seedProductRatingBarColor: '#003087',
+  seedProductRatingBarBgColor: '#e5e7eb',
+  seedProductCardBgColor: '#f8fafc',
+  seedProductCardBorderColor: '#e2e8f0',
+  seedProductCardTitleColor: '#003087',
+  seedProductCardIconColor: '#003087',
+  seedProductLabelColor: '#374151',
+  seedProductValueColor: '#111827',
 };
 
 export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({

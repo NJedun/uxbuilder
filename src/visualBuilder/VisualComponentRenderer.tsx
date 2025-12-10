@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
+import { VisualComponent, useVisualBuilderStore, GlobalStyles, SeedProductData } from '../store/visualBuilderStore';
 import type { ViewMode } from '../pages/VisualBuilder';
 
 interface VisualComponentRendererProps {
@@ -816,6 +816,265 @@ export default function VisualComponentRenderer({
             </div>
           )}
         </footer>
+      );
+    }
+
+    if (component.type === 'SeedProduct') {
+      const seedData: SeedProductData = props.seedProductData || {
+        productName: 'Product Name',
+        description: 'Product description',
+        heroImage: '',
+        ratings: [],
+        agronomics: [],
+        fieldPerformance: [],
+        diseaseResistance: [],
+      };
+
+      // Rating bar component
+      const RatingBar = ({ label, value }: { label: string; value: number }) => {
+        // Convert 1-9 scale to percentage (1 = 100%, 9 = ~11%)
+        const percentage = Math.max(0, Math.min(100, ((10 - value) / 9) * 100));
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <div style={{
+              width: '120px',
+              flexShrink: 0,
+              color: getStyle(styles.labelColor, 'seedProductLabelColor'),
+              fontSize: '14px',
+            }}>
+              {label}
+            </div>
+            <div style={{
+              flex: 1,
+              height: '20px',
+              backgroundColor: getStyle(styles.ratingBarBgColor, 'seedProductRatingBarBgColor'),
+              borderRadius: '4px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: `${percentage}%`,
+                height: '100%',
+                backgroundColor: getStyle(styles.ratingBarColor, 'seedProductRatingBarColor'),
+                borderRadius: '4px',
+                transition: 'width 0.3s ease',
+              }} />
+            </div>
+            <div style={{
+              width: '24px',
+              textAlign: 'right',
+              color: getStyle(styles.valueColor, 'seedProductValueColor'),
+              fontSize: '14px',
+              fontWeight: '600',
+            }}>
+              {value}
+            </div>
+          </div>
+        );
+      };
+
+      // Attribute list component
+      const AttributeList = ({ items }: { items: { label: string; value: string }[] }) => (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {items.map((item, index) => (
+            <li key={index} style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              padding: '6px 0',
+              borderBottom: index < items.length - 1 ? '1px solid #e5e7eb' : 'none',
+              fontSize: '14px',
+            }}>
+              <span style={{ color: getStyle(styles.labelColor, 'seedProductLabelColor') }}>
+                {item.label}
+              </span>
+              <span style={{
+                color: getStyle(styles.valueColor, 'seedProductValueColor'),
+                fontWeight: '500',
+              }}>
+                {item.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      );
+
+      // Category card component
+      const CategoryCard = ({
+        title,
+        iconUrl,
+        items
+      }: {
+        title: string;
+        iconUrl?: string;
+        items: { label: string; value: string }[]
+      }) => (
+        <div style={{
+          flex: 1,
+          minWidth: isMobile ? '100%' : '200px',
+          backgroundColor: getStyle(styles.cardBgColor, 'seedProductCardBgColor'),
+          border: `1px solid ${getStyle(styles.cardBorderColor, 'seedProductCardBorderColor')}`,
+          borderRadius: '8px',
+          padding: '20px',
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            marginBottom: '16px',
+          }}>
+            {iconUrl && (
+              <img
+                src={iconUrl}
+                alt={title}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  objectFit: 'contain',
+                  marginBottom: '8px',
+                }}
+              />
+            )}
+            <h4 style={{
+              margin: 0,
+              color: getStyle(styles.cardTitleColor, 'seedProductCardTitleColor'),
+              fontSize: '16px',
+              fontWeight: '600',
+            }}>
+              {title}
+            </h4>
+          </div>
+          <AttributeList items={items} />
+        </div>
+      );
+
+      return (
+        <div style={{
+          backgroundColor: styles.backgroundColor || '#ffffff',
+          borderRadius: styles.borderRadius || '8px',
+          overflow: 'hidden',
+          border: styles.borderWidth ? `${styles.borderWidth} ${styles.borderStyle || 'solid'} ${styles.borderColor || '#e5e7eb'}` : '1px solid #e5e7eb',
+        }}>
+          {/* Hero Image */}
+          {seedData.heroImage && (
+            <div style={{
+              width: '100%',
+              height: isMobile ? '150px' : '200px',
+              overflow: 'hidden',
+            }}>
+              <img
+                src={seedData.heroImage}
+                alt={seedData.productName}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div style={{ padding: isMobile ? '20px' : '30px' }}>
+            {/* Title & Description */}
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <h2 style={{
+                color: getStyle(styles.titleColor, 'seedProductTitleColor'),
+                fontSize: isMobile ? '24px' : getStyle(styles.titleFontSize, 'seedProductTitleFontSize'),
+                fontWeight: '700',
+                margin: '0 0 8px 0',
+              }}>
+                {seedData.productName}
+              </h2>
+              <p style={{
+                color: getStyle(styles.descriptionColor, 'seedProductDescriptionColor'),
+                fontSize: getStyle(styles.descriptionFontSize, 'seedProductDescriptionFontSize'),
+                margin: 0,
+              }}>
+                {seedData.description}
+              </p>
+            </div>
+
+            {/* Rating Section */}
+            {seedData.ratings && seedData.ratings.length > 0 && (
+              <div style={{ marginBottom: '30px' }}>
+                <h3 style={{
+                  color: getStyle(styles.cardTitleColor, 'seedProductCardTitleColor'),
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  marginBottom: '16px',
+                }}>
+                  Rating
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px',
+                  fontSize: '12px',
+                  color: '#6b7280',
+                }}>
+                  <span style={{ marginLeft: '132px' }}>Fair</span>
+                  <span>Average</span>
+                  <span>Excellent</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '12px',
+                  fontSize: '11px',
+                  color: '#9ca3af',
+                  marginLeft: '132px',
+                }}>
+                  {[9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => (
+                    <span key={n}>{n}</span>
+                  ))}
+                </div>
+                {seedData.ratings.map((rating, index) => (
+                  <RatingBar key={index} label={rating.label} value={rating.value} />
+                ))}
+              </div>
+            )}
+
+            {/* Product Characteristics Cards */}
+            <div>
+              <h3 style={{
+                color: getStyle(styles.cardTitleColor, 'seedProductCardTitleColor'),
+                fontSize: '18px',
+                fontWeight: '600',
+                textAlign: 'center',
+                marginBottom: '20px',
+              }}>
+                Product characteristics
+              </h3>
+              <div style={{
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: '16px',
+              }}>
+                {seedData.agronomics && seedData.agronomics.length > 0 && (
+                  <CategoryCard
+                    title="Agronomics"
+                    iconUrl={seedData.agronomicsIcon}
+                    items={seedData.agronomics}
+                  />
+                )}
+                {seedData.fieldPerformance && seedData.fieldPerformance.length > 0 && (
+                  <CategoryCard
+                    title="Field performance"
+                    iconUrl={seedData.fieldPerformanceIcon}
+                    items={seedData.fieldPerformance}
+                  />
+                )}
+                {seedData.diseaseResistance && seedData.diseaseResistance.length > 0 && (
+                  <CategoryCard
+                    title="Disease tolerance"
+                    iconUrl={seedData.diseaseResistanceIcon}
+                    items={seedData.diseaseResistance}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       );
     }
 

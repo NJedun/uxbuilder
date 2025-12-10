@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useVisualBuilderStore } from '../store/visualBuilderStore';
+import { useState, useRef } from 'react';
+import { useVisualBuilderStore, SeedProductRating, SeedProductAttribute } from '../store/visualBuilderStore';
 
 export default function VisualStylePanel() {
   const { selectedComponentId, components, updateComponent } = useVisualBuilderStore();
@@ -32,7 +32,20 @@ export default function VisualStylePanel() {
     dividerStyles: true,
     footerContent: true,
     footerStyles: false,
+    // SeedProduct sections
+    seedProductContent: true,
+    seedProductRatings: true,
+    seedProductAgronomics: false,
+    seedProductFieldPerformance: false,
+    seedProductDiseaseResistance: false,
+    seedProductStyles: false,
+    seedProductPdfUpload: true,
   });
+
+  // PDF upload state
+  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Find the selected component
   const findComponent = (id: string | null, componentList: any[]): any => {
@@ -82,6 +95,102 @@ export default function VisualStylePanel() {
       ...prev,
       [section]: !prev[section],
     }));
+  };
+
+  // Convert PDF file to base64 image using canvas
+  const pdfToImage = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const pdfData = e.target?.result as ArrayBuffer;
+          // @ts-expect-error - pdfjsLib is loaded from CDN
+          const pdfjsLib = window.pdfjsLib;
+          if (!pdfjsLib) {
+            reject(new Error('PDF.js library not loaded. Please refresh the page.'));
+            return;
+          }
+
+          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+          const page = await pdf.getPage(1);
+          const scale = 2; // Higher quality
+          const viewport = page.getViewport({ scale });
+
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport }).promise;
+          const imageData = canvas.toDataURL('image/png');
+          resolve(imageData);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Handle PDF upload and extraction for SeedProduct
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      setPdfError('Please upload a PDF file');
+      return;
+    }
+
+    if (!selectedComponentId || !selectedComponent) return;
+
+    setIsExtractingPdf(true);
+    setPdfError(null);
+
+    try {
+      // Convert PDF to image
+      const pdfImage = await pdfToImage(file);
+
+      // Send to AI extraction API
+      const response = await fetch('/api/ai-pdf-extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfImage }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to extract data from PDF');
+      }
+
+      const data = await response.json();
+      const extractedData = data.content;
+
+      // Update the current SeedProduct component with extracted data
+      updateComponent(selectedComponentId, {
+        props: {
+          ...selectedComponent.props,
+          seedProductData: {
+            productName: extractedData.productName || 'Product Name',
+            description: extractedData.description || '',
+            heroImage: selectedComponent.props?.seedProductData?.heroImage || '',
+            ratings: extractedData.ratings || [],
+            agronomics: extractedData.agronomics || [],
+            fieldPerformance: extractedData.fieldPerformance || [],
+            diseaseResistance: extractedData.diseaseResistance || [],
+          },
+        },
+      });
+    } catch (err: any) {
+      setPdfError(err.message || 'Failed to process PDF');
+    } finally {
+      setIsExtractingPdf(false);
+      // Reset file input
+      if (pdfInputRef.current) {
+        pdfInputRef.current.value = '';
+      }
+    }
   };
 
   if (!selectedComponent) {
@@ -1365,6 +1474,478 @@ export default function VisualStylePanel() {
             {renderTextInput('Copyright Padding', 'copyrightPadding', 'e.g., 20px 0 0 0')}
             {renderColorInput('Copyright Border Color', 'copyrightBorderColor', 'rgba(255,255,255,0.1)')}
           </div>
+        </>
+      ))}
+
+      {/* SeedProduct PDF Upload */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Upload PDF Tech Sheet', 'seedProductPdfUpload', (
+        <>
+          <p className="text-xs text-gray-500 mb-3">
+            Upload a seed product PDF tech sheet to automatically extract product data using AI.
+          </p>
+          <label
+            className={`relative w-full px-4 py-4 text-left text-sm rounded-lg transition-colors border-2 border-dashed flex flex-col items-center gap-2 cursor-pointer ${
+              isExtractingPdf
+                ? 'border-blue-400 bg-blue-50 text-blue-600'
+                : 'border-green-300 hover:border-green-500 hover:bg-green-50 text-gray-600 hover:text-green-600'
+            }`}
+          >
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={handlePdfUpload}
+              disabled={isExtractingPdf}
+            />
+            {isExtractingPdf ? (
+              <svg className="w-8 h-8 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <span className="text-2xl">📄</span>
+            )}
+            <span className="font-medium">
+              {isExtractingPdf ? 'Extracting data...' : 'Click to upload PDF'}
+            </span>
+            <span className="text-xs text-gray-400">
+              {isExtractingPdf ? 'This may take a few seconds' : 'PDF files only'}
+            </span>
+          </label>
+          {pdfError && (
+            <p className="text-xs text-red-500 mt-2 px-1">{pdfError}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-3">
+            Note: Uploading a new PDF will replace existing product data (except hero image).
+          </p>
+
+          {/* Export Product Data Button - only show if data was extracted (not default) */}
+          {props.seedProductData &&
+           props.seedProductData.productName &&
+           props.seedProductData.productName !== 'Product Name' && (
+            <button
+              onClick={() => {
+                // Transform ratings array to object with label as key
+                const ratingsObj: Record<string, number> = {};
+                (props.seedProductData.ratings || []).forEach((r: SeedProductRating) => {
+                  ratingsObj[r.label] = r.value;
+                });
+
+                // Transform attribute arrays to objects with label as key
+                const agronomicsObj: Record<string, string> = {};
+                (props.seedProductData.agronomics || []).forEach((a: SeedProductAttribute) => {
+                  agronomicsObj[a.label] = a.value;
+                });
+
+                const fieldPerformanceObj: Record<string, string> = {};
+                (props.seedProductData.fieldPerformance || []).forEach((a: SeedProductAttribute) => {
+                  fieldPerformanceObj[a.label] = a.value;
+                });
+
+                const diseaseResistanceObj: Record<string, string> = {};
+                (props.seedProductData.diseaseResistance || []).forEach((a: SeedProductAttribute) => {
+                  diseaseResistanceObj[a.label] = a.value;
+                });
+
+                const dataToExport = {
+                  name: props.seedProductData.productName,
+                  description: props.seedProductData.description,
+                  category: 'Soybean',
+                  isActive: false,
+                  rating: ratingsObj,
+                  productCharacteristics: {
+                    agronomics: agronomicsObj,
+                    fieldPerformance: fieldPerformanceObj,
+                    diseaseResistance: diseaseResistanceObj,
+                  },
+                };
+                const json = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                const fileName = (props.seedProductData.productName || 'seed-product')
+                  .replace(/[^a-z0-9]/gi, '_')
+                  .toLowerCase();
+                link.download = `${fileName}_data.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              }}
+              className="w-full mt-3 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+            >
+              <span>📥</span>
+              Export Product Data (JSON)
+            </button>
+          )}
+        </>
+      ))}
+
+      {/* SeedProduct Content */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Product Info', 'seedProductContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+            <input
+              type="text"
+              value={props.seedProductData?.productName || ''}
+              onChange={(e) => handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                productName: e.target.value,
+              })}
+              placeholder="e.g., Allegiant 009F23 XF"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <textarea
+              value={props.seedProductData?.description || ''}
+              onChange={(e) => handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                description: e.target.value,
+              })}
+              placeholder="Product description..."
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Hero Image URL</label>
+            <input
+              type="text"
+              value={props.seedProductData?.heroImage || ''}
+              onChange={(e) => handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                heroImage: e.target.value,
+              })}
+              placeholder="https://example.com/product-hero.jpg"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Category Icon URLs */}
+          <div className="pt-3 border-t border-gray-100 mt-3">
+            <p className="text-xs font-medium text-gray-500 mb-2">Category Icons</p>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Agronomics Icon URL</label>
+                <input
+                  type="text"
+                  value={props.seedProductData?.agronomicsIcon || ''}
+                  onChange={(e) => handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    agronomicsIcon: e.target.value,
+                  })}
+                  placeholder="https://example.com/agronomics-icon.png"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Field Performance Icon URL</label>
+                <input
+                  type="text"
+                  value={props.seedProductData?.fieldPerformanceIcon || ''}
+                  onChange={(e) => handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    fieldPerformanceIcon: e.target.value,
+                  })}
+                  placeholder="https://example.com/field-icon.png"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Disease Tolerance Icon URL</label>
+                <input
+                  type="text"
+                  value={props.seedProductData?.diseaseResistanceIcon || ''}
+                  onChange={(e) => handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    diseaseResistanceIcon: e.target.value,
+                  })}
+                  placeholder="https://example.com/disease-icon.png"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      ))}
+
+      {/* SeedProduct Ratings */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Ratings (1-9 Scale)', 'seedProductRatings', (
+        <>
+          <p className="text-xs text-gray-500 mb-2">1 = Excellent, 5 = Average, 9 = Fair</p>
+          {(props.seedProductData?.ratings || []).map((rating: SeedProductRating, index: number) => (
+            <div key={index} className="flex gap-2 mb-2 items-center">
+              <input
+                type="text"
+                value={rating.label}
+                onChange={(e) => {
+                  const newRatings = [...(props.seedProductData?.ratings || [])];
+                  newRatings[index] = { ...newRatings[index], label: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    ratings: newRatings,
+                  });
+                }}
+                placeholder="Label"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="number"
+                min="1"
+                max="9"
+                value={rating.value}
+                onChange={(e) => {
+                  const newRatings = [...(props.seedProductData?.ratings || [])];
+                  newRatings[index] = { ...newRatings[index], value: parseInt(e.target.value) || 1 };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    ratings: newRatings,
+                  });
+                }}
+                className="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => {
+                  const newRatings = (props.seedProductData?.ratings || []).filter((_: SeedProductRating, i: number) => i !== index);
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    ratings: newRatings,
+                  });
+                }}
+                className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newRatings = [...(props.seedProductData?.ratings || []), { label: 'New Rating', value: 5 }];
+              handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                ratings: newRatings,
+              });
+            }}
+            className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+          >
+            + Add Rating
+          </button>
+        </>
+      ))}
+
+      {/* SeedProduct Agronomics */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Agronomics', 'seedProductAgronomics', (
+        <>
+          {(props.seedProductData?.agronomics || []).map((attr: SeedProductAttribute, index: number) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={attr.label}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.agronomics || [])];
+                  newAttrs[index] = { ...newAttrs[index], label: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    agronomics: newAttrs,
+                  });
+                }}
+                placeholder="Label"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={attr.value}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.agronomics || [])];
+                  newAttrs[index] = { ...newAttrs[index], value: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    agronomics: newAttrs,
+                  });
+                }}
+                placeholder="Value"
+                className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => {
+                  const newAttrs = (props.seedProductData?.agronomics || []).filter((_: SeedProductAttribute, i: number) => i !== index);
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    agronomics: newAttrs,
+                  });
+                }}
+                className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newAttrs = [...(props.seedProductData?.agronomics || []), { label: 'New Attribute', value: '' }];
+              handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                agronomics: newAttrs,
+              });
+            }}
+            className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+          >
+            + Add Agronomic
+          </button>
+        </>
+      ))}
+
+      {/* SeedProduct Field Performance */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Field Performance', 'seedProductFieldPerformance', (
+        <>
+          {(props.seedProductData?.fieldPerformance || []).map((attr: SeedProductAttribute, index: number) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={attr.label}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.fieldPerformance || [])];
+                  newAttrs[index] = { ...newAttrs[index], label: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    fieldPerformance: newAttrs,
+                  });
+                }}
+                placeholder="Label"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={attr.value}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.fieldPerformance || [])];
+                  newAttrs[index] = { ...newAttrs[index], value: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    fieldPerformance: newAttrs,
+                  });
+                }}
+                placeholder="Value"
+                className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => {
+                  const newAttrs = (props.seedProductData?.fieldPerformance || []).filter((_: SeedProductAttribute, i: number) => i !== index);
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    fieldPerformance: newAttrs,
+                  });
+                }}
+                className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newAttrs = [...(props.seedProductData?.fieldPerformance || []), { label: 'New Condition', value: '' }];
+              handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                fieldPerformance: newAttrs,
+              });
+            }}
+            className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+          >
+            + Add Field Performance
+          </button>
+        </>
+      ))}
+
+      {/* SeedProduct Disease Resistance */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Disease Resistance', 'seedProductDiseaseResistance', (
+        <>
+          {(props.seedProductData?.diseaseResistance || []).map((attr: SeedProductAttribute, index: number) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={attr.label}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.diseaseResistance || [])];
+                  newAttrs[index] = { ...newAttrs[index], label: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    diseaseResistance: newAttrs,
+                  });
+                }}
+                placeholder="Disease Name"
+                className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                value={attr.value}
+                onChange={(e) => {
+                  const newAttrs = [...(props.seedProductData?.diseaseResistance || [])];
+                  newAttrs[index] = { ...newAttrs[index], value: e.target.value };
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    diseaseResistance: newAttrs,
+                  });
+                }}
+                placeholder="Rating"
+                className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={() => {
+                  const newAttrs = (props.seedProductData?.diseaseResistance || []).filter((_: SeedProductAttribute, i: number) => i !== index);
+                  handlePropChange('seedProductData', {
+                    ...props.seedProductData,
+                    diseaseResistance: newAttrs,
+                  });
+                }}
+                className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newAttrs = [...(props.seedProductData?.diseaseResistance || []), { label: 'New Disease', value: '' }];
+              handlePropChange('seedProductData', {
+                ...props.seedProductData,
+                diseaseResistance: newAttrs,
+              });
+            }}
+            className="w-full px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+          >
+            + Add Disease Resistance
+          </button>
+        </>
+      ))}
+
+      {/* SeedProduct Styles */}
+      {selectedComponent.type === 'SeedProduct' && renderSection('Styles', 'seedProductStyles', (
+        <>
+          {renderColorInput('Title Color', 'titleColor', '#003087')}
+          {renderTextInput('Title Font Size', 'titleFontSize', 'e.g., 32px')}
+          {renderColorInput('Description Color', 'descriptionColor', '#666666')}
+          {renderColorInput('Rating Bar Color', 'ratingBarColor', '#003087')}
+          {renderColorInput('Rating Bar Background', 'ratingBarBgColor', '#e5e7eb')}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Category Cards</p>
+            {renderColorInput('Card Background', 'cardBgColor', '#f8fafc')}
+            {renderColorInput('Card Border', 'cardBorderColor', '#e2e8f0')}
+            {renderColorInput('Card Title Color', 'cardTitleColor', '#003087')}
+            {renderColorInput('Card Icon Color', 'cardIconColor', '#003087')}
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Text Colors</p>
+            {renderColorInput('Label Color', 'labelColor', '#374151')}
+            {renderColorInput('Value Color', 'valueColor', '#111827')}
+          </div>
+          {renderTextInput('Padding', 'padding', 'e.g., 32px')}
+          {renderColorInput('Background', 'backgroundColor', '#ffffff')}
         </>
       ))}
     </div>
