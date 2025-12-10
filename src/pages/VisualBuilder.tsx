@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import VisualCanvas from '../visualBuilder/VisualCanvas';
 import VisualComponentLibrary from '../visualBuilder/VisualComponentLibrary';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
@@ -7,6 +8,8 @@ import AIStylerModal from '../visualBuilder/AIStylerModal';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
+
+export type ViewMode = 'desktop' | 'tablet' | 'mobile';
 
 export default function VisualBuilder() {
   const {
@@ -21,7 +24,17 @@ export default function VisualBuilder() {
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [showGlobalStyles, setShowGlobalStyles] = useState(false);
   const [showAIStyler, setShowAIStyler] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get canvas width based on view mode
+  const getCanvasWidth = () => {
+    switch (viewMode) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+    }
+  };
 
   const handleExportJSON = () => {
     const projectData = exportProject();
@@ -157,6 +170,39 @@ export default function VisualBuilder() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('desktop')}
+                className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'desktop' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Desktop view"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('tablet')}
+                className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'tablet' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Tablet view (768px)"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('mobile')}
+                className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'mobile' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Mobile view (375px)"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="hidden sm:block h-6 w-px bg-gray-300" />
+
             <button
               onClick={handleNew}
               className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
@@ -207,6 +253,13 @@ export default function VisualBuilder() {
               Global Styles
             </button>
 
+            <Link
+              to="/styleguide"
+              className="px-3 sm:px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+            >
+              Style Guide
+            </Link>
+
             <button
               onClick={() => setShowAIStyler(true)}
               className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md hover:from-purple-600 hover:to-pink-600 transition-all font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
@@ -241,7 +294,7 @@ export default function VisualBuilder() {
 
           {/* Canvas Area */}
           <main className="flex-1 p-2 sm:p-6 overflow-auto bg-gray-50">
-            <VisualCanvas />
+            <VisualCanvas viewMode={viewMode} />
           </main>
 
           {/* Style Panel - Desktop always visible, Mobile toggleable */}

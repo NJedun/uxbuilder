@@ -739,6 +739,40 @@ export default function VisualStylePanel() {
           >
             Reset to Equal Widths
           </button>
+
+          {/* Mobile Column Widths */}
+          <div className="pt-3 mt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-gray-600">Mobile Column Widths</label>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">📱</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-2">Override widths for mobile/tablet views</p>
+            {Array.from({ length: props.columns || 2 }).map((_, index) => (
+              <div key={index} className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-gray-500 w-6">{index + 1}:</span>
+                <input
+                  type="text"
+                  value={(props.mobileColumnWidths || [])[index] || ''}
+                  onChange={(e) => {
+                    const newWidths = [...(props.mobileColumnWidths || [])];
+                    newWidths[index] = e.target.value;
+                    handlePropChange('mobileColumnWidths', newWidths);
+                  }}
+                  placeholder="e.g., 100%"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const columns = props.columns || 2;
+                handlePropChange('mobileColumnWidths', Array(columns).fill('100%'));
+              }}
+              className="w-full px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+            >
+              Set All to 100% (Stack)
+            </button>
+          </div>
         </>
       ))}
 
@@ -906,10 +940,17 @@ export default function VisualStylePanel() {
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          {renderSelectInput('Layout', 'layout', [
-            { value: 'vertical', label: 'Vertical' },
-            { value: 'horizontal', label: 'Horizontal' },
-          ], 'Select layout')}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Layout</label>
+            <select
+              value={props.layout || 'vertical'}
+              onChange={(e) => handlePropChange('layout', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="vertical">Vertical</option>
+              <option value="horizontal">Horizontal</option>
+            </select>
+          </div>
 
           <div className="pt-2 border-t border-gray-100">
             <label className="block text-xs font-medium text-gray-600 mb-2">Links</label>
@@ -1020,11 +1061,18 @@ export default function VisualStylePanel() {
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          {renderSelectInput('Layout', 'layout', [
-            { value: 'top', label: 'Icon on Top' },
-            { value: 'left', label: 'Icon on Left' },
-            { value: 'right', label: 'Icon on Right' },
-          ], 'Select layout')}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Layout</label>
+            <select
+              value={props.layout || 'top'}
+              onChange={(e) => handlePropChange('layout', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="top">Icon on Top</option>
+              <option value="left">Icon on Left</option>
+              <option value="right">Icon on Right</option>
+            </select>
+          </div>
         </>
       ))}
 
@@ -1097,6 +1145,33 @@ export default function VisualStylePanel() {
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* Button Variant */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-2">Variant</label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: 'primary', label: 'Primary', icon: '🔵' },
+                { value: 'secondary', label: 'Secondary', icon: '⚪' },
+                { value: 'outline', label: 'Outline', icon: '⭕' },
+                { value: 'ghost', label: 'Ghost', icon: '👻' },
+              ].map((variant) => (
+                <button
+                  key={variant.value}
+                  onClick={() => handlePropChange('variant', variant.value)}
+                  className={`px-3 py-2 text-xs rounded-lg border transition-all flex items-center justify-center gap-1.5 ${
+                    (props.variant || 'primary') === variant.value
+                      ? 'bg-blue-50 border-blue-300 text-blue-700 font-medium'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <span>{variant.icon}</span>
+                  {variant.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">URL</label>
             <input

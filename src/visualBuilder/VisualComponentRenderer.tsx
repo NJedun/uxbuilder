@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
+import type { ViewMode } from '../pages/VisualBuilder';
 
 interface VisualComponentRendererProps {
   component: VisualComponent;
   isSelected: boolean;
   onSelect: () => void;
   isNested?: boolean;
+  viewMode?: ViewMode;
 }
 
 interface ColumnStyle {
@@ -81,8 +84,15 @@ export default function VisualComponentRenderer({
   isSelected,
   onSelect,
   isNested = false,
+  viewMode = 'desktop',
 }: VisualComponentRendererProps) {
   const { deleteComponent, selectComponent, selectedComponentId, globalStyles } = useVisualBuilderStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Responsive helpers
+  const isMobile = viewMode === 'mobile';
+  const isTablet = viewMode === 'tablet';
+  const isCompact = isMobile || isTablet;
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,117 +112,199 @@ export default function VisualComponentRenderer({
 
     if (component.type === 'Header') {
       const navLinks = props.navLinks || [];
+      const navLinkColor = getStyle(styles.navLinkColor, 'navLinkColor') || '#ffffff';
 
       return (
         <header
           style={{
             display: 'flex',
+            flexDirection: 'column',
             backgroundColor: getStyle(styles.backgroundColor, 'headerBackgroundColor'),
-            padding: getStyle(styles.padding, 'headerPadding'),
-            justifyContent: getStyle(styles.justifyContent, 'headerJustifyContent') || 'space-between',
-            alignItems: getStyle(styles.alignItems, 'headerAlignItems') || 'center',
+            padding: isCompact ? '12px 16px' : getStyle(styles.padding, 'headerPadding'),
             maxWidth: styles.maxWidth || globalStyles.headerMaxWidth,
             margin: styles.margin,
             width: styles.width || '100%',
             boxSizing: 'border-box',
-            // Border styles
             borderWidth: getStyle(styles.borderWidth, 'headerBorderWidth'),
             borderStyle: getStyle(styles.borderStyle, 'headerBorderStyle'),
             borderColor: getStyle(styles.borderColor, 'headerBorderColor'),
           }}
         >
-          {/* Logo */}
-          {props.showLogo !== false && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              {props.logoImageUrl ? (
-                <img
-                  src={props.logoImageUrl}
-                  alt={props.logoText || 'Logo'}
-                  style={{
-                    height: styles.logoHeight || '32px',
-                    width: 'auto',
-                  }}
-                />
-              ) : (
-                <span
-                  style={{
-                    color: getStyle(styles.logoColor, 'logoColor'),
-                    fontSize: getStyle(styles.logoFontSize, 'logoFontSize'),
-                    fontWeight: getStyle(styles.logoFontWeight, 'logoFontWeight'),
-                  }}
-                >
-                  {props.logoText || 'Logo'}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Navigation Links + Divider + Language Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px' }}>
-            {/* Navigation Links */}
-            {props.showNavLinks !== false && navLinks.length > 0 && (
-              <nav
+          {/* Main Header Row */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            {/* Logo */}
+            {props.showLogo !== false && (
+              <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px',
+                  gap: '8px',
                 }}
               >
-                {navLinks.map((link: { text: string; url: string }, index: number) => (
-                  <a
-                    key={index}
-                    href={link.url}
-                    onClick={(e) => e.preventDefault()}
+                {props.logoImageUrl ? (
+                  <img
+                    src={props.logoImageUrl}
+                    alt={props.logoText || 'Logo'}
                     style={{
-                      color: getStyle(styles.navLinkColor, 'navLinkColor'),
+                      height: isCompact ? '28px' : (styles.logoHeight || '32px'),
+                      width: 'auto',
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      color: getStyle(styles.logoColor, 'logoColor'),
+                      fontSize: isCompact ? '18px' : getStyle(styles.logoFontSize, 'logoFontSize'),
+                      fontWeight: getStyle(styles.logoFontWeight, 'logoFontWeight'),
+                    }}
+                  >
+                    {props.logoText || 'Logo'}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Desktop Navigation */}
+            {!isCompact && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px' }}>
+                {props.showNavLinks !== false && navLinks.length > 0 && (
+                  <nav
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: getStyle(styles.navLinkGap, 'navLinkGap') || '32px',
+                    }}
+                  >
+                    {navLinks.map((link: { text: string; url: string }, index: number) => (
+                      <a
+                        key={index}
+                        href={link.url}
+                        onClick={(e) => e.preventDefault()}
+                        style={{
+                          color: navLinkColor,
+                          fontSize: getStyle(styles.navLinkFontSize, 'navLinkFontSize'),
+                          fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
+                          textDecoration: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {link.text}
+                      </a>
+                    ))}
+                  </nav>
+                )}
+
+                {props.showNavDivider && (
+                  <div
+                    style={{
+                      width: '1px',
+                      height: styles.navDividerHeight || '20px',
+                      backgroundColor: styles.navDividerColor || navLinkColor || '#cccccc',
+                      margin: styles.navDividerMargin || '0 8px',
+                    }}
+                  />
+                )}
+
+                {props.showLanguageSelector && props.languages && props.languages.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: navLinkColor,
                       fontSize: getStyle(styles.navLinkFontSize, 'navLinkFontSize'),
                       fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
-                      textDecoration: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    {link.text}
-                  </a>
-                ))}
-              </nav>
-            )}
-
-            {/* Vertical Divider */}
-            {props.showNavDivider && (
-              <div
-                style={{
-                  width: '1px',
-                  height: styles.navDividerHeight || '20px',
-                  backgroundColor: styles.navDividerColor || getStyle(styles.navLinkColor, 'navLinkColor') || '#cccccc',
-                  margin: styles.navDividerMargin || '0 8px',
-                }}
-              />
-            )}
-
-            {/* Language Selector */}
-            {props.showLanguageSelector && props.languages && props.languages.length > 0 && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: getStyle(styles.navLinkColor, 'navLinkColor'),
-                  fontSize: getStyle(styles.navLinkFontSize, 'navLinkFontSize'),
-                  fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
-                  cursor: 'pointer',
-                }}
-              >
-                <span>{props.selectedLanguage || props.languages[0]?.code}</span>
-                <span style={{ fontSize: '10px' }}>▼</span>
+                    <span>{props.selectedLanguage || props.languages[0]?.code}</span>
+                    <span style={{ fontSize: '10px' }}>▼</span>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Hamburger Menu Button (Mobile/Tablet) */}
+            {isCompact && (
+              <button
+                aria-label="Toggle navigation menu"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMobileMenuOpen(!mobileMenuOpen);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}
+              >
+                <span style={{ width: '20px', height: '2px', backgroundColor: navLinkColor, display: 'block', transition: 'transform 0.2s', transform: mobileMenuOpen ? 'rotate(45deg) translate(4px, 4px)' : 'none' }} />
+                <span style={{ width: '20px', height: '2px', backgroundColor: navLinkColor, display: 'block', opacity: mobileMenuOpen ? 0 : 1, transition: 'opacity 0.2s' }} />
+                <span style={{ width: '20px', height: '2px', backgroundColor: navLinkColor, display: 'block', transition: 'transform 0.2s', transform: mobileMenuOpen ? 'rotate(-45deg) translate(4px, -4px)' : 'none' }} />
+              </button>
+            )}
           </div>
+
+          {/* Mobile Navigation Dropdown */}
+          {isCompact && mobileMenuOpen && (
+            <nav
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                paddingTop: '16px',
+                borderTop: `1px solid ${navLinkColor}20`,
+                marginTop: '12px',
+              }}
+            >
+              {props.showNavLinks !== false && navLinks.map((link: { text: string; url: string }, index: number) => (
+                <a
+                  key={index}
+                  href={link.url}
+                  onClick={(e) => e.preventDefault()}
+                  style={{
+                    color: navLinkColor,
+                    fontSize: isMobile ? '14px' : '15px',
+                    fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                    padding: '4px 0',
+                  }}
+                >
+                  {link.text}
+                </a>
+              ))}
+
+              {props.showLanguageSelector && props.languages && props.languages.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: navLinkColor,
+                    fontSize: isMobile ? '14px' : '15px',
+                    fontWeight: getStyle(styles.navLinkFontWeight, 'navLinkFontWeight'),
+                    cursor: 'pointer',
+                    padding: '4px 0',
+                  }}
+                >
+                  <span>{props.selectedLanguage || props.languages[0]?.code}</span>
+                  <span style={{ fontSize: '10px' }}>▼</span>
+                </div>
+              )}
+            </nav>
+          )}
         </header>
       );
     }
@@ -353,8 +445,17 @@ export default function VisualComponentRenderer({
     if (component.type === 'Row') {
       const columns = props.columns || 2;
       const columnWidths = props.columnWidths || Array(columns).fill(`${100 / columns}%`);
+      const mobileColumnWidths = props.mobileColumnWidths || [];
       const columnStyles = props.columnStyles || [];
       const children = component.children || [];
+
+      // Determine which widths to use based on view mode
+      const getResponsiveWidth = (index: number) => {
+        if (isCompact && mobileColumnWidths[index]) {
+          return mobileColumnWidths[index];
+        }
+        return columnWidths[index] || `${100 / columns}%`;
+      };
 
       return (
         <div
@@ -382,7 +483,7 @@ export default function VisualComponentRenderer({
               key={index}
               columnIndex={index}
               children={children}
-              width={columnWidths[index] || `${100 / columns}%`}
+              width={getResponsiveWidth(index)}
               columnStyle={columnStyles[index] || {}}
               globalStyles={globalStyles}
             />
@@ -539,18 +640,63 @@ export default function VisualComponentRenderer({
     }
 
     if (component.type === 'Button') {
+      const variant = props.variant || 'primary';
+      const primaryBg = getStyle(styles.backgroundColor, 'buttonBackgroundColor') || '#4f46e5';
+      const primaryText = getStyle(styles.textColor, 'buttonTextColor') || '#ffffff';
+
+      // Get variant-specific styles
+      const getVariantStyles = () => {
+        switch (variant) {
+          case 'secondary':
+            return {
+              backgroundColor: '#6b7280',
+              color: '#ffffff',
+              borderWidth: '0',
+              borderStyle: 'solid',
+              borderColor: 'transparent',
+            };
+          case 'outline':
+            return {
+              backgroundColor: 'transparent',
+              color: primaryBg,
+              borderWidth: '2px',
+              borderStyle: 'solid',
+              borderColor: primaryBg,
+            };
+          case 'ghost':
+            return {
+              backgroundColor: 'transparent',
+              color: primaryBg,
+              borderWidth: '0',
+              borderStyle: 'solid',
+              borderColor: 'transparent',
+            };
+          case 'primary':
+          default:
+            return {
+              backgroundColor: primaryBg,
+              color: primaryText,
+              borderWidth: styles.borderWidth || '0',
+              borderStyle: styles.borderStyle || 'solid',
+              borderColor: styles.borderColor || 'transparent',
+            };
+        }
+      };
+
+      const variantStyles = getVariantStyles();
+
       const buttonElement = (
         <button
           style={{
-            backgroundColor: getStyle(styles.backgroundColor, 'buttonBackgroundColor'),
-            color: getStyle(styles.textColor, 'buttonTextColor'),
+            backgroundColor: variantStyles.backgroundColor,
+            color: variantStyles.color,
             padding: getStyle(styles.padding, 'buttonPadding'),
             borderRadius: getStyle(styles.borderRadius, 'buttonBorderRadius'),
             fontSize: getStyle(styles.fontSize, 'buttonFontSize'),
             fontWeight: getStyle(styles.fontWeight, 'buttonFontWeight'),
-            borderWidth: styles.borderWidth || '0',
-            borderStyle: styles.borderStyle || 'solid',
-            borderColor: styles.borderColor,
+            borderWidth: variantStyles.borderWidth,
+            borderStyle: variantStyles.borderStyle,
+            borderColor: variantStyles.borderColor,
             width: styles.width || 'auto',
             cursor: 'pointer',
             display: 'inline-block',

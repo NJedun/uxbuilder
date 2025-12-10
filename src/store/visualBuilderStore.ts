@@ -49,11 +49,29 @@ export interface GlobalStyles {
   navDividerHeight?: string;
   navDividerMargin?: string;
 
-  // Title defaults
+  // Title defaults (H1)
   titleColor?: string;
   titleFontSize?: string;
   titleFontWeight?: string;
   titleMarginBottom?: string;
+
+  // H2 defaults
+  h2Color?: string;
+  h2FontSize?: string;
+  h2FontWeight?: string;
+  h2MarginBottom?: string;
+
+  // H3 defaults
+  h3Color?: string;
+  h3FontSize?: string;
+  h3FontWeight?: string;
+  h3MarginBottom?: string;
+
+  // H4 defaults
+  h4Color?: string;
+  h4FontSize?: string;
+  h4FontWeight?: string;
+  h4MarginBottom?: string;
 
   // Subtitle/Text defaults
   subtitleColor?: string;
@@ -189,11 +207,29 @@ const defaultGlobalStyles: GlobalStyles = {
   navDividerHeight: '20px',
   navDividerMargin: '0 8px',
 
-  // Title defaults
+  // Title defaults (H1)
   titleColor: '#ffffff',
   titleFontSize: '42px',
   titleFontWeight: '700',
   titleMarginBottom: '20px',
+
+  // H2 defaults
+  h2Color: '#ffffff',
+  h2FontSize: '32px',
+  h2FontWeight: '700',
+  h2MarginBottom: '16px',
+
+  // H3 defaults
+  h3Color: '#ffffff',
+  h3FontSize: '24px',
+  h3FontWeight: '600',
+  h3MarginBottom: '12px',
+
+  // H4 defaults
+  h4Color: '#ffffff',
+  h4FontSize: '20px',
+  h4FontWeight: '600',
+  h4MarginBottom: '10px',
 
   // Subtitle/Text defaults
   subtitleColor: '#cccccc',

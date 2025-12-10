@@ -1,8 +1,13 @@
 import { useEffect } from 'react';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import VisualComponentRenderer from './VisualComponentRenderer';
+import type { ViewMode } from '../pages/VisualBuilder';
 
-export default function VisualCanvas() {
+interface VisualCanvasProps {
+  viewMode?: ViewMode;
+}
+
+export default function VisualCanvas({ viewMode = 'desktop' }: VisualCanvasProps) {
   const {
     components,
     selectComponent,
@@ -21,12 +26,32 @@ export default function VisualCanvas() {
     }
   };
 
+  // Get canvas width based on view mode
+  const getCanvasWidth = () => {
+    switch (viewMode) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+    }
+  };
+
+  const canvasWidth = getCanvasWidth();
+  const isResponsiveView = viewMode !== 'desktop';
+
   return (
-    <div
-      id="visual-builder-canvas"
-      className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg min-h-screen relative"
-      onClick={handleCanvasClick}
-    >
+    <div className="flex justify-center w-full">
+      <div
+        id="visual-builder-canvas"
+        className={`bg-white shadow-lg rounded-lg min-h-screen relative transition-all duration-300 ${
+          isResponsiveView ? 'border-2 border-gray-300' : ''
+        }`}
+        style={{
+          width: canvasWidth,
+          maxWidth: viewMode === 'desktop' ? '72rem' : canvasWidth,
+          minWidth: isResponsiveView ? canvasWidth : undefined,
+        }}
+        onClick={handleCanvasClick}
+      >
       {components.length === 0 ? (
         <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg m-8">
           <div className="text-center text-gray-400">
@@ -55,10 +80,12 @@ export default function VisualCanvas() {
               component={component}
               isSelected={selectedComponentId === component.id}
               onSelect={() => selectComponent(component.id)}
+              viewMode={viewMode}
             />
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
