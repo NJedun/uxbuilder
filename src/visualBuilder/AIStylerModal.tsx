@@ -8,94 +8,6 @@ interface AIStylerModalProps {
 
 type StyleMode = 'prompt' | 'image';
 
-const STYLE_PROMPT = `You are a UI stylist. Style this JSON by filling in customStyles and globalStyles with appropriate CSS values.
-
-RULES:
-1. Fill style values with colors, sizes, spacing based on the style description
-2. Keep structure, IDs unchanged
-3. Return ONLY valid JSON - no markdown, no explanation
-4. Use hex colors like #1a365d, #ffffff
-5. NEVER use shorthand CSS properties (margin, padding, border). ALWAYS use specific properties:
-   - Use marginTop, marginRight, marginBottom, marginLeft instead of margin
-   - Use paddingTop, paddingRight, paddingBottom, paddingLeft instead of padding
-   - Use borderWidth, borderStyle, borderColor instead of border`;
-
-const IMAGE_STYLE_PROMPT = `You are a UI design expert. Analyze this website screenshot and extract a complete style guide.
-
-Return ONLY a valid JSON object with these globalStyles (use hex colors, px values):
-{
-  "globalStyles": {
-    "headerBackgroundColor": "#...",
-    "headerPadding": "12px 40px",
-    "headerBorderWidth": "0",
-    "headerBorderStyle": "solid",
-    "headerBorderColor": "#...",
-    "logoColor": "#...",
-    "logoFontSize": "20px",
-    "logoFontWeight": "800",
-    "navLinkColor": "#...",
-    "navLinkFontSize": "14px",
-    "navLinkFontWeight": "500",
-    "navLinkGap": "24px",
-    "titleColor": "#...",
-    "titleFontSize": "32px",
-    "titleFontWeight": "700",
-    "titleMarginBottom": "16px",
-    "subtitleColor": "#...",
-    "subtitleFontSize": "16px",
-    "subtitleFontWeight": "400",
-    "subtitleMarginBottom": "24px",
-    "buttonBackgroundColor": "#...",
-    "buttonTextColor": "#...",
-    "buttonPadding": "14px 32px",
-    "buttonBorderRadius": "0px or 4px or 8px or 9999px",
-    "buttonFontSize": "14px",
-    "buttonFontWeight": "600",
-    "buttonBorderWidth": "0",
-    "buttonBorderStyle": "solid",
-    "buttonBorderColor": "#...",
-    "containerBackgroundColor": "#...",
-    "containerPadding": "40px",
-    "containerBorderRadius": "0px or 8px or 16px",
-    "rowGap": "24px",
-    "rowPadding": "40px",
-    "rowBackgroundColor": "#...",
-    "columnPadding": "16px",
-    "columnBorderRadius": "0px or 8px or 12px",
-    "columnBackgroundColor": "#...",
-    "footerBackgroundColor": "#...",
-    "footerPadding": "40px 60px",
-    "footerTextColor": "#...",
-    "linkColor": "#...",
-    "linkListLabelColor": "#...",
-    "linkListLabelFontSize": "12px",
-    "linkListLabelFontWeight": "700",
-    "linkListItemColor": "#...",
-    "linkListItemFontSize": "14px",
-    "iconBoxIconColor": "#...",
-    "iconBoxTitleColor": "#...",
-    "iconBoxDescriptionColor": "#...",
-    "dividerColor": "#...",
-    "dividerHeight": "1px or 2px"
-  }
-}
-
-EXTRACTION GUIDE - Look carefully at:
-1. CORNERS: Are elements rounded (8px, 12px, 16px) or sharp (0px)? Buttons fully rounded = 9999px
-2. SHADOWS: Note if cards/buttons have shadows (we'll use border colors to simulate)
-3. SPACING: Estimate padding/gaps - tight (12-16px), medium (24-32px), or spacious (40-60px)
-4. COLORS: Extract exact colors - backgrounds, text, buttons, borders, links
-5. TYPOGRAPHY: Bold headers (700-800), medium nav (500-600), light body (400)
-6. BORDERS: Check for subtle borders on cards, inputs, sections
-7. LAYOUT: Note column background colors if different from container
-
-IMPORTANT RULES:
-1. Extract ACTUAL colors from the image - use hex codes like #1a365d
-2. Return ONLY valid JSON - no markdown, no explanation
-3. Use ONLY the exact property names shown above
-
-Return ONLY the JSON.`;
-
 // Attempt to repair common JSON issues from AI responses
 function repairJson(jsonStr: string): string {
   let repaired = jsonStr;
@@ -190,10 +102,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
   const [mode, setMode] = useState<StyleMode>('prompt');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Azure OpenAI configuration from environment variables
-  const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
-  const azureEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
-  const apiVersion = '2024-12-01-preview';
+  // API routes for secure Azure OpenAI access
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -237,73 +146,50 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
     }
   };
 
-  // Text-only styling with Azure OpenAI
-  const callAzureText = async (userPrompt: string): Promise<string> => {
-    const deploymentName = 'gpt-5.1-chat';
-    const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
+  // Text-only styling via API route
+  const callStyleAPI = async (promptText: string, projectJson: string): Promise<string> => {
+    const response = await fetch('/api/ai-style', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
       },
       body: JSON.stringify({
-        messages: [
-          { role: 'system', content: STYLE_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        max_completion_tokens: 16000,
+        prompt: promptText,
+        projectJson,
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Azure OpenAI API error: ${response.status}`);
+      throw new Error(err.error || `API error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || '';
+    return data.content || '';
   };
 
-  // Vision-based style extraction with Azure OpenAI (using vision-capable model)
-  const callAzureVision = async (imageBase64: string): Promise<string> => {
-    const deploymentName = 'gpt-4o';
-    const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
+  // Vision-based style extraction via API route
+  const callVisionAPI = async (imageBase64: string): Promise<string> => {
+    const response = await fetch('/api/ai-vision', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': apiKey,
       },
       body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: IMAGE_STYLE_PROMPT },
-              {
-                type: 'image_url',
-                image_url: { url: imageBase64 },
-              },
-            ],
-          },
-        ],
-        max_completion_tokens: 4000,
+        image: imageBase64,
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Azure OpenAI Vision API error: ${response.status}`);
+      throw new Error(err.error || `API error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || '';
+    return data.content || '';
   };
 
   const handleStyleWithPrompt = async () => {
-    if (!apiKey.trim()) {
-      setError('Azure OpenAI API key not configured. Please set VITE_AZURE_OPENAI_KEY in .env file.');
-      return;
-    }
     if (!prompt.trim()) {
       setError('Please provide a style description');
       return;
@@ -320,8 +206,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
       setStatus('AI is styling...');
 
-      const userPrompt = `Style this layout JSON:\n${projectJson}\n\nStyle: ${prompt}`;
-      const responseText = await callAzureText(userPrompt);
+      const responseText = await callStyleAPI(prompt, projectJson);
 
       setStatus('Processing response...');
 
@@ -365,10 +250,6 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
   };
 
   const handleExtractFromImage = async () => {
-    if (!apiKey.trim()) {
-      setError('Azure OpenAI API key not configured. Please set VITE_AZURE_OPENAI_KEY in .env file.');
-      return;
-    }
     if (!referenceImage) {
       setError('Please upload a reference image');
       return;
@@ -380,7 +261,7 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
     try {
       setStatus('Extracting style guide...');
-      const responseText = await callAzureVision(referenceImage);
+      const responseText = await callVisionAPI(referenceImage);
 
       setStatus('Processing response...');
 

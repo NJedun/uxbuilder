@@ -1128,11 +1128,6 @@ function AIStylerModal({ isOpen, onClose, targetCategory }: AIStylerModalProps) 
   const [status, setStatus] = useState('');
   const [mode, setMode] = useState<'prompt' | 'image'>('image');
 
-  // Azure OpenAI configuration from environment variables
-  const apiKey = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
-  const azureEndpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
-  const apiVersion = '2024-12-01-preview';
-
   const targetInfo = targetCategory ? STYLE_CATEGORIES[targetCategory] : null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1238,10 +1233,6 @@ Return format:
   };
 
   const handleExtractFromImage = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter your Azure OpenAI API key');
-      return;
-    }
     if (!referenceImage) {
       setError('Please upload a reference image');
       return;
@@ -1253,35 +1244,25 @@ Return format:
 
     try {
       setStatus('Extracting styles...');
-      // Azure OpenAI endpoint for vision-capable model
-      const deploymentName = 'gpt-4o';
-      const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
+
+      const response = await fetch('/api/ai-vision', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'api-key': apiKey,
         },
         body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: buildPrompt() },
-                { type: 'image_url', image_url: { url: referenceImage } },
-              ],
-            },
-          ],
-          max_completion_tokens: 4000,
+          image: referenceImage,
+          customPrompt: buildPrompt(),
         }),
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error: ${response.status}`);
+        throw new Error(err.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const responseText = data.choices[0]?.message?.content || '';
+      const responseText = data.content || '';
 
       setStatus('Processing response...');
 
@@ -1317,10 +1298,6 @@ Return format:
   };
 
   const handleStyleWithPrompt = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter your Azure OpenAI API key');
-      return;
-    }
     if (!prompt.trim()) {
       setError('Please provide a style description');
       return;
@@ -1331,38 +1308,28 @@ Return format:
     setStatus('Generating styles...');
 
     try {
-      const systemPrompt = targetCategory && targetInfo
-        ? `You are a UI stylist. Generate CSS styles based on the description.
-           Focus on: ${targetInfo.label}
-           Properties to set: ${targetInfo.globalStyleKeys.join(', ')}
-           Return ONLY valid JSON with globalStyles object.`
-        : `You are a UI stylist. Generate a complete style guide based on the description.
-           Return ONLY valid JSON with globalStyles object containing colors, sizes, spacing, etc.`;
+      const fullPrompt = targetCategory && targetInfo
+        ? `Focus on: ${targetInfo.label}. Properties to set: ${targetInfo.globalStyleKeys.join(', ')}. ${prompt}`
+        : prompt;
 
-      // Azure OpenAI endpoint for text model
-      const deploymentName = 'gpt-5.1-chat';
-      const response = await fetch(`${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`, {
+      const response = await fetch('/api/ai-style', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'api-key': apiKey,
         },
         body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt },
-          ],
-          max_completion_tokens: 4000,
+          prompt: fullPrompt,
+          projectJson: JSON.stringify({ globalStyles: {} }),
         }),
       });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error: ${response.status}`);
+        throw new Error(err.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      const responseText = data.choices[0]?.message?.content || '';
+      const responseText = data.content || '';
 
       setStatus('Processing response...');
 
