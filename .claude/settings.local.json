@@ -6,7 +6,10 @@
       "Bash(cat:*)",
       "Bash(npm run dev:*)",
       "Bash(del \"c:\\Project\\uxBuilder\\src\\config\\firebase.ts\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(ls -la \"c:\\Project\\uxBuilder\\src\"\" 2>/dev/null || echo \"src directory structure \")",
+      "Bash(find:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
