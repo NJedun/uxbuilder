@@ -1,16 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const STYLE_PROMPT = `You are a professional UI/UX designer. Style the provided layout JSON based on the user's style description.
-
-IMPORTANT RULES:
-1. Return ONLY valid JSON - no explanations, no markdown
-2. Preserve ALL existing structure (ids, types, children)
-3. Only modify style-related properties: customStyles, globalStyles
-4. Use CSS-in-JS format (camelCase properties, string values)
-
-Return the complete styled JSON with:
-- globalStyles: Overall theme styles (colors, fonts, spacing)
-- components: Array with updated customStyles for each component`;
+import { STYLE_PROMPT, AZURE_CONFIG } from '../shared/prompts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST
@@ -19,9 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env.AZURE_OPENAI_KEY;
-  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
-  const apiVersion = '2024-12-01-preview';
-  const deploymentName = 'gpt-5.1-chat';
+  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || AZURE_CONFIG.defaultEndpoint;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'Azure OpenAI API key not configured' });
@@ -37,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userPrompt = `Style this layout JSON:\n${projectJson}\n\nStyle: ${prompt}`;
 
     const response = await fetch(
-      `${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`,
+      `${azureEndpoint}/openai/deployments/${AZURE_CONFIG.deploymentName}/chat/completions?api-version=${AZURE_CONFIG.apiVersion}`,
       {
         method: 'POST',
         headers: {

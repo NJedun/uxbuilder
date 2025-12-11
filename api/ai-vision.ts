@@ -1,49 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const IMAGE_STYLE_PROMPT = `Analyze this UI screenshot and extract a complete style guide. Return ONLY valid JSON with this exact structure:
-
-{
-  "globalStyles": {
-    "primaryColor": "#hex",
-    "secondaryColor": "#hex",
-    "backgroundColor": "#hex",
-    "textColor": "#hex",
-    "headingColor": "#hex",
-    "headingFontSize": "px value",
-    "headingFontWeight": "weight",
-    "paragraphFontSize": "px value",
-    "paragraphLineHeight": "value",
-    "buttonBackgroundColor": "#hex",
-    "buttonTextColor": "#hex",
-    "buttonPadding": "px values",
-    "buttonBorderRadius": "px value",
-    "buttonFontSize": "px value",
-    "buttonFontWeight": "weight",
-    "inputBackgroundColor": "#hex",
-    "inputBorderColor": "#hex",
-    "inputBorderRadius": "px value",
-    "inputPadding": "px values",
-    "inputFontSize": "px value",
-    "cardBackgroundColor": "#hex",
-    "cardBorderRadius": "px value",
-    "cardPadding": "px values",
-    "cardShadow": "shadow value",
-    "linkColor": "#hex",
-    "linkHoverColor": "#hex",
-    "navBackgroundColor": "#hex",
-    "navTextColor": "#hex",
-    "navPadding": "px values",
-    "footerBackgroundColor": "#hex",
-    "footerTextColor": "#hex",
-    "footerPadding": "px values",
-    "sectionPadding": "px values",
-    "containerMaxWidth": "px value",
-    "borderRadius": "px value",
-    "spacing": "px value"
-  }
-}
-
-Extract colors, sizes, and spacing from the visual design. Return ONLY the JSON, no explanations.`;
+import { IMAGE_STYLE_PROMPT, AZURE_CONFIG } from '../shared/prompts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST
@@ -52,9 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const apiKey = process.env.AZURE_OPENAI_KEY;
-  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || 'https://boris-m94gthfb-eastus2.cognitiveservices.azure.com';
-  const apiVersion = '2024-12-01-preview';
-  const deploymentName = 'gpt-4o';
+  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || AZURE_CONFIG.defaultEndpoint;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'Azure OpenAI API key not configured' });
@@ -70,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const promptText = customPrompt || IMAGE_STYLE_PROMPT;
 
     const response = await fetch(
-      `${azureEndpoint}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`,
+      `${azureEndpoint}/openai/deployments/${AZURE_CONFIG.deploymentName}/chat/completions?api-version=${AZURE_CONFIG.apiVersion}`,
       {
         method: 'POST',
         headers: {
