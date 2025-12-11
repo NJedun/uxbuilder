@@ -859,15 +859,7 @@ export default function VisualComponentRenderer({
                 transition: 'width 0.3s ease',
               }} />
             </div>
-            <div style={{
-              width: '24px',
-              textAlign: 'right',
-              color: getStyle(styles.valueColor, 'seedProductValueColor'),
-              fontSize: '14px',
-              fontWeight: '600',
-            }}>
-              {value}
-            </div>
+            
           </div>
         );
       };
