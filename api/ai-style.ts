@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { STYLE_PROMPT, AZURE_CONFIG } from '../shared/prompts';
+import { STYLE_PROMPT, AZURE_CONFIG } from '../shared/prompts.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST

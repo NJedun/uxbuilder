@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PDF_EXTRACT_PROMPT, AZURE_CONFIG } from '../shared/prompts';
+import { PDF_EXTRACT_PROMPT, AZURE_CONFIG } from '../shared/prompts.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

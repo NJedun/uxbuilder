@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
-import { STYLE_PROMPT, IMAGE_STYLE_PROMPT, PDF_EXTRACT_PROMPT, AZURE_CONFIG } from './shared/prompts.ts';
+import { STYLE_PROMPT, IMAGE_STYLE_PROMPT, PDF_EXTRACT_PROMPT, AZURE_CONFIG } from './shared/prompts.js';
 
 dotenv.config();
 
