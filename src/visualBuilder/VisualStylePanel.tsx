@@ -47,6 +47,10 @@ export default function VisualStylePanel() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
+  // Azure save state
+  const [isSavingToAzure, setIsSavingToAzure] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   // Find the selected component
   const findComponent = (id: string | null, componentList: any[]): any => {
     if (!id) return null;
@@ -1520,12 +1524,15 @@ export default function VisualStylePanel() {
             Note: Uploading a new PDF will replace existing product data (except hero image).
           </p>
 
-          {/* Export Product Data Button - only show if data was extracted (not default) */}
+          {/* Save to Azure Button - only show if data was extracted (not default) */}
           {props.seedProductData &&
            props.seedProductData.productName &&
            props.seedProductData.productName !== 'Product Name' && (
             <button
-              onClick={() => {
+              onClick={async () => {
+                setIsSavingToAzure(true);
+                setSaveStatus(null);
+
                 // Transform ratings array to object with label as key
                 const ratingsObj: Record<string, number> = {};
                 (props.seedProductData.ratings || []).forEach((r: SeedProductRating) => {
@@ -1548,7 +1555,7 @@ export default function VisualStylePanel() {
                   diseaseResistanceObj[a.label] = a.value;
                 });
 
-                const dataToExport = {
+                const dataToSave = {
                   name: props.seedProductData.productName,
                   description: props.seedProductData.description,
                   category: 'Soybean',
@@ -1560,25 +1567,52 @@ export default function VisualStylePanel() {
                     diseaseResistance: diseaseResistanceObj,
                   },
                 };
-                const json = JSON.stringify(dataToExport, null, 2);
-                const blob = new Blob([json], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                const fileName = (props.seedProductData.productName || 'seed-product')
-                  .replace(/[^a-z0-9]/gi, '_')
-                  .toLowerCase();
-                link.download = `${fileName}_data.json`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+
+                try {
+                  const response = await fetch('/api/seed-product', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSave),
+                  });
+
+                  if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Failed to save');
+                  }
+
+                  const result = await response.json();
+                  setSaveStatus({ type: 'success', message: `Saved! ID: ${result.rowKey}` });
+                } catch (err: any) {
+                  setSaveStatus({ type: 'error', message: err.message || 'Failed to save to Azure' });
+                } finally {
+                  setIsSavingToAzure(false);
+                }
               }}
-              className="w-full mt-3 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center justify-center gap-2"
+              disabled={isSavingToAzure}
+              className="w-full mt-3 px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>📥</span>
-              Export Product Data (JSON)
+              {isSavingToAzure ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <span>☁️</span>
+                  Save to Azure
+                </>
+              )}
             </button>
+          )}
+
+          {/* Save Status Message */}
+          {saveStatus && (
+            <p className={`text-xs mt-2 px-1 ${saveStatus.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+              {saveStatus.message}
+            </p>
           )}
         </>
       ))}
