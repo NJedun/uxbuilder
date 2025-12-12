@@ -337,8 +337,16 @@ const componentTemplates = [
   },
 ];
 
-export default function VisualComponentLibrary() {
-  const { addComponent, components, selectedComponentId } = useVisualBuilderStore();
+interface VisualComponentLibraryProps {
+  onAddComponent?: (component: VisualComponent) => void;
+  components?: VisualComponent[];
+}
+
+export default function VisualComponentLibrary({ onAddComponent: externalAddComponent, components: externalComponents }: VisualComponentLibraryProps = {}) {
+  const store = useVisualBuilderStore();
+  const addComponent = externalAddComponent || store.addComponent;
+  const components = externalComponents || store.components;
+  const selectedComponentId = store.selectedComponentId;
   const [targetColumn, setTargetColumn] = useState<number | null>(null);
 
   // Find all Row components to allow adding children to them

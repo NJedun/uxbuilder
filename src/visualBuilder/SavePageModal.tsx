@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
+import { PageType } from '../types/layout';
 
 interface PLPOption {
   rowKey: string;
@@ -8,12 +9,20 @@ interface PLPOption {
   partitionKey: string;
 }
 
+interface LayoutOption {
+  rowKey: string;
+  name: string;
+  partitionKey: string;
+  isDefault: boolean;
+}
+
 interface EditingPage {
   rowKey: string;
   partitionKey: string;
-  pageType: 'PLP' | 'PDP';
+  pageType: 'PLP' | 'PDP' | 'landingPage';
   slug: string;
   parentRowKey: string | null;
+  layoutRowKey: string | null;
   title: string;
   summary: string;
   category: string | null;
@@ -34,8 +43,10 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
   const [project, setProject] = useState(projectName || 'Farming');
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
-  const [category, setCategory] = useState(''); // If filled -> PLP
-  const [parentRowKey, setParentRowKey] = useState(''); // If filled -> PDP
+  const [pageType, setPageType] = useState<'PLP' | 'PDP' | 'landingPage'>('PDP');
+  const [category, setCategory] = useState(''); // For PLP
+  const [parentRowKey, setParentRowKey] = useState(''); // For PDP
+  const [layoutRowKey, setLayoutRowKey] = useState(''); // Selected layout
   const [isPublished, setIsPublished] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,26 +55,36 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
   const [plpOptions, setPlpOptions] = useState<PLPOption[]>([]);
   const [loadingPLPs, setLoadingPLPs] = useState(false);
 
+  // Available layouts
+  const [layoutOptions, setLayoutOptions] = useState<LayoutOption[]>([]);
+  const [loadingLayouts, setLoadingLayouts] = useState(false);
+
   // Populate form when editing
   useEffect(() => {
     if (isOpen && editingPage) {
       setProject(editingPage.partitionKey);
       setTitle(editingPage.title);
       setSummary(editingPage.summary || '');
+      setPageType(editingPage.pageType);
+      setLayoutRowKey(editingPage.layoutRowKey || '');
       if (editingPage.pageType === 'PLP') {
         setCategory(editingPage.category || '');
         setParentRowKey('');
-      } else {
+      } else if (editingPage.pageType === 'PDP') {
         setCategory('');
         setParentRowKey(editingPage.parentRowKey || '');
+      } else {
+        setCategory('');
+        setParentRowKey('');
       }
     }
   }, [isOpen, editingPage]);
 
-  // Fetch existing PLPs when modal opens
+  // Fetch existing PLPs and layouts when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchPLPs();
+      fetchLayouts();
     }
   }, [isOpen]);
 
@@ -84,18 +105,52 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
     }
   };
 
-  // Determine page type based on inputs
-  const getPageType = (): 'PLP' | 'PDP' => {
-    if (category && !parentRowKey) return 'PLP';
-    return 'PDP';
+  const fetchLayouts = async () => {
+    try {
+      setLoadingLayouts(true);
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/pages?type=layout`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const layouts = (data.data || []).map((l: any) => ({
+          rowKey: l.rowKey,
+          name: l.name || l.title,
+          partitionKey: l.partitionKey,
+          isDefault: l.isDefault || false,
+        }));
+        setLayoutOptions(layouts);
+
+        // Auto-select default layout for new pages
+        if (!isEditing && !layoutRowKey) {
+          const defaultLayout = layouts.find((l: LayoutOption) => l.isDefault);
+          if (defaultLayout) {
+            setLayoutRowKey(defaultLayout.rowKey);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch layouts:', err);
+    } finally {
+      setLoadingLayouts(false);
+    }
   };
 
-  // Generate slug
+  // Filter layouts by current project
+  const filteredLayouts = layoutOptions.filter(
+    (l) => l.partitionKey === project || !project
+  );
+
+  // Generate slug based on page type
   const generateSlug = (): string => {
     const titleSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-    if (getPageType() === 'PLP') {
+    if (pageType === 'PLP') {
       return category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
+    if (pageType === 'landingPage') {
+      return titleSlug;
     }
 
     // For PDP, combine parent slug with title
@@ -116,12 +171,12 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
       setError('Title is required');
       return;
     }
-    if (!category && !parentRowKey) {
-      setError('Either Category (for PLP) or Parent (for PDP) must be specified');
+    if (pageType === 'PLP' && !category) {
+      setError('Category is required for PLP pages');
       return;
     }
-    if (category && parentRowKey) {
-      setError('Cannot set both Category and Parent. Choose one.');
+    if (pageType === 'PDP' && !parentRowKey) {
+      setError('Parent category is required for PDP pages');
       return;
     }
 
@@ -134,12 +189,13 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
       if (isEditing && editingPage) {
         // Update existing page using PUT
         const pageData = {
-          pageType: getPageType(),
+          pageType,
           slug: editingPage.slug, // Keep original slug when editing
-          parentRowKey: parentRowKey || null,
+          parentRowKey: pageType === 'PDP' ? parentRowKey : null,
+          layoutRowKey: layoutRowKey || null,
           title: title.trim(),
           summary: summary.trim(),
-          category: category.trim() || null,
+          category: pageType === 'PLP' ? category.trim() : null,
           components: JSON.stringify(components),
           globalStyles: JSON.stringify(globalStyles),
           isPublished,
@@ -164,12 +220,13 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
         // Create new page using POST
         const pageData = {
           partitionKey: project.trim(),
-          pageType: getPageType(),
+          pageType,
           slug: generateSlug(),
-          parentRowKey: parentRowKey || null,
+          parentRowKey: pageType === 'PDP' ? parentRowKey : null,
+          layoutRowKey: layoutRowKey || null,
           title: title.trim(),
           summary: summary.trim(),
-          category: category.trim() || null,
+          category: pageType === 'PLP' ? category.trim() : null,
           components: JSON.stringify(components),
           globalStyles: JSON.stringify(globalStyles),
           isPublished,
@@ -201,8 +258,6 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
 
   if (!isOpen) return null;
 
-  const pageType = getPageType();
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -224,7 +279,7 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
         </div>
 
         {/* Body */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 text-sm">
               {error}
@@ -250,6 +305,73 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
               {isEditing ? 'Cannot change project when editing' : 'Groups pages together'}
             </p>
           </div>
+
+          {/* Page Type Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Page Type *
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setPageType('PLP')}
+                className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  pageType === 'PLP'
+                    ? 'bg-blue-100 border-blue-500 text-blue-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                PLP (Category)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageType('PDP')}
+                className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  pageType === 'PDP'
+                    ? 'bg-green-100 border-green-500 text-green-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                PDP (Product)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPageType('landingPage')}
+                className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                  pageType === 'landingPage'
+                    ? 'bg-purple-100 border-purple-500 text-purple-700'
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Landing Page
+              </button>
+            </div>
+          </div>
+
+          {/* Layout Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Layout
+            </label>
+            <select
+              value={layoutRowKey}
+              onChange={(e) => setLayoutRowKey(e.target.value)}
+              disabled={loadingLayouts}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">No layout (standalone page)</option>
+              {filteredLayouts.map((layout) => (
+                <option key={layout.rowKey} value={layout.rowKey}>
+                  {layout.name} {layout.isDefault ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              {layoutRowKey ? 'Page will use layout header/footer' : 'No shared header/footer'}
+            </p>
+          </div>
+
+          <hr className="my-4" />
 
           {/* Title */}
           <div>
@@ -279,82 +401,60 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
             />
           </div>
 
-          <hr className="my-4" />
-
-          <p className="text-sm text-gray-600 mb-2">
-            Choose <strong>one</strong> option below:
-          </p>
-
           {/* Category (for PLP) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category (creates a PLP)
-            </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                if (e.target.value) setParentRowKey(''); // Clear parent
-              }}
-              placeholder="e.g., Wheat"
-              disabled={!!parentRowKey}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                parentRowKey ? 'bg-gray-100 cursor-not-allowed' : ''
-              }`}
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              URL: /preview/{category.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'category-slug'}
-            </p>
-          </div>
-
-          <div className="text-center text-gray-400 text-sm">— OR —</div>
+          {pageType === 'PLP' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category Name *
+              </label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g., Wheat"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                URL: /preview/{category.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'category-slug'}
+              </p>
+            </div>
+          )}
 
           {/* Parent (for PDP) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Parent Category (creates a PDP)
-            </label>
-            <select
-              value={parentRowKey}
-              onChange={(e) => {
-                setParentRowKey(e.target.value);
-                if (e.target.value) setCategory(''); // Clear category
-              }}
-              disabled={!!category || loadingPLPs}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                category ? 'bg-gray-100 cursor-not-allowed' : ''
-              }`}
-            >
-              <option value="">Select a parent PLP...</option>
-              {plpOptions.map((plp) => (
-                <option key={plp.rowKey} value={plp.rowKey}>
-                  {plp.title} ({plp.partitionKey})
-                </option>
-              ))}
-            </select>
-            {parentRowKey && (
-              <p className="mt-1 text-xs text-gray-500">
-                URL: /preview/{generateSlug()}
-              </p>
-            )}
-          </div>
+          {pageType === 'PDP' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Parent Category *
+              </label>
+              <select
+                value={parentRowKey}
+                onChange={(e) => setParentRowKey(e.target.value)}
+                disabled={loadingPLPs}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a parent PLP...</option>
+                {plpOptions.map((plp) => (
+                  <option key={plp.rowKey} value={plp.rowKey}>
+                    {plp.title} ({plp.partitionKey})
+                  </option>
+                ))}
+              </select>
+              {parentRowKey && (
+                <p className="mt-1 text-xs text-gray-500">
+                  URL: /preview/{generateSlug()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Landing Page slug preview */}
+          {pageType === 'landingPage' && title && (
+            <p className="text-xs text-gray-500">
+              URL: /preview/{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
+            </p>
+          )}
 
           <hr className="my-4" />
-
-          {/* Page Type Indicator */}
-          <div className="flex items-center justify-between bg-gray-50 rounded-md p-3">
-            <span className="text-sm text-gray-600">Page Type:</span>
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                pageType === 'PLP'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-green-100 text-green-800'
-              }`}
-            >
-              {pageType === 'PLP' ? 'Category Page (PLP)' : 'Product Page (PDP)'}
-            </span>
-          </div>
 
           {/* Publish Toggle */}
           <div className="flex items-center gap-3">

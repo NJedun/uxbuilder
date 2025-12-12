@@ -238,6 +238,7 @@ interface VisualBuilderState {
 }
 
 const STORAGE_KEY = 'visualBuilder_project';
+const PROJECT_NAME_KEY = 'uxBuilder_lastProjectName'; // Shared across Visual Builder and Layout Editor
 const VERSION = '1.0.0';
 
 const defaultGlobalStyles: GlobalStyles = {
@@ -366,7 +367,7 @@ const defaultGlobalStyles: GlobalStyles = {
 };
 
 export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
-  projectName: 'Untitled Project',
+  projectName: localStorage.getItem(PROJECT_NAME_KEY) || 'Untitled Project',
   components: [],
   globalStyles: { ...defaultGlobalStyles },
   selectedComponentId: null,
@@ -374,6 +375,10 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   setProjectName: (name: string) => {
     set({ projectName: name });
+    // Save project name separately for persistence across sessions
+    if (name && name !== 'Untitled Project') {
+      localStorage.setItem(PROJECT_NAME_KEY, name);
+    }
     get().saveToLocalStorage();
   },
 
@@ -580,12 +585,17 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   },
 
   importProject: (data: VisualProjectData) => {
+    const name = data.name || 'Untitled Project';
     set({
-      projectName: data.name || 'Untitled Project',
+      projectName: name,
       components: data.components || [],
       globalStyles: data.globalStyles || { ...defaultGlobalStyles },
       selectedComponentId: null,
     });
+    // Save project name separately for persistence
+    if (name && name !== 'Untitled Project') {
+      localStorage.setItem(PROJECT_NAME_KEY, name);
+    }
     get().saveToLocalStorage();
   },
 

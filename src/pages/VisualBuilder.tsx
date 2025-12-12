@@ -15,9 +15,10 @@ export type ViewMode = 'desktop' | 'tablet' | 'mobile';
 interface EditingPage {
   rowKey: string;
   partitionKey: string;
-  pageType: 'PLP' | 'PDP';
+  pageType: 'PLP' | 'PDP' | 'landingPage';
   slug: string;
   parentRowKey: string | null;
+  layoutRowKey: string | null;
   title: string;
   summary: string;
   category: string | null;
@@ -36,6 +37,14 @@ export default function VisualBuilder() {
   const [searchParams] = useSearchParams();
   const [editingPage, setEditingPage] = useState<EditingPage | null>(null);
   const [loadingPage, setLoadingPage] = useState(false);
+
+  // Sync project name from localStorage on mount (in case it was changed in Layout Editor)
+  useEffect(() => {
+    const savedProjectName = localStorage.getItem('uxBuilder_lastProjectName');
+    if (savedProjectName && savedProjectName !== projectName) {
+      setProjectName(savedProjectName);
+    }
+  }, []);
 
   // Load page data if editing
   useEffect(() => {
@@ -77,6 +86,7 @@ export default function VisualBuilder() {
           pageType: page.pageType,
           slug: page.slug,
           parentRowKey: page.parentRowKey,
+          layoutRowKey: page.layoutRowKey || null,
           title: page.title,
           summary: page.summary || '',
           category: page.category,
@@ -412,6 +422,8 @@ export default function VisualBuilder() {
               Global Styles
             </button>
 
+            
+
             <Link
               to="/styleguide"
               className="px-3 sm:px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
@@ -428,7 +440,12 @@ export default function VisualBuilder() {
             </button>
 
             <div className="hidden sm:block h-6 w-px bg-gray-300" />
-
+            <Link
+              to="/layouts"
+              className="px-3 sm:px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+            >
+              Layouts
+            </Link>
             <Link
               to="/pages"
               className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"

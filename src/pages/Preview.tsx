@@ -3,18 +3,30 @@ import { useParams, Link } from 'react-router-dom';
 import { VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
 import VisualComponentRenderer from '../visualBuilder/VisualComponentRenderer';
 import { ProductGrid } from '../visualBuilder/components';
+import { SectionStyles, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 
 interface PageData {
   rowKey: string;
   partitionKey: string;
-  pageType: 'PLP' | 'PDP';
+  pageType: 'PLP' | 'PDP' | 'landingPage';
   slug: string;
   parentRowKey: string | null;
+  layoutRowKey: string | null;
   title: string;
   summary: string;
   components: string;
   globalStyles: string;
   isPublished: boolean;
+}
+
+interface LayoutData {
+  rowKey: string;
+  headerComponents: string;
+  footerComponents: string;
+  headerStyles: string;
+  bodyStyles: string;
+  footerStyles: string;
+  globalStyles: string;
 }
 
 interface ChildPage {
@@ -30,9 +42,11 @@ interface ParentPage {
   slug: string;
 }
 
+
 export default function Preview() {
   const { '*': slug } = useParams(); // Catch-all for nested slugs like wheat/product1
   const [page, setPage] = useState<PageData | null>(null);
+  const [layout, setLayout] = useState<LayoutData | null>(null);
   const [childPages, setChildPages] = useState<ChildPage[]>([]);
   const [parentPage, setParentPage] = useState<ParentPage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +62,7 @@ export default function Preview() {
     try {
       setLoading(true);
       setError(null);
+      setLayout(null);
 
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
       const response = await fetch(`${baseUrl}/api/pages/by-slug?slug=${encodeURIComponent(pageSlug)}`);
@@ -61,6 +76,11 @@ export default function Preview() {
 
       const data = await response.json();
       setPage(data.data);
+
+      // If page has a layout, fetch it
+      if (data.data.layoutRowKey) {
+        fetchLayout(data.data.partitionKey, data.data.layoutRowKey);
+      }
 
       // If this is a PLP, fetch child PDPs
       if (data.data.pageType === 'PLP') {
@@ -78,6 +98,20 @@ export default function Preview() {
       setError(err instanceof Error ? err.message : 'Failed to load page');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLayout = async (project: string, layoutRowKey: string) => {
+    try {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/pages/${project}/${layoutRowKey}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setLayout(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch layout:', err);
     }
   };
 
@@ -152,8 +186,45 @@ export default function Preview() {
     console.error('Failed to parse page data:', err);
   }
 
+  // Parse layout data if available
+  let headerComponents: VisualComponent[] = [];
+  let footerComponents: VisualComponent[] = [];
+  let headerStyles: SectionStyles = { ...defaultHeaderStyles };
+  let bodyStyles: SectionStyles = { ...defaultBodyStyles };
+  let footerStyles: SectionStyles = { ...defaultFooterStyles };
+  let layoutGlobalStyles: GlobalStyles = {} as GlobalStyles;
+
+  if (layout) {
+    try {
+      headerComponents = JSON.parse(layout.headerComponents || '[]');
+      footerComponents = JSON.parse(layout.footerComponents || '[]');
+      // Handle empty strings for styles
+      const parsedHeaderStyles = layout.headerStyles && layout.headerStyles !== '' ? JSON.parse(layout.headerStyles) : {};
+      const parsedBodyStyles = layout.bodyStyles && layout.bodyStyles !== '' ? JSON.parse(layout.bodyStyles) : {};
+      const parsedFooterStyles = layout.footerStyles && layout.footerStyles !== '' ? JSON.parse(layout.footerStyles) : {};
+      headerStyles = { ...defaultHeaderStyles, ...parsedHeaderStyles };
+      bodyStyles = { ...defaultBodyStyles, ...parsedBodyStyles };
+      footerStyles = { ...defaultFooterStyles, ...parsedFooterStyles };
+      layoutGlobalStyles = JSON.parse(layout.globalStyles || '{}');
+      // Merge layout global styles with page global styles (page takes precedence)
+      globalStyles = { ...layoutGlobalStyles, ...globalStyles };
+    } catch (err) {
+      console.error('Failed to parse layout data:', err);
+    }
+  }
+
   // Check if any component is a ProductGrid placeholder
   const hasProductGrid = components.some((c) => c.type === 'ProductGrid');
+
+  // Get page type label
+  const getPageTypeLabel = () => {
+    switch (page.pageType) {
+      case 'PLP': return 'Category Page';
+      case 'PDP': return 'Product Page';
+      case 'landingPage': return 'Landing Page';
+      default: return page.pageType;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -162,13 +233,17 @@ export default function Preview() {
         <div className="flex items-center gap-4">
           <span className="font-medium">Preview Mode</span>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-300">
-            {page.pageType === 'PLP' ? 'Category Page' : 'Product Page'}
-          </span>
+          <span className="text-gray-300">{getPageTypeLabel()}</span>
           <span className="text-gray-400">|</span>
           <code className="text-gray-300 bg-gray-800 px-2 py-0.5 rounded">
             /{page.slug}
           </code>
+          {layout && (
+            <>
+              <span className="text-gray-400">|</span>
+              <span className="text-purple-400">Layout applied</span>
+            </>
+          )}
           {/* Show parent PLP link for PDP pages */}
           {page.pageType === 'PDP' && parentPage && (
             <>
@@ -199,44 +274,121 @@ export default function Preview() {
         </div>
       </div>
 
-      {/* Page Content */}
-      <div>
-        {components.map((component) => {
-          // Special handling for ProductGrid - inject child pages
-          if (component.type === 'ProductGrid' && page.pageType === 'PLP') {
-            return (
-              <ProductGrid
+      {/* Layout Header */}
+      {headerComponents.length > 0 && (
+        <header
+          style={{
+            maxWidth: headerStyles.maxWidth || '100%',
+            margin: headerStyles.margin || '0',
+            backgroundColor: headerStyles.backgroundColor || 'transparent',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: headerStyles.contentMaxWidth || '100%',
+              margin: headerStyles.contentMargin || '0',
+              padding: headerStyles.padding || '0',
+              minHeight: headerStyles.minHeight || undefined,
+            }}
+          >
+            {headerComponents.map((component) => (
+              <VisualComponentRenderer
                 key={component.id}
-                props={{ ...component.props, parentRowKey: page.rowKey }}
-                styles={component.customStyles || {}}
-                globalStyles={globalStyles}
-                childPages={childPages}
+                component={component}
+                isSelected={false}
+                onSelect={() => {}}
+                viewMode="desktop"
+                readOnly={true}
+              />
+            ))}
+          </div>
+        </header>
+      )}
+
+      {/* Page Content (Body) */}
+      <main
+        style={{
+          maxWidth: layout ? (bodyStyles.maxWidth || '100%') : undefined,
+          margin: layout ? (bodyStyles.margin || '0') : undefined,
+          backgroundColor: bodyStyles.backgroundColor || 'transparent',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: layout ? (bodyStyles.contentMaxWidth || '100%') : undefined,
+            margin: layout ? (bodyStyles.contentMargin || '0') : undefined,
+            padding: layout ? (bodyStyles.padding || '0') : undefined,
+            minHeight: layout ? (bodyStyles.minHeight || undefined) : undefined,
+          }}
+        >
+          {components.map((component) => {
+            // Special handling for ProductGrid - inject child pages
+            if (component.type === 'ProductGrid' && page.pageType === 'PLP') {
+              return (
+                <ProductGrid
+                  key={component.id}
+                  props={{ ...component.props, parentRowKey: page.rowKey }}
+                  styles={component.customStyles || {}}
+                  globalStyles={globalStyles}
+                  childPages={childPages}
+                />
+              );
+            }
+
+            return (
+              <VisualComponentRenderer
+                key={component.id}
+                component={component}
+                isSelected={false}
+                onSelect={() => {}}
+                viewMode="desktop"
+                readOnly={true}
               />
             );
-          }
+          })}
 
-          return (
-            <VisualComponentRenderer
-              key={component.id}
-              component={component}
-              isSelected={false}
-              onSelect={() => {}}
-              viewMode="desktop"
-              readOnly={true}
+          {/* If PLP but no ProductGrid component, show child pages at bottom */}
+          {page.pageType === 'PLP' && !hasProductGrid && childPages.length > 0 && (
+            <ProductGrid
+              props={{ parentRowKey: page.rowKey }}
+              styles={{}}
+              globalStyles={globalStyles}
+              childPages={childPages}
             />
-          );
-        })}
+          )}
+        </div>
+      </main>
 
-        {/* If PLP but no ProductGrid component, show child pages at bottom */}
-        {page.pageType === 'PLP' && !hasProductGrid && childPages.length > 0 && (
-          <ProductGrid
-            props={{ parentRowKey: page.rowKey }}
-            styles={{}}
-            globalStyles={globalStyles}
-            childPages={childPages}
-          />
-        )}
-      </div>
+      {/* Layout Footer */}
+      {footerComponents.length > 0 && (
+        <footer
+          style={{
+            maxWidth: footerStyles.maxWidth || '100%',
+            margin: footerStyles.margin || '0',
+            backgroundColor: footerStyles.backgroundColor || 'transparent',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: footerStyles.contentMaxWidth || '100%',
+              margin: footerStyles.contentMargin || '0',
+              padding: footerStyles.padding || '0',
+              minHeight: footerStyles.minHeight || undefined,
+            }}
+          >
+            {footerComponents.map((component) => (
+              <VisualComponentRenderer
+                key={component.id}
+                component={component}
+                isSelected={false}
+                onSelect={() => {}}
+                viewMode="desktop"
+                readOnly={true}
+              />
+            ))}
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
