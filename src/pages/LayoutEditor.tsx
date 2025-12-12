@@ -457,7 +457,9 @@ export default function LayoutEditor() {
               >
                 {displayHeaderComponents.length === 0 ? (
                   <div className="bg-gray-100 p-8 text-center text-gray-400 border-b">
-                    <div className="text-2xl mb-2">📋</div>
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <div>Click here and add components for the header</div>
                   </div>
                 ) : (
@@ -497,7 +499,9 @@ export default function LayoutEditor() {
                 className="border-2 border-dashed border-gray-300 bg-white/50 flex items-center justify-center"
               >
                 <div className="text-center text-gray-400">
-                  <div className="text-3xl mb-2">📝</div>
+                  <svg className="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                   <div className="font-medium">Content Zone</div>
                   <div className="text-sm">Page content will appear here</div>
                 </div>
@@ -532,7 +536,9 @@ export default function LayoutEditor() {
               >
                 {displayFooterComponents.length === 0 ? (
                   <div className="bg-gray-100 p-8 text-center text-gray-400 border-t">
-                    <div className="text-2xl mb-2">📋</div>
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     <div>Click here and add components for the footer</div>
                   </div>
                 ) : (

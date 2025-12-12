@@ -241,7 +241,7 @@ export default function Preview() {
           {layout && (
             <>
               <span className="text-gray-400">|</span>
-              <span className="text-purple-400">Layout applied</span>
+              <span className="text-gray-300">Layout applied</span>
             </>
           )}
           {/* Show parent PLP link for PDP pages */}
@@ -267,7 +267,7 @@ export default function Preview() {
           </Link>
           <Link
             to={`/visual-builder?edit=${page.rowKey}&project=${page.partitionKey}`}
-            className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700"
+            className="px-3 py-1 bg-gray-600 rounded hover:bg-gray-700"
           >
             Edit Page
           </Link>

@@ -106,6 +106,7 @@ export default function VisualBuilder() {
   const [showSavePageModal, setShowSavePageModal] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showNewDropdown, setShowNewDropdown] = useState(false);
+  const [showStylesDropdown, setShowStylesDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -256,7 +257,7 @@ export default function VisualBuilder() {
         {/* Toolbar */}
         <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-800">Visual Builder</h1>
+            <Link to="/" className="text-lg sm:text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors">Visual AI Builder</Link>
             <input
               type="text"
               value={projectName}
@@ -325,7 +326,10 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span>📁</span> New Project
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      New Project
                     </button>
                     <button
                       onClick={() => {
@@ -334,7 +338,10 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span>📄</span> New Page
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      New Page
                     </button>
                     <button
                       onClick={() => {
@@ -343,8 +350,22 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span>🧹</span> Clear Canvas
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Clear Canvas
                     </button>
+                    <div className="border-t border-gray-100 my-1" />
+                    <label
+                      htmlFor="import-input"
+                      onClick={() => setShowNewDropdown(false)}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Import JSON
+                    </label>
                   </div>
                 </>
               )}
@@ -358,18 +379,12 @@ export default function VisualBuilder() {
               className="hidden"
               id="import-input"
             />
-            <label
-              htmlFor="import-input"
-              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors font-medium text-xs sm:text-sm cursor-pointer whitespace-nowrap"
-            >
-              Import
-            </label>
 
             {/* Export Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
-                className="px-3 sm:px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+                className="px-3 sm:px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
               >
                 Export
                 <svg className={`w-4 h-4 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -390,7 +405,10 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span className="text-green-500">📄</span> JSON
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      JSON
                     </button>
                     <button
                       onClick={() => {
@@ -399,7 +417,10 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span className="text-purple-500">🖼️</span> PNG
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      PNG
                     </button>
                     <button
                       onClick={() => {
@@ -408,41 +429,77 @@ export default function VisualBuilder() {
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
-                      <span className="text-orange-500">📑</span> PDF
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      PDF
                     </button>
                   </div>
                 </>
               )}
             </div>
 
-            <button
-              onClick={() => setShowGlobalStyles(true)}
-              className="px-3 sm:px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              Global Styles
-            </button>
-
-            
-
-            <Link
-              to="/styleguide"
-              className="px-3 sm:px-4 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              Style Guide
-            </Link>
-
-            <button
-              onClick={() => setShowAIStyler(true)}
-              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-md hover:from-purple-600 hover:to-pink-600 transition-all font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
-            >
-              <span>✨</span>
-              Style with AI
-            </button>
+            {/* Styles Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowStylesDropdown(!showStylesDropdown)}
+                className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+              >
+                Styles
+                <svg className={`w-4 h-4 transition-transform ${showStylesDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showStylesDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowStylesDropdown(false)}
+                  />
+                  <div className="absolute top-full right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                    <button
+                      onClick={() => {
+                        setShowGlobalStyles(true);
+                        setShowStylesDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                      Global Styles
+                    </button>
+                    <Link
+                      to="/styleguide"
+                      onClick={() => setShowStylesDropdown(false)}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Style Guide
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowAIStyler(true);
+                        setShowStylesDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Style with AI
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <div className="hidden sm:block h-6 w-px bg-gray-300" />
             <Link
               to="/layouts"
-              className="px-3 sm:px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+              className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
             >
               Layouts
             </Link>
@@ -455,7 +512,7 @@ export default function VisualBuilder() {
 
             <button
               onClick={() => setShowSavePageModal(true)}
-              className="px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+              className="px-3 sm:px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -505,13 +562,13 @@ export default function VisualBuilder() {
           <div className="lg:hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
             <button
               onClick={() => setShowComponentLibrary(!showComponentLibrary)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg shadow-lg hover:bg-gray-800 transition-colors text-sm font-medium"
             >
               {showComponentLibrary ? 'Hide' : 'Show'} Components
             </button>
             <button
               onClick={() => setShowStylePanel(!showStylePanel)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-lg hover:bg-gray-700 transition-colors text-sm font-medium"
             >
               {showStylePanel ? 'Hide' : 'Show'} Styles
             </button>

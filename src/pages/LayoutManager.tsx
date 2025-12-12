@@ -133,7 +133,7 @@ export default function LayoutManager() {
               </select>
               <Link
                 to="/layout-editor"
-                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-sm"
+                className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
               >
                 + Create Layout
               </Link>
@@ -146,7 +146,7 @@ export default function LayoutManager() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
             <span className="ml-3 text-gray-600">Loading layouts...</span>
           </div>
         ) : error ? (
@@ -175,14 +175,16 @@ export default function LayoutManager() {
 
               {filteredLayouts.length === 0 ? (
                 <div className="px-6 py-12 text-center">
-                  <div className="text-gray-400 text-5xl mb-4">🎨</div>
+                  <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                  </svg>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No layouts yet</h3>
                   <p className="text-gray-500 mb-4">
                     Layouts define the header, footer, and content area for your pages.
                   </p>
                   <Link
                     to="/layout-editor"
-                    className="inline-flex items-center px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-sm"
+                    className="inline-flex items-center px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
                   >
                     Create your first layout
                   </Link>
