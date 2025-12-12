@@ -350,10 +350,9 @@ app.get('/api/pages', async (req, res) => {
     const { type, parentRowKey, project } = req.query;
 
     const entities = [];
-    let filter = '';
 
-    // Build filter query
-    const filters = [];
+    // Build filter query - always exclude SeedProduct partition
+    const filters = ["PartitionKey ne 'SeedProduct'"];
     if (type) {
       filters.push(`pageType eq '${type}'`);
     }
@@ -364,11 +363,8 @@ app.get('/api/pages', async (req, res) => {
       filters.push(`PartitionKey eq '${project}'`);
     }
 
-    if (filters.length > 0) {
-      filter = filters.join(' and ');
-    }
-
-    const queryOptions = filter ? { filter } : {};
+    const filter = filters.join(' and ');
+    const queryOptions = { filter };
     const queryResults = tableClient.listEntities({ queryOptions });
 
     for await (const entity of queryResults) {
