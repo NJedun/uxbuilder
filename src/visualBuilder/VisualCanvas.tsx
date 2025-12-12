@@ -49,7 +49,7 @@ export default function VisualCanvas({ viewMode = 'desktop', previewLayout }: Vi
         }`}
         style={{
           width: canvasWidth,
-          maxWidth: viewMode === 'desktop' ? '72rem' : canvasWidth,
+          maxWidth: viewMode === 'desktop' ? '1500px' : canvasWidth,
           minWidth: isResponsiveView ? canvasWidth : undefined,
         }}
         onClick={handleCanvasClick}

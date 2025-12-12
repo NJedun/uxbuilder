@@ -4,3 +4,4 @@ export { default as ButtonComponent } from './ButtonComponent';
 export { default as TextComponent } from './TextComponent';
 export { default as ImageComponent } from './ImageComponent';
 export { default as Divider } from './Divider';
+export { default as Heading } from './Heading';

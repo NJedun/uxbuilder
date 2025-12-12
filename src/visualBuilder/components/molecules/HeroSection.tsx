@@ -91,35 +91,39 @@ export default function HeroSection({ props, styles, globalStyles, getStyle }: H
       }}
     >
       {/* Title */}
-      <h1
-        style={{
-          color: getStyle(styles.titleColor, 'titleColor'),
-          fontSize: getStyle(styles.titleFontSize, 'titleFontSize'),
-          fontWeight: getStyle(styles.titleFontWeight, 'titleFontWeight'),
-          marginBottom: getStyle(styles.titleMarginBottom, 'titleMarginBottom'),
-          maxWidth: styles.titleMaxWidth,
-          margin: styles.textAlign === 'center' ? '0 auto' : 0,
-          marginBlockEnd: getStyle(styles.titleMarginBottom, 'titleMarginBottom'),
-        }}
-      >
-        {props.title || 'Welcome to Our Website'}
-      </h1>
+      {props.title && (
+        <h1
+          style={{
+            color: getStyle(styles.titleColor, 'titleColor'),
+            fontSize: getStyle(styles.titleFontSize, 'titleFontSize'),
+            fontWeight: getStyle(styles.titleFontWeight, 'titleFontWeight'),
+            marginBottom: getStyle(styles.titleMarginBottom, 'titleMarginBottom'),
+            maxWidth: styles.titleMaxWidth,
+            margin: styles.textAlign === 'center' ? '0 auto' : 0,
+            marginBlockEnd: getStyle(styles.titleMarginBottom, 'titleMarginBottom'),
+          }}
+        >
+          {props.title}
+        </h1>
+      )}
 
       {/* Subtitle */}
-      <p
-        style={{
-          color: getStyle(styles.subtitleColor, 'subtitleColor'),
-          fontSize: getStyle(styles.subtitleFontSize, 'subtitleFontSize'),
-          fontWeight: getStyle(styles.subtitleFontWeight, 'subtitleFontWeight'),
-          marginBottom: getStyle(styles.subtitleMarginBottom, 'subtitleMarginBottom'),
-          maxWidth: styles.subtitleMaxWidth || '600px',
-          margin: styles.textAlign === 'center' ? '0 auto' : 0,
-          marginBlockEnd: getStyle(styles.subtitleMarginBottom, 'subtitleMarginBottom'),
-          whiteSpace: 'pre-line',
-        }}
-      >
-        {props.subtitle || 'This is a paragraph of text that provides information to the reader.'}
-      </p>
+      {props.subtitle && (
+        <p
+          style={{
+            color: getStyle(styles.subtitleColor, 'subtitleColor'),
+            fontSize: getStyle(styles.subtitleFontSize, 'subtitleFontSize'),
+            fontWeight: getStyle(styles.subtitleFontWeight, 'subtitleFontWeight'),
+            marginBottom: getStyle(styles.subtitleMarginBottom, 'subtitleMarginBottom'),
+            maxWidth: styles.subtitleMaxWidth || '600px',
+            margin: styles.textAlign === 'center' ? '0 auto' : 0,
+            marginBlockEnd: getStyle(styles.subtitleMarginBottom, 'subtitleMarginBottom'),
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {props.subtitle}
+        </p>
+      )}
 
       {/* Button */}
       {props.showButton !== false && (

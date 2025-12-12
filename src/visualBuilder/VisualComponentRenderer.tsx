@@ -13,8 +13,10 @@ import {
   ButtonComponent,
   Divider,
   FooterComponent,
+  FooterAllegiant,
   SeedProduct,
   ProductGrid,
+  Heading,
 } from './components';
 
 interface VisualComponentRendererProps {
@@ -151,6 +153,16 @@ export default function VisualComponentRenderer({
           />
         );
 
+      case 'Heading':
+        return (
+          <Heading
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+            getStyle={getStyle}
+          />
+        );
+
       case 'Text':
         return (
           <TextComponent
@@ -187,6 +199,17 @@ export default function VisualComponentRenderer({
             props={props}
             styles={styles}
             globalStyles={globalStyles}
+            getStyle={getStyle}
+          />
+        );
+
+      case 'FooterAllegiant':
+        return (
+          <FooterAllegiant
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+            viewMode={viewMode}
             getStyle={getStyle}
           />
         );

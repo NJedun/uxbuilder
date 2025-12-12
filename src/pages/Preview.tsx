@@ -287,6 +287,9 @@ export default function Preview() {
             maxWidth: headerStyles.maxWidth || '100%',
             margin: headerStyles.margin || '0',
             backgroundColor: headerStyles.backgroundColor || 'transparent',
+            borderBottomWidth: headerStyles.borderBottomWidth || undefined,
+            borderBottomStyle: (headerStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+            borderBottomColor: headerStyles.borderBottomColor || undefined,
           }}
         >
           <div
@@ -317,6 +320,9 @@ export default function Preview() {
           maxWidth: layout ? (bodyStyles.maxWidth || '100%') : undefined,
           margin: layout ? (bodyStyles.margin || '0') : undefined,
           backgroundColor: bodyStyles.backgroundColor || 'transparent',
+          borderBottomWidth: bodyStyles.borderBottomWidth || undefined,
+          borderBottomStyle: (bodyStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+          borderBottomColor: bodyStyles.borderBottomColor || undefined,
         }}
       >
         <div
@@ -372,6 +378,9 @@ export default function Preview() {
             maxWidth: footerStyles.maxWidth || '100%',
             margin: footerStyles.margin || '0',
             backgroundColor: footerStyles.backgroundColor || 'transparent',
+            borderBottomWidth: footerStyles.borderBottomWidth || undefined,
+            borderBottomStyle: (footerStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+            borderBottomColor: footerStyles.borderBottomColor || undefined,
           }}
         >
           <div

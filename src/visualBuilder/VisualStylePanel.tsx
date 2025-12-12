@@ -40,6 +40,8 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
     linkListStyles: false,
     iconBoxContent: true,
     iconBoxStyles: false,
+    headingContent: true,
+    headingStyles: false,
     textContent: true,
     textStyles: false,
     buttonContent: true,
@@ -47,6 +49,12 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
     dividerStyles: true,
     footerContent: true,
     footerStyles: false,
+    // FooterAllegiant sections
+    footerAllegiantContent: true,
+    footerAllegiantContainer: true,
+    footerAllegiantLogo: false,
+    footerAllegiantLinks: false,
+    footerAllegiantCopyright: false,
     // SeedProduct sections
     seedProductContent: true,
     seedProductRatings: true,
@@ -954,6 +962,17 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
           {renderTextInput('Width', 'width', 'e.g., 100%, 800px')}
           {renderTextInput('Max Width', 'maxWidth', 'e.g., 1400px')}
           {renderTextInput('Margin', 'margin', 'e.g., 0 auto')}
+          <div className="pt-2 border-t border-gray-100 mt-2">
+            <p className="text-xs font-medium text-gray-500 mb-2">Border Bottom</p>
+            {renderTextInput('Border Bottom Width', 'borderBottomWidth', 'e.g., 1px')}
+            {renderSelectInput('Border Bottom Style', 'borderBottomStyle', [
+              { value: '', label: 'None' },
+              { value: 'solid', label: 'Solid' },
+              { value: 'dashed', label: 'Dashed' },
+              { value: 'dotted', label: 'Dotted' },
+            ], 'Select style')}
+            {renderColorInput('Border Bottom Color', 'borderBottomColor', '#e5e7eb')}
+          </div>
         </>
       ))}
 
@@ -1586,6 +1605,61 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
         </>
       ))}
 
+      {/* Heading Content */}
+      {selectedComponent.type === 'Heading' && renderSection('Content', 'headingContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Heading Text</label>
+            <input
+              type="text"
+              value={props.text || ''}
+              onChange={(e) => handlePropChange('text', e.target.value)}
+              placeholder="Enter heading text..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Heading Level</label>
+            <select
+              value={props.level || 'h1'}
+              onChange={(e) => handlePropChange('level', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="h1">H1 - Main Title</option>
+              <option value="h2">H2 - Section Title</option>
+              <option value="h3">H3 - Subsection</option>
+              <option value="h4">H4 - Sub-subsection</option>
+              <option value="h5">H5 - Small Heading</option>
+              <option value="h6">H6 - Smallest Heading</option>
+            </select>
+          </div>
+        </>
+      ))}
+
+      {/* Heading Styles */}
+      {selectedComponent.type === 'Heading' && renderSection('Styles', 'headingStyles', (
+        <>
+          {renderColorInput('Color', 'color', '#333333')}
+          {renderTextInput('Font Size', 'fontSize', 'e.g., 2.5rem, 40px')}
+          {renderSelectInput('Font Weight', 'fontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Line Height', 'lineHeight', 'e.g., 1.2')}
+          {renderSelectInput('Text Align', 'textAlign', [
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ], 'Select alignment')}
+          {renderTextInput('Letter Spacing', 'letterSpacing', 'e.g., 0.5px, 2px')}
+          {renderSelectInput('Text Transform', 'textTransform', [
+            { value: '', label: 'None' },
+            { value: 'uppercase', label: 'UPPERCASE' },
+            { value: 'lowercase', label: 'lowercase' },
+            { value: 'capitalize', label: 'Capitalize' },
+          ], 'Select transform')}
+          {renderTextInput('Padding', 'padding', 'e.g., 20px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 0 20px 0')}
+        </>
+      ))}
+
       {/* Text Content */}
       {selectedComponent.type === 'Text' && renderSection('Content', 'textContent', (
         <>
@@ -1854,6 +1928,164 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
             {renderTextInput('Copyright Padding', 'copyrightPadding', 'e.g., 20px 0 0 0')}
             {renderColorInput('Copyright Border Color', 'copyrightBorderColor', 'rgba(255,255,255,0.1)')}
           </div>
+        </>
+      ))}
+
+      {/* FooterAllegiant Content */}
+      {selectedComponent.type === 'FooterAllegiant' && renderSection('Content', 'footerAllegiantContent', (
+        <>
+          {/* Logo settings */}
+          <div className="mb-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700 mb-2">
+              <input
+                type="checkbox"
+                checked={props.showLogo !== false}
+                onChange={(e) => handlePropChange('showLogo', e.target.checked)}
+                className="rounded"
+              />
+              Show Logo
+            </label>
+            {props.showLogo !== false && (
+              <>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Logo Text</label>
+                  <input
+                    type="text"
+                    value={props.logoText || ''}
+                    onChange={(e) => handlePropChange('logoText', e.target.value)}
+                    placeholder="e.g., CHS"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Logo Image URL</label>
+                  <input
+                    type="text"
+                    value={props.logoImageUrl || ''}
+                    onChange={(e) => handlePropChange('logoImageUrl', e.target.value)}
+                    placeholder="e.g., /logo.png"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">If set, image will be used instead of text</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Copyright text */}
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Copyright Text</label>
+            <input
+              type="text"
+              value={props.copyrightText || ''}
+              onChange={(e) => handlePropChange('copyrightText', e.target.value)}
+              placeholder="e.g., © 2025 CHS Inc."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Footer Links */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <p className="text-xs font-medium text-gray-500 mb-3">Footer Links</p>
+            {(props.footerLinks || []).map((link: { text: string; url: string }, index: number) => (
+              <div key={index} className="mb-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs text-gray-500">Link {index + 1}</span>
+                  <button
+                    onClick={() => {
+                      const newLinks = [...(props.footerLinks || [])];
+                      newLinks.splice(index, 1);
+                      handlePropChange('footerLinks', newLinks);
+                    }}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={link.text}
+                  onChange={(e) => {
+                    const newLinks = [...(props.footerLinks || [])];
+                    newLinks[index] = { ...newLinks[index], text: e.target.value };
+                    handlePropChange('footerLinks', newLinks);
+                  }}
+                  placeholder="Link text"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded mb-1"
+                />
+                <input
+                  type="text"
+                  value={link.url}
+                  onChange={(e) => {
+                    const newLinks = [...(props.footerLinks || [])];
+                    newLinks[index] = { ...newLinks[index], url: e.target.value };
+                    handlePropChange('footerLinks', newLinks);
+                  }}
+                  placeholder="Link URL"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                />
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newLinks = [...(props.footerLinks || []), { text: 'New Link', url: '#' }];
+                handlePropChange('footerLinks', newLinks);
+              }}
+              className="w-full px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg"
+            >
+              + Add Link
+            </button>
+          </div>
+        </>
+      ))}
+
+      {/* FooterAllegiant Container */}
+      {selectedComponent.type === 'FooterAllegiant' && renderSection('Container', 'footerAllegiantContainer', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#003087')}
+          {renderTextInput('Padding', 'padding', 'e.g., 12px 32px')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 1400px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 auto')}
+          <div className="pt-2 border-t border-gray-100 mt-2">
+            <p className="text-xs font-medium text-gray-500 mb-2">Border Top</p>
+            {renderTextInput('Border Top Width', 'borderTopWidth', 'e.g., 1px')}
+            {renderSelectInput('Border Top Style', 'borderTopStyle', [
+              { value: '', label: 'None' },
+              { value: 'solid', label: 'Solid' },
+              { value: 'dashed', label: 'Dashed' },
+              { value: 'dotted', label: 'Dotted' },
+            ], 'Select style')}
+            {renderColorInput('Border Top Color', 'borderTopColor', '#e5e7eb')}
+          </div>
+        </>
+      ))}
+
+      {/* FooterAllegiant Logo Styles */}
+      {selectedComponent.type === 'FooterAllegiant' && renderSection('Logo Styles', 'footerAllegiantLogo', (
+        <>
+          {renderColorInput('Logo Color', 'logoColor', '#ffffff')}
+          {renderTextInput('Logo Font Size', 'logoFontSize', 'e.g., 24px')}
+          {renderSelectInput('Logo Font Weight', 'logoFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Logo Height (for image)', 'logoHeight', 'e.g., 36px')}
+        </>
+      ))}
+
+      {/* FooterAllegiant Link Styles */}
+      {selectedComponent.type === 'FooterAllegiant' && renderSection('Link Styles', 'footerAllegiantLinks', (
+        <>
+          {renderColorInput('Link Color', 'linkColor', '#ffffff')}
+          {renderTextInput('Link Font Size', 'linkFontSize', 'e.g., 13px')}
+          {renderSelectInput('Link Font Weight', 'linkFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Link Gap', 'linkGap', 'e.g., 24px')}
+          {renderColorInput('Link Hover Color', 'linkHoverColor', '#cccccc')}
+        </>
+      ))}
+
+      {/* FooterAllegiant Copyright Styles */}
+      {selectedComponent.type === 'FooterAllegiant' && renderSection('Copyright Styles', 'footerAllegiantCopyright', (
+        <>
+          {renderColorInput('Copyright Color', 'copyrightColor', '#ffffff')}
+          {renderTextInput('Copyright Font Size', 'copyrightFontSize', 'e.g., 12px')}
         </>
       ))}
 

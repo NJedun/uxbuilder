@@ -443,6 +443,9 @@ export default function LayoutEditor() {
                 maxWidth: headerStyles.maxWidth || '100%',
                 margin: headerStyles.margin || '0',
                 backgroundColor: headerStyles.backgroundColor || 'transparent',
+                borderBottomWidth: headerStyles.borderBottomWidth || undefined,
+                borderBottomStyle: (headerStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+                borderBottomColor: headerStyles.borderBottomColor || undefined,
               }}
             >
               {activeSection !== 'header' && (
@@ -491,6 +494,9 @@ export default function LayoutEditor() {
                 maxWidth: bodyStyles.maxWidth || '100%',
                 margin: bodyStyles.margin || '0',
                 backgroundColor: bodyStyles.backgroundColor || 'transparent',
+                borderBottomWidth: bodyStyles.borderBottomWidth || undefined,
+                borderBottomStyle: (bodyStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+                borderBottomColor: bodyStyles.borderBottomColor || undefined,
               }}
             >
               <div
@@ -522,6 +528,9 @@ export default function LayoutEditor() {
                 maxWidth: footerStyles.maxWidth || '100%',
                 margin: footerStyles.margin || '0',
                 backgroundColor: footerStyles.backgroundColor || 'transparent',
+                borderBottomWidth: footerStyles.borderBottomWidth || undefined,
+                borderBottomStyle: (footerStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+                borderBottomColor: footerStyles.borderBottomColor || undefined,
               }}
             >
               {activeSection !== 'footer' && (
@@ -681,6 +690,57 @@ export default function LayoutEditor() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                       placeholder="e.g., 400px"
                     />
+                  </div>
+
+                  {/* Border Bottom Section */}
+                  <div className="pt-4 mt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Border Bottom</h4>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Border Width</label>
+                        <input
+                          type="text"
+                          value={getCurrentSectionStyles().borderBottomWidth || ''}
+                          onChange={(e) => updateCurrentSectionStyles({ ...getCurrentSectionStyles(), borderBottomWidth: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          placeholder="e.g., 1px"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Border Style</label>
+                        <select
+                          value={getCurrentSectionStyles().borderBottomStyle || ''}
+                          onChange={(e) => updateCurrentSectionStyles({ ...getCurrentSectionStyles(), borderBottomStyle: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        >
+                          <option value="">None</option>
+                          <option value="solid">Solid</option>
+                          <option value="dashed">Dashed</option>
+                          <option value="dotted">Dotted</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Border Color</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={getCurrentSectionStyles().borderBottomColor || '#e5e7eb'}
+                            onChange={(e) => updateCurrentSectionStyles({ ...getCurrentSectionStyles(), borderBottomColor: e.target.value })}
+                            className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={getCurrentSectionStyles().borderBottomColor || ''}
+                            onChange={(e) => updateCurrentSectionStyles({ ...getCurrentSectionStyles(), borderBottomColor: e.target.value })}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                            placeholder="#e5e7eb"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

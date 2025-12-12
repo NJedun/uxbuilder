@@ -42,6 +42,9 @@ interface HeaderAllegiantProps {
     searchBackgroundColor?: string;
     searchTextColor?: string;
     searchWidth?: string;
+    borderBottomWidth?: string;
+    borderBottomStyle?: string;
+    borderBottomColor?: string;
   };
   globalStyles: GlobalStyles;
   viewMode?: ViewMode;
@@ -77,6 +80,9 @@ export default function HeaderAllegiant({
         borderWidth: getStyle(styles.borderWidth, 'headerBorderWidth'),
         borderStyle: getStyle(styles.borderStyle, 'headerBorderStyle'),
         borderColor: getStyle(styles.borderColor, 'headerBorderColor'),
+        borderBottomWidth: styles.borderBottomWidth,
+        borderBottomStyle: styles.borderBottomStyle as React.CSSProperties['borderBottomStyle'],
+        borderBottomColor: styles.borderBottomColor,
       }}
     >
       {/* Main Header Row */}

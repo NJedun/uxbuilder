@@ -56,6 +56,11 @@ export interface Layout {
     padding?: string;
     backgroundColor?: string;
     minHeight?: string;
+    contentMaxWidth?: string;
+    contentMargin?: string;
+    borderBottomWidth?: string;
+    borderBottomStyle?: string;
+    borderBottomColor?: string;
   };
   globalStyles: GlobalStyles;
   isPublished: boolean;
@@ -91,6 +96,10 @@ export interface SectionStyles {
   // Content wrapper styles (for inner content alignment)
   contentMaxWidth: string;
   contentMargin: string;
+  // Border bottom styles
+  borderBottomWidth: string;
+  borderBottomStyle: string;
+  borderBottomColor: string;
 }
 
 // Default body styles
@@ -102,6 +111,9 @@ export const defaultBodyStyles: SectionStyles = {
   minHeight: '400px',
   contentMaxWidth: '1200px',
   contentMargin: '0 auto',
+  borderBottomWidth: '',
+  borderBottomStyle: '',
+  borderBottomColor: '',
 };
 
 // Default header styles
@@ -113,6 +125,9 @@ export const defaultHeaderStyles: SectionStyles = {
   minHeight: '',
   contentMaxWidth: '1200px',
   contentMargin: '0 auto',
+  borderBottomWidth: '',
+  borderBottomStyle: '',
+  borderBottomColor: '',
 };
 
 // Default footer styles
@@ -124,4 +139,7 @@ export const defaultFooterStyles: SectionStyles = {
   minHeight: '',
   contentMaxWidth: '1200px',
   contentMargin: '0 auto',
+  borderBottomWidth: '',
+  borderBottomStyle: '',
+  borderBottomColor: '',
 };

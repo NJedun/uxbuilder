@@ -45,6 +45,11 @@ const ComponentIcons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
     </svg>
   ),
+  Heading: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h8m-8 6h16" />
+    </svg>
+  ),
   Text: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -63,6 +68,11 @@ const ComponentIcons: Record<string, JSX.Element> = {
   Footer: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+    </svg>
+  ),
+  FooterAllegiant: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14H5m14 0a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 14V9a2 2 0 012-2" />
     </svg>
   ),
   SeedProduct: (
@@ -184,6 +194,10 @@ const componentTemplates = [
       searchBackgroundColor: '#ffffff',
       searchTextColor: '#333333',
       searchWidth: '180px',
+      // Border bottom styles
+      borderBottomWidth: '',
+      borderBottomStyle: '',
+      borderBottomColor: '',
     },
   },
   {
@@ -349,6 +363,26 @@ const componentTemplates = [
     },
   },
   {
+    type: 'Heading',
+    label: 'Heading (H1-H6)',
+    canBeChild: true,
+    defaultProps: {
+      text: 'Heading Text',
+      level: 'h1',
+    },
+    defaultStyles: {
+      color: '',
+      fontSize: '',
+      fontWeight: '',
+      lineHeight: '',
+      textAlign: 'left',
+      padding: '',
+      margin: '',
+      letterSpacing: '',
+      textTransform: '',
+    },
+  },
+  {
     type: 'Text',
     label: 'Text / Paragraph',
     canBeChild: true,
@@ -438,6 +472,49 @@ const componentTemplates = [
       copyrightFontSize: '',
       copyrightPadding: '',
       copyrightBorderColor: '',
+    },
+  },
+  {
+    type: 'FooterAllegiant',
+    label: 'Footer Allegiant (Horizontal)',
+    canBeChild: false,
+    defaultProps: {
+      showLogo: true,
+      logoImageUrl: '',
+      logoText: 'CHS',
+      copyrightText: '© 2025 CHS Inc.',
+      footerLinks: [
+        { text: 'Benefits of New Seed', url: '#' },
+        { text: 'CHS Terms & Conditions of Sale', url: '#' },
+        { text: 'chsinc.com', url: '#' },
+        { text: 'Contact us', url: '#' },
+        { text: 'CHS Privacy Center', url: '#' },
+        { text: 'Preference Center', url: '#' },
+      ],
+    },
+    defaultStyles: {
+      backgroundColor: '#003087',
+      padding: '12px 32px',
+      maxWidth: '1400px',
+      margin: '0 auto',
+      // Logo styles
+      logoColor: '#ffffff',
+      logoFontSize: '24px',
+      logoFontWeight: '700',
+      logoHeight: '36px',
+      // Link styles
+      linkColor: '#ffffff',
+      linkFontSize: '13px',
+      linkFontWeight: '400',
+      linkGap: '24px',
+      linkHoverColor: '#cccccc',
+      // Copyright styles
+      copyrightColor: '#ffffff',
+      copyrightFontSize: '12px',
+      // Border top styles
+      borderTopWidth: '',
+      borderTopStyle: '',
+      borderTopColor: '',
     },
   },
   {
@@ -629,131 +706,133 @@ export default function VisualComponentLibrary({
   };
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto h-full flex flex-col">
-      {/* Layout Preview Section */}
-      {onLayoutSelect && (
-        <div className="p-4 border-b border-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setLayoutsExpanded(!layoutsExpanded)}
-            className="flex items-center justify-between w-full text-left"
-          >
-            <h2 className="text-lg font-semibold text-gray-800">Layout Preview</h2>
-            <svg
-              className={`w-5 h-5 text-gray-500 transition-transform ${layoutsExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+    <div className="w-64 bg-white border-r border-gray-200 h-full flex flex-col min-h-0">
+      {/* Scrollable content area */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Layout Preview Section */}
+        {onLayoutSelect && (
+          <div className="p-4 border-b border-gray-200" style={{ minHeight: '120px' }}>
+            <button
+              onClick={() => setLayoutsExpanded(!layoutsExpanded)}
+              className="flex items-center justify-between w-full text-left"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <h2 className="text-lg font-semibold text-gray-800">Layout Preview</h2>
+              <svg
+                className={`w-5 h-5 text-gray-500 transition-transform ${layoutsExpanded ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-          {layoutsExpanded && (
-            <div className="mt-3">
-              {loadingLayouts ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
-                  <span className="ml-2 text-xs text-gray-500">Loading layouts...</span>
-                </div>
-              ) : layouts.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-xs text-gray-500 mb-2">
-                    {projectName === 'Untitled Project'
-                      ? 'Name your project to see layouts'
-                      : 'No layouts for this project'}
-                  </p>
-                  <a
-                    href="/layout-editor"
-                    className="text-xs text-blue-600 hover:text-blue-700"
-                  >
-                    Create a layout →
-                  </a>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {/* No Layout Option */}
-                  <div
-                    onClick={() => handleLayoutSelect(null)}
-                    className={`cursor-pointer rounded-lg border p-2 transition-all ${
-                      !selectedLayoutId
-                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-700 truncate">No Layout</p>
-                        <p className="text-[10px] text-gray-400">Content only</p>
-                      </div>
-                    </div>
+            {layoutsExpanded && (
+              <div className="mt-3">
+                {loadingLayouts ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+                    <span className="ml-2 text-xs text-gray-500">Loading layouts...</span>
                   </div>
-
-                  {/* Layout Options */}
-                  {layouts.map((layout) => (
+                ) : layouts.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-xs text-gray-500 mb-2">
+                      {projectName === 'Untitled Project'
+                        ? 'Name your project to see layouts'
+                        : 'No layouts for this project'}
+                    </p>
+                    <a
+                      href="/layout-editor"
+                      className="text-xs text-blue-600 hover:text-blue-700"
+                    >
+                      Create a layout →
+                    </a>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* No Layout Option */}
                     <div
-                      key={layout.rowKey}
-                      onClick={() => handleLayoutSelect(layout)}
+                      onClick={() => handleLayoutSelect(null)}
                       className={`cursor-pointer rounded-lg border p-2 transition-all ${
-                        selectedLayoutId === layout.rowKey
+                        !selectedLayoutId
                           ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        {/* Mini Layout Preview */}
-                        <div className="w-12 h-8 bg-gray-100 rounded flex flex-col overflow-hidden">
-                          <div className="h-1.5 bg-gray-300" /> {/* Header */}
-                          <div className="flex-1 bg-white border-x border-dashed border-gray-200" /> {/* Body */}
-                          <div className="h-1.5 bg-gray-300" /> {/* Footer */}
+                        <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-700 truncate">{layout.name}</p>
-                          <div className="flex items-center gap-1">
-                            {layout.isDefault && (
-                              <span className="text-[9px] px-1 py-0.5 bg-purple-100 text-purple-600 rounded">
-                                Default
-                              </span>
-                            )}
-                            <p className="text-[10px] text-gray-400 truncate">
-                              {layout.description || layout.slug}
-                            </p>
+                          <p className="text-xs font-medium text-gray-700 truncate">No Layout</p>
+                          <p className="text-[10px] text-gray-400">Content only</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Layout Options */}
+                    {layouts.map((layout) => (
+                      <div
+                        key={layout.rowKey}
+                        onClick={() => handleLayoutSelect(layout)}
+                        className={`cursor-pointer rounded-lg border p-2 transition-all ${
+                          selectedLayoutId === layout.rowKey
+                            ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {/* Mini Layout Preview */}
+                          <div className="w-12 h-8 bg-gray-100 rounded flex flex-col overflow-hidden">
+                            <div className="h-1.5 bg-gray-300" /> {/* Header */}
+                            <div className="flex-1 bg-white border-x border-dashed border-gray-200" /> {/* Body */}
+                            <div className="h-1.5 bg-gray-300" /> {/* Footer */}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-gray-700 truncate">{layout.name}</p>
+                            <div className="flex items-center gap-1">
+                              {layout.isDefault && (
+                                <span className="text-[9px] px-1 py-0.5 bg-purple-100 text-purple-600 rounded">
+                                  Default
+                                </span>
+                              )}
+                              <p className="text-[10px] text-gray-400 truncate">
+                                {layout.description || layout.slug}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  {/* Create New Layout Option */}
-                  <a
-                    href="/layout-editor"
-                    className="block cursor-pointer rounded-lg border border-dashed border-gray-300 p-2 transition-all hover:border-purple-400 hover:bg-purple-50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-12 h-8 bg-purple-50 rounded flex items-center justify-center">
-                        <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
+                    {/* Create New Layout Option */}
+                    <a
+                      href="/layout-editor"
+                      className="block cursor-pointer rounded-lg border border-dashed border-gray-300 p-2 transition-all hover:border-purple-400 hover:bg-purple-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 h-8 bg-purple-50 rounded flex items-center justify-center">
+                          <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-purple-600">Create New Layout</p>
+                          <p className="text-[10px] text-gray-400">Design header & footer</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-purple-600">Create New Layout</p>
-                        <p className="text-[10px] text-gray-400">Design header & footer</p>
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-      <div className="p-4 flex-shrink-0">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
+        <div className="p-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
 
         <p className="text-xs text-gray-500 mb-4">Click to add to canvas</p>
 
@@ -821,10 +900,11 @@ export default function VisualComponentLibrary({
             <p className="text-xs text-gray-500 mb-2">Select a Row component to add children</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Component Tree - shows structure and allows reordering */}
-      <div className="flex-1 border-t border-gray-200 overflow-y-auto">
+      <div className="flex-shrink-0 border-t border-gray-200 overflow-y-auto" style={{ minHeight: '150px', maxHeight: '250px' }}>
         <ComponentTree />
       </div>
     </div>
