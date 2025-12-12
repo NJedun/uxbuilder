@@ -184,29 +184,16 @@ export const defaultSeedProductData: SeedProductData = {
   fieldPerformanceIcon: '',
   diseaseResistanceIcon: '',
   ratings: [
-    { label: 'Emergence', value: 1 },
-    { label: 'Standability', value: 2 },
-    { label: 'Stress Tolerance', value: 3 },
-    { label: 'SDS', value: 2 },
-    { label: 'IDC', value: 4 },
-    { label: 'Shattering', value: 1 },
-    { label: 'White Mold', value: 3 },
-    { label: 'BSR', value: 2 },
+    { label: 'Label', value: 1 }
   ],
   agronomics: [
-    { label: 'Relative Maturity', value: '0.0' },
-    { label: 'Plant Height', value: 'Med' },
-    { label: 'Plant Type', value: 'Med-bushy' },
+    { label: 'Label', value: '0.0' },
   ],
   fieldPerformance: [
-    { label: 'Fine Soil', value: 'VG' },
-    { label: 'Medium Soil', value: 'VG' },
-    { label: 'No-Till', value: 'G' },
+    { label: 'Label', value: 'VG' },
   ],
   diseaseResistance: [
-    { label: 'Root Rot', value: '5' },
-    { label: 'White Mold', value: '4' },
-    { label: 'Stem Rot', value: 'R' },
+    { label: 'Label', value: '5' },
   ],
 }
 
@@ -244,6 +231,7 @@ interface VisualBuilderState {
   exportProject: () => VisualProjectData;
   importProject: (data: VisualProjectData) => void;
   clearProject: () => void;
+  clearCanvas: () => void;
 
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
@@ -606,6 +594,14 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       projectName: 'Untitled Project',
       components: [],
       globalStyles: { ...defaultGlobalStyles },
+      selectedComponentId: null,
+    });
+    get().saveToLocalStorage();
+  },
+
+  clearCanvas: () => {
+    set({
+      components: [],
       selectedComponentId: null,
     });
     get().saveToLocalStorage();

@@ -1,15 +1,27 @@
-import { useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import VisualCanvas from '../visualBuilder/VisualCanvas';
 import VisualComponentLibrary from '../visualBuilder/VisualComponentLibrary';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AIStylerModal from '../visualBuilder/AIStylerModal';
+import SavePageModal from '../visualBuilder/SavePageModal';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 export type ViewMode = 'desktop' | 'tablet' | 'mobile';
+
+interface EditingPage {
+  rowKey: string;
+  partitionKey: string;
+  pageType: 'PLP' | 'PDP';
+  slug: string;
+  parentRowKey: string | null;
+  title: string;
+  summary: string;
+  category: string | null;
+}
 
 export default function VisualBuilder() {
   const {
@@ -18,12 +30,72 @@ export default function VisualBuilder() {
     exportProject,
     importProject,
     clearProject,
+    clearCanvas,
   } = useVisualBuilderStore();
+
+  const [searchParams] = useSearchParams();
+  const [editingPage, setEditingPage] = useState<EditingPage | null>(null);
+  const [loadingPage, setLoadingPage] = useState(false);
+
+  // Load page data if editing
+  useEffect(() => {
+    const editRowKey = searchParams.get('edit');
+    const editProject = searchParams.get('project');
+
+    if (editRowKey && editProject) {
+      loadPageForEditing(editProject, editRowKey);
+    }
+  }, [searchParams]);
+
+  const loadPageForEditing = async (project: string, rowKey: string) => {
+    try {
+      setLoadingPage(true);
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/pages/${project}/${rowKey}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const page = data.data;
+
+        // Load components and styles into the store using importProject
+        try {
+          const components = JSON.parse(page.components || '[]');
+          const globalStyles = JSON.parse(page.globalStyles || '{}');
+          importProject({
+            name: page.partitionKey,
+            components,
+            globalStyles,
+          });
+        } catch (err) {
+          console.error('Failed to parse page data:', err);
+        }
+
+        // Store editing context
+        setEditingPage({
+          rowKey: page.rowKey,
+          partitionKey: page.partitionKey,
+          pageType: page.pageType,
+          slug: page.slug,
+          parentRowKey: page.parentRowKey,
+          title: page.title,
+          summary: page.summary || '',
+          category: page.category,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load page for editing:', err);
+    } finally {
+      setLoadingPage(false);
+    }
+  };
 
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
   const [showStylePanel, setShowStylePanel] = useState(false);
   const [showGlobalStyles, setShowGlobalStyles] = useState(false);
   const [showAIStyler, setShowAIStyler] = useState(false);
+  const [showSavePageModal, setShowSavePageModal] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showNewDropdown, setShowNewDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -154,6 +226,21 @@ export default function VisualBuilder() {
     }
   };
 
+  const handleClearCanvas = () => {
+    if (confirm('Clear all components from the canvas? Project name and global styles will be preserved.')) {
+      clearCanvas();
+    }
+  };
+
+  const handleNewPage = () => {
+    // Clear editing state so saving creates a new page instead of updating
+    setEditingPage(null);
+    // Also clear URL params if present
+    if (searchParams.get('edit')) {
+      window.history.replaceState({}, '', '/visual-builder');
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
         {/* Toolbar */}
@@ -169,7 +256,7 @@ export default function VisualBuilder() {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <button
@@ -203,12 +290,55 @@ export default function VisualBuilder() {
 
             <div className="hidden sm:block h-6 w-px bg-gray-300" />
 
-            <button
-              onClick={handleNew}
-              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              New
-            </button>
+            {/* New Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNewDropdown(!showNewDropdown)}
+                className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+              >
+                New
+                <svg className={`w-4 h-4 transition-transform ${showNewDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showNewDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowNewDropdown(false)}
+                  />
+                  <div className="absolute top-full right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                    <button
+                      onClick={() => {
+                        handleNew();
+                        setShowNewDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span>📁</span> New Project
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleNewPage();
+                        setShowNewDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span>📄</span> New Page
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleClearCanvas();
+                        setShowNewDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span>🧹</span> Clear Canvas
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <input
               ref={fileInputRef}
@@ -225,26 +355,55 @@ export default function VisualBuilder() {
               Import
             </label>
 
-            <button
-              onClick={handleExportJSON}
-              className="px-3 sm:px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              Export JSON
-            </button>
-
-            <button
-              onClick={handleExportPNG}
-              className="px-3 sm:px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              PNG
-            </button>
-
-            <button
-              onClick={handleExportPDF}
-              className="px-3 sm:px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              PDF
-            </button>
+            {/* Export Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                className="px-3 sm:px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+              >
+                Export
+                <svg className={`w-4 h-4 transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showExportDropdown && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowExportDropdown(false)}
+                  />
+                  <div className="absolute top-full right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50 min-w-[120px]">
+                    <button
+                      onClick={() => {
+                        handleExportJSON();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span className="text-green-500">📄</span> JSON
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleExportPNG();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span className="text-purple-500">🖼️</span> PNG
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleExportPDF();
+                        setShowExportDropdown(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <span className="text-orange-500">📑</span> PDF
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               onClick={() => setShowGlobalStyles(true)}
@@ -266,6 +425,25 @@ export default function VisualBuilder() {
             >
               <span>✨</span>
               Style with AI
+            </button>
+
+            <div className="hidden sm:block h-6 w-px bg-gray-300" />
+
+            <Link
+              to="/pages"
+              className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
+            >
+              Pages
+            </Link>
+
+            <button
+              onClick={() => setShowSavePageModal(true)}
+              className="px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              Save Page
             </button>
           </div>
         </div>
@@ -333,6 +511,15 @@ export default function VisualBuilder() {
           <AIStylerModal
             isOpen={showAIStyler}
             onClose={() => setShowAIStyler(false)}
+          />
+        )}
+
+        {/* Save Page Modal */}
+        {showSavePageModal && (
+          <SavePageModal
+            isOpen={showSavePageModal}
+            onClose={() => setShowSavePageModal(false)}
+            editingPage={editingPage}
           />
         )}
       </div>

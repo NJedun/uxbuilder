@@ -9,6 +9,7 @@ interface SeedProductProps {
   };
   styles: {
     backgroundColor?: string;
+    padding?: string;
     borderRadius?: string;
     borderWidth?: string;
     borderStyle?: string;
@@ -82,7 +83,7 @@ export default function SeedProduct({
       )}
 
       {/* Content */}
-      <div style={{ padding: isMobile ? '20px' : '30px' }}>
+      <div style={{ padding: styles.padding || (isMobile ? '20px' : '30px') }}>
         {/* Title & Description */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <h2

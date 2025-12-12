@@ -12,6 +12,7 @@ import {
   Divider,
   FooterComponent,
   SeedProduct,
+  ProductGrid,
 } from './components';
 
 interface VisualComponentRendererProps {
@@ -20,6 +21,7 @@ interface VisualComponentRendererProps {
   onSelect: () => void;
   isNested?: boolean;
   viewMode?: ViewMode;
+  readOnly?: boolean;
 }
 
 export default function VisualComponentRenderer({
@@ -28,6 +30,7 @@ export default function VisualComponentRenderer({
   onSelect,
   isNested = false,
   viewMode = 'desktop',
+  readOnly = false,
 }: VisualComponentRendererProps) {
   const { deleteComponent, selectComponent, selectedComponentId, globalStyles } =
     useVisualBuilderStore();
@@ -60,6 +63,7 @@ export default function VisualComponentRenderer({
       onSelect={childOnSelect}
       isNested={true}
       viewMode={viewMode}
+      readOnly={readOnly}
     />
   );
 
@@ -175,6 +179,15 @@ export default function VisualComponentRenderer({
           />
         );
 
+      case 'ProductGrid':
+        return (
+          <ProductGrid
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+          />
+        );
+
       default:
         return (
           <div className="p-4 bg-red-50 border border-red-200 rounded">
@@ -183,6 +196,11 @@ export default function VisualComponentRenderer({
         );
     }
   };
+
+  // In readOnly mode, just render the component without any interactive wrapper
+  if (readOnly) {
+    return <>{renderComponent()}</>;
+  }
 
   return (
     <div

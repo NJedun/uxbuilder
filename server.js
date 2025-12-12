@@ -321,6 +321,287 @@ app.post('/api/seed-product', async (req, res) => {
   }
 });
 
+// ============================================
+// Pages API (PLP/PDP Management)
+// ============================================
+
+// Helper to get pages table client (uses same table as products, distinguished by PartitionKey)
+function getPagesTableClient() {
+  const accountName = process.env.AZURE_STORAGE_ACCOUNT;
+  const accountKey = process.env.AZURE_STORAGE_KEY;
+  const tableName = process.env.AZURE_TABLE_NAME;
+
+  if (!accountName || !accountKey || !tableName) {
+    throw new Error('Azure Table Storage not configured');
+  }
+
+  const credential = new AzureNamedKeyCredential(accountName, accountKey);
+  return new TableClient(
+    `https://${accountName}.table.core.windows.net`,
+    tableName,
+    credential
+  );
+}
+
+// GET /api/pages - List all pages with optional filters
+app.get('/api/pages', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+    const { type, parentRowKey, project } = req.query;
+
+    const entities = [];
+    let filter = '';
+
+    // Build filter query
+    const filters = [];
+    if (type) {
+      filters.push(`pageType eq '${type}'`);
+    }
+    if (parentRowKey) {
+      filters.push(`parentRowKey eq '${parentRowKey}'`);
+    }
+    if (project) {
+      filters.push(`PartitionKey eq '${project}'`);
+    }
+
+    if (filters.length > 0) {
+      filter = filters.join(' and ');
+    }
+
+    const queryOptions = filter ? { filter } : {};
+    const queryResults = tableClient.listEntities({ queryOptions });
+
+    for await (const entity of queryResults) {
+      entities.push({
+        rowKey: entity.rowKey,
+        partitionKey: entity.partitionKey,
+        pageType: entity.pageType,
+        slug: entity.slug,
+        parentRowKey: entity.parentRowKey || null,
+        title: entity.title,
+        summary: entity.summary || '',
+        category: entity.category || null,
+        components: entity.components,
+        globalStyles: entity.globalStyles,
+        isPublished: entity.isPublished || false,
+        createdAt: entity.createdAt,
+        updatedAt: entity.updatedAt,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: entities.length,
+      data: entities,
+    });
+  } catch (error) {
+    console.error('Pages fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch pages' });
+  }
+});
+
+// GET /api/pages/:project/:rowKey - Get single page
+app.get('/api/pages/:project/:rowKey', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+    const { project, rowKey } = req.params;
+
+    const entity = await tableClient.getEntity(project, rowKey);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        rowKey: entity.rowKey,
+        partitionKey: entity.partitionKey,
+        pageType: entity.pageType,
+        slug: entity.slug,
+        parentRowKey: entity.parentRowKey || null,
+        title: entity.title,
+        summary: entity.summary || '',
+        category: entity.category || null,
+        components: entity.components,
+        globalStyles: entity.globalStyles,
+        isPublished: entity.isPublished || false,
+        createdAt: entity.createdAt,
+        updatedAt: entity.updatedAt,
+      },
+    });
+  } catch (error) {
+    if (error.statusCode === 404) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+    console.error('Page fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch page' });
+  }
+});
+
+// GET /api/pages/by-slug?slug=xxx - Get page by slug (supports nested slugs like wheat/product1)
+app.get('/api/pages/by-slug', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+    const slug = req.query.slug;
+
+    if (!slug) {
+      return res.status(400).json({ error: 'Missing slug parameter' });
+    }
+
+    const queryResults = tableClient.listEntities({
+      queryOptions: { filter: `slug eq '${slug}'` },
+    });
+
+    let foundEntity = null;
+    for await (const entity of queryResults) {
+      foundEntity = entity;
+      break;
+    }
+
+    if (!foundEntity) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        rowKey: foundEntity.rowKey,
+        partitionKey: foundEntity.partitionKey,
+        pageType: foundEntity.pageType,
+        slug: foundEntity.slug,
+        parentRowKey: foundEntity.parentRowKey || null,
+        title: foundEntity.title,
+        summary: foundEntity.summary || '',
+        category: foundEntity.category || null,
+        components: foundEntity.components,
+        globalStyles: foundEntity.globalStyles,
+        isPublished: foundEntity.isPublished || false,
+        createdAt: foundEntity.createdAt,
+        updatedAt: foundEntity.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Page by slug fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch page' });
+  }
+});
+
+// POST /api/pages - Create new page
+app.post('/api/pages', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+
+    // Create table if it doesn't exist
+    try {
+      await tableClient.createTable();
+    } catch (err) {
+      if (err.statusCode !== 409) {
+        console.log('Table creation note:', err.message);
+      }
+    }
+
+    const pageData = req.body;
+
+    if (!pageData.partitionKey || !pageData.title) {
+      return res.status(400).json({ error: 'Missing project (partitionKey) or title' });
+    }
+
+    // Generate unique row key
+    const timestamp = Date.now();
+    const sanitizedTitle = pageData.title.replace(/[^a-zA-Z0-9]/g, '_');
+    const rowKey = `${sanitizedTitle}_${timestamp}`;
+
+    const now = new Date().toISOString();
+
+    const entity = {
+      partitionKey: pageData.partitionKey,
+      rowKey: rowKey,
+      pageType: pageData.pageType || 'PDP',
+      slug: pageData.slug,
+      parentRowKey: pageData.parentRowKey || '',
+      title: pageData.title,
+      summary: pageData.summary || '',
+      category: pageData.category || '',
+      components: pageData.components || '[]',
+      globalStyles: pageData.globalStyles || '{}',
+      isPublished: pageData.isPublished || false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await tableClient.createEntity(entity);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Page saved successfully',
+      rowKey: rowKey,
+      slug: pageData.slug,
+    });
+  } catch (error) {
+    console.error('Page save error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to save page' });
+  }
+});
+
+// PUT /api/pages/:project/:rowKey - Update existing page
+app.put('/api/pages/:project/:rowKey', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+    const { project, rowKey } = req.params;
+    const pageData = req.body;
+
+    // Get existing entity first
+    const existing = await tableClient.getEntity(project, rowKey);
+
+    const entity = {
+      partitionKey: project,
+      rowKey: rowKey,
+      pageType: pageData.pageType || existing.pageType,
+      slug: pageData.slug || existing.slug,
+      parentRowKey: pageData.parentRowKey !== undefined ? pageData.parentRowKey : existing.parentRowKey,
+      title: pageData.title || existing.title,
+      summary: pageData.summary !== undefined ? pageData.summary : existing.summary,
+      category: pageData.category !== undefined ? pageData.category : existing.category,
+      components: pageData.components || existing.components,
+      globalStyles: pageData.globalStyles || existing.globalStyles,
+      isPublished: pageData.isPublished !== undefined ? pageData.isPublished : existing.isPublished,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await tableClient.updateEntity(entity, 'Replace');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Page updated successfully',
+    });
+  } catch (error) {
+    if (error.statusCode === 404) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+    console.error('Page update error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to update page' });
+  }
+});
+
+// DELETE /api/pages/:project/:rowKey - Delete page
+app.delete('/api/pages/:project/:rowKey', async (req, res) => {
+  try {
+    const tableClient = getPagesTableClient();
+    const { project, rowKey } = req.params;
+
+    await tableClient.deleteEntity(project, rowKey);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Page deleted successfully',
+    });
+  } catch (error) {
+    if (error.statusCode === 404) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+    console.error('Page delete error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to delete page' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API server running on http://localhost:${PORT}`);
 });

@@ -316,6 +316,25 @@ const componentTemplates = [
       backgroundColor: '',
     },
   },
+  {
+    type: 'ProductGrid',
+    label: 'Product Grid (PLP)',
+    icon: '📦',
+    canBeChild: true,
+    defaultProps: {
+      columns: 3,
+      gap: '24px',
+    },
+    defaultStyles: {
+      padding: '40px 20px',
+      backgroundColor: '',
+      cardBackgroundColor: '',
+      cardBorderColor: '',
+      titleColor: '',
+      textColor: '',
+      linkColor: '',
+    },
+  },
 ];
 
 export default function VisualComponentLibrary() {
