@@ -7,7 +7,7 @@ import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AIStylerModal from '../visualBuilder/AIStylerModal';
 import SavePageModal from '../visualBuilder/SavePageModal';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
-import { Layout } from '../types/layout';
+import { Layout, BodySection, defaultBodyStyles } from '../types/layout';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -33,6 +33,8 @@ export default function VisualBuilder() {
     importProject,
     clearProject,
     clearCanvas,
+    setSectionComponents,
+    setActiveSectionId,
   } = useVisualBuilderStore();
 
   const [searchParams] = useSearchParams();
@@ -71,11 +73,25 @@ export default function VisualBuilder() {
         try {
           const components = JSON.parse(page.components || '[]');
           const globalStyles = JSON.parse(page.globalStyles || '{}');
+          const sectionComponents = JSON.parse(page.sectionComponents || '{}');
+
           importProject({
+            version: '1.0.0',
             name: page.partitionKey,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            instructions: { note: '' },
             components,
+            sectionComponents,
             globalStyles,
+            theme: null,
           });
+
+          // Set active section to first one if sectionComponents exist
+          const sectionIds = Object.keys(sectionComponents);
+          if (sectionIds.length > 0) {
+            setActiveSectionId(sectionIds[0]);
+          }
         } catch (err) {
           console.error('Failed to parse page data:', err);
         }
@@ -114,6 +130,21 @@ export default function VisualBuilder() {
         const data = await response.json();
         const layoutEntity = data.data;
 
+        // Parse body sections (with backward compatibility)
+        let bodySections: BodySection[] = [];
+        if (layoutEntity.bodySections && layoutEntity.bodySections !== '' && layoutEntity.bodySections !== '[]') {
+          bodySections = JSON.parse(layoutEntity.bodySections);
+        }
+        // If no body sections, create default one from bodyStyles for backward compatibility
+        const parsedBodyStyles = layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {};
+        if (bodySections.length === 0) {
+          bodySections = [{
+            id: 'body-section-1',
+            name: 'Body Section 1',
+            styles: { ...defaultBodyStyles, ...parsedBodyStyles },
+          }];
+        }
+
         // Parse and set the layout
         const layout: Layout = {
           rowKey: layoutEntity.rowKey,
@@ -124,13 +155,19 @@ export default function VisualBuilder() {
           isDefault: layoutEntity.isDefault,
           headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
           footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
-          bodyStyles: layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {},
+          bodySections,
+          bodyStyles: parsedBodyStyles,
           globalStyles: layoutEntity.globalStyles ? JSON.parse(layoutEntity.globalStyles) : {},
           isPublished: layoutEntity.isPublished,
           createdAt: layoutEntity.createdAt || '',
           updatedAt: layoutEntity.updatedAt || '',
         };
         setPreviewLayout(layout);
+
+        // Set active section to first body section from layout
+        if (bodySections.length > 0) {
+          setActiveSectionId(bodySections[0].id);
+        }
       }
     } catch (err) {
       console.error('Failed to load layout for preview:', err);

@@ -197,6 +197,9 @@ export const defaultSeedProductData: SeedProductData = {
   ],
 }
 
+// Type for section components mapping
+export type SectionComponentsMap = Record<string, VisualComponent[]>;
+
 export interface VisualProjectData {
   version: string;
   name: string;
@@ -205,14 +208,17 @@ export interface VisualProjectData {
   instructions: {
     note: string;
   };
-  components: VisualComponent[];
+  components: VisualComponent[]; // Deprecated, use sectionComponents
+  sectionComponents?: SectionComponentsMap;
   globalStyles: GlobalStyles;
   theme: any; // Will be managed by ThemeContext
 }
 
 interface VisualBuilderState {
   projectName: string;
-  components: VisualComponent[];
+  components: VisualComponent[]; // Deprecated, use sectionComponents
+  sectionComponents: SectionComponentsMap;
+  activeSectionId: string | null;
   globalStyles: GlobalStyles;
   selectedComponentId: string | null;
   draggedComponentType: string | null;
@@ -227,6 +233,9 @@ interface VisualBuilderState {
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => void;
   setGlobalStyles: (styles: GlobalStyles) => void;
   moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => void;
+  setActiveSectionId: (sectionId: string | null) => void;
+  setSectionComponents: (sectionComponents: SectionComponentsMap) => void;
+  getActiveComponents: () => VisualComponent[];
 
   exportProject: () => VisualProjectData;
   importProject: (data: VisualProjectData) => void;
@@ -368,7 +377,9 @@ const defaultGlobalStyles: GlobalStyles = {
 
 export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   projectName: localStorage.getItem(PROJECT_NAME_KEY) || 'Untitled Project',
-  components: [],
+  components: [], // Deprecated, maintained for backward compatibility
+  sectionComponents: {},
+  activeSectionId: null,
   globalStyles: { ...defaultGlobalStyles },
   selectedComponentId: null,
   draggedComponentType: null,
@@ -385,36 +396,60 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   addComponent: (component: VisualComponent, parentId?: string) => {
     const state = get();
 
-    if (parentId) {
-      // Add as child to parent component
-      const addToParent = (components: VisualComponent[]): VisualComponent[] => {
-        return components.map(comp => {
-          if (comp.id === parentId) {
-            return {
-              ...comp,
-              children: [...(comp.children || []), component]
-            };
-          }
-          if (comp.children) {
-            return {
-              ...comp,
-              children: addToParent(comp.children)
-            };
-          }
-          return comp;
-        });
-      };
+    // Helper to add to parent in a component tree
+    const addToParent = (components: VisualComponent[]): VisualComponent[] => {
+      return components.map(comp => {
+        if (comp.id === parentId) {
+          return {
+            ...comp,
+            children: [...(comp.children || []), component]
+          };
+        }
+        if (comp.children) {
+          return {
+            ...comp,
+            children: addToParent(comp.children)
+          };
+        }
+        return comp;
+      });
+    };
 
-      set({ components: addToParent(state.components) });
+    // If we have an active section, add to sectionComponents
+    if (state.activeSectionId) {
+      const currentSectionComponents = state.sectionComponents[state.activeSectionId] || [];
+
+      if (parentId) {
+        const updatedComponents = addToParent(currentSectionComponents);
+        set({
+          sectionComponents: {
+            ...state.sectionComponents,
+            [state.activeSectionId]: updatedComponents
+          }
+        });
+      } else {
+        set({
+          sectionComponents: {
+            ...state.sectionComponents,
+            [state.activeSectionId]: [...currentSectionComponents, component]
+          }
+        });
+      }
     } else {
-      // Add to root level
-      set({ components: [...state.components, component] });
+      // Fallback to deprecated components array for backward compatibility
+      if (parentId) {
+        set({ components: addToParent(state.components) });
+      } else {
+        set({ components: [...state.components, component] });
+      }
     }
 
     get().saveToLocalStorage();
   },
 
   updateComponent: (id: string, updates: Partial<VisualComponent>) => {
+    const state = get();
+
     const updateInTree = (components: VisualComponent[]): VisualComponent[] => {
       return components.map(comp => {
         if (comp.id === id) {
@@ -430,11 +465,39 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       });
     };
 
-    set({ components: updateInTree(get().components) });
+    // Helper to check if component exists in tree
+    const existsInTree = (components: VisualComponent[]): boolean => {
+      for (const comp of components) {
+        if (comp.id === id) return true;
+        if (comp.children && existsInTree(comp.children)) return true;
+      }
+      return false;
+    };
+
+    // Search across all sections to find and update the component
+    const newSectionComponents = { ...state.sectionComponents };
+    let found = false;
+
+    for (const sectionId of Object.keys(newSectionComponents)) {
+      if (existsInTree(newSectionComponents[sectionId])) {
+        newSectionComponents[sectionId] = updateInTree(newSectionComponents[sectionId]);
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      set({ sectionComponents: newSectionComponents });
+    } else {
+      // Fallback to deprecated components array
+      set({ components: updateInTree(state.components) });
+    }
     get().saveToLocalStorage();
   },
 
   deleteComponent: (id: string) => {
+    const state = get();
+
     const deleteFromTree = (components: VisualComponent[]): VisualComponent[] => {
       return components
         .filter(comp => comp.id !== id)
@@ -444,10 +507,39 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
         }));
     };
 
-    set({
-      components: deleteFromTree(get().components),
-      selectedComponentId: get().selectedComponentId === id ? null : get().selectedComponentId
-    });
+    // Helper to check if component exists in tree
+    const existsInTree = (components: VisualComponent[]): boolean => {
+      for (const comp of components) {
+        if (comp.id === id) return true;
+        if (comp.children && existsInTree(comp.children)) return true;
+      }
+      return false;
+    };
+
+    // Search across all sections to find and delete the component
+    const newSectionComponents = { ...state.sectionComponents };
+    let found = false;
+
+    for (const sectionId of Object.keys(newSectionComponents)) {
+      if (existsInTree(newSectionComponents[sectionId])) {
+        newSectionComponents[sectionId] = deleteFromTree(newSectionComponents[sectionId]);
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      set({
+        sectionComponents: newSectionComponents,
+        selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId
+      });
+    } else {
+      // Fallback to deprecated components array
+      set({
+        components: deleteFromTree(state.components),
+        selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId
+      });
+    }
     get().saveToLocalStorage();
   },
 
@@ -460,7 +552,20 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   },
 
   reorderComponents: (components: VisualComponent[]) => {
-    set({ components });
+    const state = get();
+
+    // If we have an active section, reorder in sectionComponents
+    if (state.activeSectionId) {
+      set({
+        sectionComponents: {
+          ...state.sectionComponents,
+          [state.activeSectionId]: components
+        }
+      });
+    } else {
+      // Fallback to deprecated components array
+      set({ components });
+    }
     get().saveToLocalStorage();
   },
 
@@ -490,33 +595,70 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       return newArr;
     };
 
-    if (!parentId) {
-      // Moving at root level
-      set({ components: moveInArray(state.components) });
-    } else {
-      // Moving within a parent's children
-      const moveInTree = (components: VisualComponent[]): VisualComponent[] => {
-        return components.map(comp => {
-          if (comp.id === parentId && comp.children) {
-            return {
-              ...comp,
-              children: moveInArray(comp.children)
-            };
-          }
-          if (comp.children) {
-            return {
-              ...comp,
-              children: moveInTree(comp.children)
-            };
-          }
-          return comp;
-        });
-      };
+    const moveInTree = (components: VisualComponent[]): VisualComponent[] => {
+      return components.map(comp => {
+        if (comp.id === parentId && comp.children) {
+          return {
+            ...comp,
+            children: moveInArray(comp.children)
+          };
+        }
+        if (comp.children) {
+          return {
+            ...comp,
+            children: moveInTree(comp.children)
+          };
+        }
+        return comp;
+      });
+    };
 
-      set({ components: moveInTree(state.components) });
+    // If we have an active section, move in sectionComponents
+    if (state.activeSectionId && state.sectionComponents[state.activeSectionId]) {
+      const sectionComps = state.sectionComponents[state.activeSectionId];
+      if (!parentId) {
+        set({
+          sectionComponents: {
+            ...state.sectionComponents,
+            [state.activeSectionId]: moveInArray(sectionComps)
+          }
+        });
+      } else {
+        set({
+          sectionComponents: {
+            ...state.sectionComponents,
+            [state.activeSectionId]: moveInTree(sectionComps)
+          }
+        });
+      }
+    } else {
+      // Fallback to deprecated components array
+      if (!parentId) {
+        set({ components: moveInArray(state.components) });
+      } else {
+        set({ components: moveInTree(state.components) });
+      }
     }
 
     get().saveToLocalStorage();
+  },
+
+  setActiveSectionId: (sectionId: string | null) => {
+    set({ activeSectionId: sectionId });
+  },
+
+  setSectionComponents: (sectionComponents: SectionComponentsMap) => {
+    set({ sectionComponents });
+    get().saveToLocalStorage();
+  },
+
+  getActiveComponents: () => {
+    const state = get();
+    if (state.activeSectionId && state.sectionComponents[state.activeSectionId]) {
+      return state.sectionComponents[state.activeSectionId];
+    }
+    // Fallback to deprecated components array for backward compatibility
+    return state.components;
   },
 
   exportProject: () => {
@@ -578,7 +720,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
         outputFormat: 'After extracting styles from an image, update ONLY the globalStyles object. Keep component customStyles empty unless a specific component needs to differ from global defaults.'
       },
-      components: state.components,
+      components: state.components, // Deprecated, maintained for backward compatibility
+      sectionComponents: state.sectionComponents,
       globalStyles: state.globalStyles,
       theme: null, // Theme is managed separately by ThemeContext
     };
@@ -588,7 +731,9 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
     const name = data.name || 'Untitled Project';
     set({
       projectName: name,
-      components: data.components || [],
+      components: data.components || [], // Deprecated, maintained for backward compatibility
+      sectionComponents: data.sectionComponents || {},
+      activeSectionId: null,
       globalStyles: data.globalStyles || { ...defaultGlobalStyles },
       selectedComponentId: null,
     });
@@ -603,6 +748,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
     set({
       projectName: 'Untitled Project',
       components: [],
+      sectionComponents: {},
+      activeSectionId: null,
       globalStyles: { ...defaultGlobalStyles },
       selectedComponentId: null,
     });
@@ -610,10 +757,24 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   },
 
   clearCanvas: () => {
-    set({
-      components: [],
-      selectedComponentId: null,
-    });
+    const state = get();
+
+    // If we have an active section, only clear that section
+    if (state.activeSectionId) {
+      set({
+        sectionComponents: {
+          ...state.sectionComponents,
+          [state.activeSectionId]: []
+        },
+        selectedComponentId: null,
+      });
+    } else {
+      // Clear deprecated components array
+      set({
+        components: [],
+        selectedComponentId: null,
+      });
+    }
     get().saveToLocalStorage();
   },
 
@@ -622,7 +783,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
     const data = {
       version: VERSION,
       projectName: state.projectName,
-      components: state.components,
+      components: state.components, // Deprecated, maintained for backward compatibility
+      sectionComponents: state.sectionComponents,
       globalStyles: state.globalStyles,
       timestamp: Date.now(),
     };
@@ -638,7 +800,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
       set({
         projectName: data.projectName || 'Untitled Project',
-        components: data.components || [],
+        components: data.components || [], // Deprecated, maintained for backward compatibility
+        sectionComponents: data.sectionComponents || {},
         globalStyles: data.globalStyles || { ...defaultGlobalStyles },
         selectedComponentId: null,
       });

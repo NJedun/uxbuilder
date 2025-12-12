@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useVisualBuilderStore, VisualComponent, defaultSeedProductData } from '../store/visualBuilderStore';
-import { Layout } from '../types/layout';
+import { Layout, BodySection, defaultBodyStyles } from '../types/layout';
 import ComponentTree from './ComponentTree';
 
 // SVG Icon components for the component library
@@ -570,6 +570,7 @@ interface LayoutEntity {
   isDefault?: boolean;
   headerComponents: string;
   footerComponents: string;
+  bodySections?: string;
   bodyStyles?: string;
   isPublished: boolean;
 }
@@ -590,8 +591,18 @@ export default function VisualComponentLibrary({
   const store = useVisualBuilderStore();
   const addComponent = externalAddComponent || store.addComponent;
   const components = externalComponents || store.components;
+  const sectionComponents = store.sectionComponents;
+  const activeSectionId = store.activeSectionId;
   const selectedComponentId = store.selectedComponentId;
   const projectName = store.projectName;
+
+  // Get all components from active section and fallback deprecated components
+  const getAllComponents = (): VisualComponent[] => {
+    if (activeSectionId && sectionComponents[activeSectionId]) {
+      return sectionComponents[activeSectionId];
+    }
+    return components;
+  };
   const [targetColumn, setTargetColumn] = useState<number | null>(null);
   const [layouts, setLayouts] = useState<LayoutEntity[]>([]);
   const [loadingLayouts, setLoadingLayouts] = useState(false);
@@ -630,6 +641,21 @@ export default function VisualComponentLibrary({
     }
 
     try {
+      // Parse body sections (or create default from bodyStyles for backward compatibility)
+      let bodySections: BodySection[] = [];
+      if (layoutEntity.bodySections && layoutEntity.bodySections !== '[]') {
+        bodySections = JSON.parse(layoutEntity.bodySections);
+      }
+      // Backward compatibility: create a single body section from bodyStyles if no bodySections
+      if (bodySections.length === 0) {
+        const existingBodyStyles = layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {};
+        bodySections = [{
+          id: 'body-section-1',
+          name: 'Body Section 1',
+          styles: { ...defaultBodyStyles, ...existingBodyStyles },
+        }];
+      }
+
       // Parse the layout components
       const layout: Layout = {
         rowKey: layoutEntity.rowKey,
@@ -640,6 +666,7 @@ export default function VisualComponentLibrary({
         isDefault: layoutEntity.isDefault,
         headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
         footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
+        bodySections,
         bodyStyles: layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {},
         globalStyles: store.globalStyles,
         isPublished: layoutEntity.isPublished,
@@ -679,9 +706,10 @@ export default function VisualComponentLibrary({
     return null;
   };
 
-  const selectedComponent = findComponent(selectedComponentId, components);
+  const activeComponents = getAllComponents();
+  const selectedComponent = findComponent(selectedComponentId, activeComponents);
   const selectedRow = selectedComponent?.type === 'Row' ? selectedComponent : null;
-  const rowComponents = findRowComponents(components);
+  const rowComponents = findRowComponents(activeComponents);
 
   const handleAddComponent = (
     template: typeof componentTemplates[0],

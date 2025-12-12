@@ -8,7 +8,7 @@ interface VisualStylePanelProps {
 }
 
 export default function VisualStylePanel({ previewLayout }: VisualStylePanelProps = {}) {
-  const { selectedComponentId, components, updateComponent } = useVisualBuilderStore();
+  const { selectedComponentId, components, sectionComponents, updateComponent } = useVisualBuilderStore();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     content: true,
     container: true,
@@ -74,20 +74,33 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
   const [isSavingToAzure, setIsSavingToAzure] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Find the selected component
-  const findComponent = (id: string | null, componentList: any[]): any => {
-    if (!id) return null;
+  // Find the selected component in a component tree
+  const findInTree = (id: string, componentList: any[]): any => {
     for (const comp of componentList) {
       if (comp.id === id) return comp;
       if (comp.children) {
-        const found = findComponent(id, comp.children);
+        const found = findInTree(id, comp.children);
         if (found) return found;
       }
     }
     return null;
   };
 
-  const selectedComponent = findComponent(selectedComponentId, components);
+  // Find component across all sections and deprecated components array
+  const findComponent = (id: string | null): any => {
+    if (!id) return null;
+
+    // Search in sectionComponents first
+    for (const sectionId of Object.keys(sectionComponents)) {
+      const found = findInTree(id, sectionComponents[sectionId]);
+      if (found) return found;
+    }
+
+    // Fallback to deprecated components array
+    return findInTree(id, components);
+  };
+
+  const selectedComponent = findComponent(selectedComponentId);
 
   const handleStyleChange = (property: string, value: string) => {
     if (!selectedComponentId || !selectedComponent) return;

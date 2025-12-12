@@ -5,7 +5,7 @@ import VisualComponentRenderer from '../visualBuilder/VisualComponentRenderer';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import { useVisualBuilderStore, VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
-import { SectionStyles, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
+import { SectionStyles, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles, createDefaultBodySection, getDefaultBodySections } from '../types/layout';
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
 type ActiveSection = 'header' | 'body' | 'footer';
@@ -27,9 +27,13 @@ export default function LayoutEditor() {
   const [headerComponents, setHeaderComponents] = useState<VisualComponent[]>([]);
   const [footerComponents, setFooterComponents] = useState<VisualComponent[]>([]);
 
+  // Body sections (multiple body zones)
+  const [bodySections, setBodySections] = useState<BodySection[]>(getDefaultBodySections());
+  const [activeBodySectionId, setActiveBodySectionId] = useState<string | null>('body-section-1');
+
   // Section styles
   const [headerStyles, setHeaderStyles] = useState<SectionStyles>({ ...defaultHeaderStyles });
-  const [bodyStyles, setBodyStyles] = useState<SectionStyles>({ ...defaultBodyStyles });
+  const [bodyStyles, setBodyStyles] = useState<SectionStyles>({ ...defaultBodyStyles }); // Deprecated, kept for backward compatibility
   const [footerStyles, setFooterStyles] = useState<SectionStyles>({ ...defaultFooterStyles });
 
   // UI state
@@ -53,7 +57,13 @@ export default function LayoutEditor() {
     reorderComponents,
     importProject,
     exportProject,
+    setActiveSectionId,
   } = useVisualBuilderStore();
+
+  // Clear activeSectionId on mount so Layout Editor uses deprecated components array
+  useEffect(() => {
+    setActiveSectionId(null);
+  }, [setActiveSectionId]);
 
   // Sync store components to section state when switching sections
   const saveCurrentSection = useCallback(() => {
@@ -89,7 +99,11 @@ export default function LayoutEditor() {
   const getCurrentSectionStyles = (): SectionStyles => {
     switch (activeSection) {
       case 'header': return headerStyles;
-      case 'body': return bodyStyles;
+      case 'body': {
+        // Get styles for the active body section
+        const activeSection = bodySections.find(s => s.id === activeBodySectionId);
+        return activeSection?.styles || bodyStyles;
+      }
       case 'footer': return footerStyles;
     }
   };
@@ -98,9 +112,52 @@ export default function LayoutEditor() {
   const updateCurrentSectionStyles = (styles: SectionStyles) => {
     switch (activeSection) {
       case 'header': setHeaderStyles(styles); break;
-      case 'body': setBodyStyles(styles); break;
+      case 'body': {
+        // Update styles for the active body section
+        if (activeBodySectionId) {
+          setBodySections(sections =>
+            sections.map(s =>
+              s.id === activeBodySectionId ? { ...s, styles } : s
+            )
+          );
+        } else {
+          setBodyStyles(styles);
+        }
+        break;
+      }
       case 'footer': setFooterStyles(styles); break;
     }
+  };
+
+  // Add a new body section
+  const addBodySection = () => {
+    const nextIndex = bodySections.length + 1;
+    const newSection = createDefaultBodySection(nextIndex);
+    setBodySections([...bodySections, newSection]);
+    setActiveBodySectionId(newSection.id);
+  };
+
+  // Delete a body section
+  const deleteBodySection = (sectionId: string) => {
+    if (bodySections.length <= 1) {
+      alert('Cannot delete the last body section');
+      return;
+    }
+    const newSections = bodySections.filter(s => s.id !== sectionId);
+    setBodySections(newSections);
+    // If we deleted the active section, select the first one
+    if (activeBodySectionId === sectionId) {
+      setActiveBodySectionId(newSections[0]?.id || null);
+    }
+  };
+
+  // Update body section name
+  const updateBodySectionName = (sectionId: string, name: string) => {
+    setBodySections(sections =>
+      sections.map(s =>
+        s.id === sectionId ? { ...s, name } : s
+      )
+    );
   };
 
   // Persist project name to localStorage whenever it changes (shared with Visual Builder)
@@ -171,10 +228,26 @@ export default function LayoutEditor() {
             : {};
           const parsedGlobalStyles = JSON.parse(layout.globalStyles || '{}');
 
+          // Parse body sections (new multi-section support)
+          let parsedBodySections: BodySection[] = [];
+          if (layout.bodySections && layout.bodySections !== '' && layout.bodySections !== '[]') {
+            parsedBodySections = JSON.parse(layout.bodySections);
+          }
+          // If no body sections exist, create default one from bodyStyles for backward compatibility
+          if (parsedBodySections.length === 0) {
+            parsedBodySections = [{
+              id: 'body-section-1',
+              name: 'Body Section 1',
+              styles: { ...defaultBodyStyles, ...parsedBodyStyles },
+            }];
+          }
+
           setHeaderComponents(parsedHeader);
           setFooterComponents(parsedFooter);
           setHeaderStyles({ ...defaultHeaderStyles, ...parsedHeaderStyles });
-          setBodyStyles({ ...defaultBodyStyles, ...parsedBodyStyles });
+          setBodyStyles({ ...defaultBodyStyles, ...parsedBodyStyles }); // Keep for backward compatibility
+          setBodySections(parsedBodySections);
+          setActiveBodySectionId(parsedBodySections[0]?.id || null);
           setFooterStyles({ ...defaultFooterStyles, ...parsedFooterStyles });
           setGlobalStyles(parsedGlobalStyles);
 
@@ -227,7 +300,8 @@ export default function LayoutEditor() {
         headerComponents: JSON.stringify(finalHeaderComponents),
         footerComponents: JSON.stringify(finalFooterComponents),
         headerStyles: JSON.stringify(headerStyles),
-        bodyStyles: JSON.stringify(bodyStyles),
+        bodyStyles: JSON.stringify(bodySections[0]?.styles || bodyStyles), // First section for backward compatibility
+        bodySections: JSON.stringify(bodySections),
         footerStyles: JSON.stringify(footerStyles),
         globalStyles: JSON.stringify(globalStyles),
         isPublished: true,
@@ -386,7 +460,7 @@ export default function LayoutEditor() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            Body (Content Zone)
+            Body ({bodySections.length} section{bodySections.length !== 1 ? 's' : ''})
           </button>
           <button
             onClick={() => handleSectionChange('footer')}
@@ -400,6 +474,19 @@ export default function LayoutEditor() {
           </button>
 
           <div className="flex-1" />
+
+          {/* Add Body Section button - only show when body tab is active */}
+          {activeSection === 'body' && (
+            <button
+              onClick={addBodySection}
+              className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-md transition-colors mr-2 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Section
+            </button>
+          )}
 
           <button
             onClick={() => setShowSectionStylesPanel(true)}
@@ -484,39 +571,77 @@ export default function LayoutEditor() {
               </div>
             </div>
 
-            {/* Body Section (Content Zone) */}
-            <div
-              className={`relative transition-all cursor-pointer ${
-                activeSection === 'body' ? 'ring-2 ring-purple-500' : ''
-              }`}
-              onClick={() => handleSectionChange('body')}
-              style={{
-                maxWidth: bodyStyles.maxWidth || '100%',
-                margin: bodyStyles.margin || '0',
-                backgroundColor: bodyStyles.backgroundColor || 'transparent',
-                borderBottomWidth: bodyStyles.borderBottomWidth || undefined,
-                borderBottomStyle: (bodyStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
-                borderBottomColor: bodyStyles.borderBottomColor || undefined,
-              }}
-            >
+            {/* Body Sections (Content Zones) */}
+            {bodySections.map((section) => (
               <div
-                style={{
-                  maxWidth: bodyStyles.contentMaxWidth || '100%',
-                  margin: bodyStyles.contentMargin || '0',
-                  padding: bodyStyles.padding || '0',
-                  minHeight: bodyStyles.minHeight || '400px',
+                key={section.id}
+                className={`relative transition-all cursor-pointer ${
+                  activeSection === 'body' && activeBodySectionId === section.id
+                    ? 'ring-2 ring-purple-500 ring-opacity-50'
+                    : activeSection === 'body'
+                    ? 'ring-1 ring-gray-300 ring-opacity-50'
+                    : ''
+                }`}
+                onClick={() => {
+                  handleSectionChange('body');
+                  setActiveBodySectionId(section.id);
                 }}
-                className="border-2 border-dashed border-gray-300 bg-white/50 flex items-center justify-center"
+                style={{
+                  maxWidth: section.styles.maxWidth || '100%',
+                  margin: section.styles.margin || '0',
+                  backgroundColor: section.styles.backgroundColor || 'transparent',
+                  borderBottomWidth: section.styles.borderBottomWidth || undefined,
+                  borderBottomStyle: (section.styles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
+                  borderBottomColor: section.styles.borderBottomColor || undefined,
+                }}
               >
-                <div className="text-center text-gray-400">
-                  <svg className="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <div className="font-medium">Content Zone</div>
-                  <div className="text-sm">Page content will appear here</div>
+                {/* Section label */}
+                {activeSection === 'body' && (
+                  <div className="absolute top-1 left-1 z-10 flex items-center gap-1">
+                    <span className={`px-2 py-0.5 text-[10px] rounded ${
+                      activeBodySectionId === section.id
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-400 text-white'
+                    }`}>
+                      {section.name}
+                    </span>
+                    {bodySections.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteBodySection(section.id);
+                        }}
+                        className="px-1.5 py-0.5 text-[10px] rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        title="Delete section"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div
+                  style={{
+                    maxWidth: section.styles.contentMaxWidth || '100%',
+                    margin: section.styles.contentMargin || '0',
+                    padding: section.styles.padding || '0',
+                    minHeight: section.styles.minHeight || '200px',
+                  }}
+                  className={`border-2 border-dashed ${
+                    activeSection === 'body' && activeBodySectionId === section.id
+                      ? 'border-purple-300'
+                      : 'border-gray-300'
+                  } bg-white/50 flex items-center justify-center`}
+                >
+                  <div className="text-center text-gray-400">
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <div className="font-medium text-sm">{section.name}</div>
+                    <div className="text-xs">Page content will appear here</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
 
             {/* Footer Section */}
             <div
@@ -581,7 +706,9 @@ export default function LayoutEditor() {
           <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">
-                {activeSection === 'header' ? 'Header' : activeSection === 'body' ? 'Body' : 'Footer'} Section Styles
+                {activeSection === 'header' ? 'Header' : activeSection === 'body' ? (
+                  bodySections.find(s => s.id === activeBodySectionId)?.name || 'Body'
+                ) : 'Footer'} Section Styles
               </h3>
               <button
                 onClick={() => setShowSectionStylesPanel(false)}
@@ -592,6 +719,20 @@ export default function LayoutEditor() {
             </div>
 
             <div className="space-y-4">
+              {/* Body Section Name (only for body sections) */}
+              {activeSection === 'body' && activeBodySectionId && (
+                <div className="pb-3 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Section Name</label>
+                  <input
+                    type="text"
+                    value={bodySections.find(s => s.id === activeBodySectionId)?.name || ''}
+                    onChange={(e) => updateBodySectionName(activeBodySectionId, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    placeholder="Body Section 1"
+                  />
+                </div>
+              )}
+
               {/* Section Container Styles */}
               <div className="pb-3 border-b border-gray-200">
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Section Container</h4>

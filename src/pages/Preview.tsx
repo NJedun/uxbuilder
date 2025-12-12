@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
 import VisualComponentRenderer from '../visualBuilder/VisualComponentRenderer';
 import { ProductGrid } from '../visualBuilder/components';
-import { SectionStyles, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
+import { SectionStyles, BodySection, SectionComponentsMap, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 
 interface PageData {
   rowKey: string;
@@ -14,7 +14,8 @@ interface PageData {
   layoutRowKey: string | null;
   title: string;
   summary: string;
-  components: string;
+  components: string; // Deprecated, use sectionComponents
+  sectionComponents?: string; // New: JSON string of SectionComponentsMap
   globalStyles: string;
   isPublished: boolean;
 }
@@ -24,7 +25,8 @@ interface LayoutData {
   headerComponents: string;
   footerComponents: string;
   headerStyles: string;
-  bodyStyles: string;
+  bodySections?: string; // New: JSON string of BodySection[]
+  bodyStyles: string; // Deprecated
   footerStyles: string;
   globalStyles: string;
 }
@@ -177,10 +179,16 @@ export default function Preview() {
 
   // Parse components and global styles
   let components: VisualComponent[] = [];
+  let sectionComponents: SectionComponentsMap = {};
   let globalStyles: GlobalStyles = {} as GlobalStyles;
 
   try {
+    // Parse deprecated components for backward compatibility
     components = JSON.parse(page.components || '[]');
+    // Parse new sectionComponents
+    if (page.sectionComponents) {
+      sectionComponents = JSON.parse(page.sectionComponents);
+    }
     globalStyles = JSON.parse(page.globalStyles || '{}');
   } catch (err) {
     console.error('Failed to parse page data:', err);
@@ -189,8 +197,8 @@ export default function Preview() {
   // Parse layout data if available
   let headerComponents: VisualComponent[] = [];
   let footerComponents: VisualComponent[] = [];
+  let bodySections: BodySection[] = [];
   let headerStyles: SectionStyles = { ...defaultHeaderStyles };
-  let bodyStyles: SectionStyles = { ...defaultBodyStyles };
   let footerStyles: SectionStyles = { ...defaultFooterStyles };
   let layoutGlobalStyles: GlobalStyles = {} as GlobalStyles;
 
@@ -198,12 +206,25 @@ export default function Preview() {
     try {
       headerComponents = JSON.parse(layout.headerComponents || '[]');
       footerComponents = JSON.parse(layout.footerComponents || '[]');
+
+      // Parse body sections (or create default from bodyStyles for backward compatibility)
+      if (layout.bodySections && layout.bodySections !== '[]') {
+        bodySections = JSON.parse(layout.bodySections);
+      }
+      if (bodySections.length === 0) {
+        // Backward compatibility: create single section from bodyStyles
+        const parsedBodyStyles = layout.bodyStyles && layout.bodyStyles !== '' ? JSON.parse(layout.bodyStyles) : {};
+        bodySections = [{
+          id: 'body-section-1',
+          name: 'Body Section 1',
+          styles: { ...defaultBodyStyles, ...parsedBodyStyles },
+        }];
+      }
+
       // Handle empty strings for styles
       const parsedHeaderStyles = layout.headerStyles && layout.headerStyles !== '' ? JSON.parse(layout.headerStyles) : {};
-      const parsedBodyStyles = layout.bodyStyles && layout.bodyStyles !== '' ? JSON.parse(layout.bodyStyles) : {};
       const parsedFooterStyles = layout.footerStyles && layout.footerStyles !== '' ? JSON.parse(layout.footerStyles) : {};
       headerStyles = { ...defaultHeaderStyles, ...parsedHeaderStyles };
-      bodyStyles = { ...defaultBodyStyles, ...parsedBodyStyles };
       footerStyles = { ...defaultFooterStyles, ...parsedFooterStyles };
       layoutGlobalStyles = JSON.parse(layout.globalStyles || '{}');
       // Merge layout global styles with page global styles (page takes precedence)
@@ -211,10 +232,32 @@ export default function Preview() {
     } catch (err) {
       console.error('Failed to parse layout data:', err);
     }
+  } else {
+    // No layout - create a default body section
+    bodySections = [{
+      id: 'body-section-1',
+      name: 'Body Section 1',
+      styles: { ...defaultBodyStyles },
+    }];
   }
 
-  // Check if any component is a ProductGrid placeholder
-  const hasProductGrid = components.some((c) => c.type === 'ProductGrid');
+  // Get components for a specific section
+  const getSectionComponents = (sectionId: string): VisualComponent[] => {
+    // First check sectionComponents
+    if (sectionComponents[sectionId] && sectionComponents[sectionId].length > 0) {
+      return sectionComponents[sectionId];
+    }
+    // Backward compatibility: if only one section and we have deprecated components, use them
+    if (bodySections.length === 1 && sectionId === bodySections[0].id && components.length > 0) {
+      return components;
+    }
+    return [];
+  };
+
+  // Check if any component is a ProductGrid placeholder (across all sections)
+  const allComponents = Object.values(sectionComponents).flat();
+  const hasProductGrid = allComponents.some((c) => c.type === 'ProductGrid') ||
+                         components.some((c) => c.type === 'ProductGrid');
 
   // Get page type label
   const getPageTypeLabel = () => {
@@ -314,62 +357,75 @@ export default function Preview() {
         </header>
       )}
 
-      {/* Page Content (Body) */}
-      <main
-        style={{
-          maxWidth: layout ? (bodyStyles.maxWidth || '100%') : undefined,
-          margin: layout ? (bodyStyles.margin || '0') : undefined,
-          backgroundColor: bodyStyles.backgroundColor || 'transparent',
-          borderBottomWidth: bodyStyles.borderBottomWidth || undefined,
-          borderBottomStyle: (bodyStyles.borderBottomStyle as React.CSSProperties['borderBottomStyle']) || undefined,
-          borderBottomColor: bodyStyles.borderBottomColor || undefined,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: layout ? (bodyStyles.contentMaxWidth || '100%') : undefined,
-            margin: layout ? (bodyStyles.contentMargin || '0') : undefined,
-            padding: layout ? (bodyStyles.padding || '0') : undefined,
-            minHeight: layout ? (bodyStyles.minHeight || undefined) : undefined,
-          }}
-        >
-          {components.map((component) => {
-            // Special handling for ProductGrid - inject child pages
-            if (component.type === 'ProductGrid' && page.pageType === 'PLP') {
-              return (
+      {/* Page Content (Body Sections) */}
+      {bodySections.map((section) => {
+        const sectionComps = getSectionComponents(section.id);
+        const styles = section.styles || defaultBodyStyles;
+
+        // In preview, hide empty sections (except if it's the only section)
+        if (sectionComps.length === 0 && bodySections.length > 1) {
+          return null;
+        }
+
+        return (
+          <main
+            key={section.id}
+            style={{
+              maxWidth: styles.maxWidth || '100%',
+              margin: styles.margin || '0',
+              backgroundColor: styles.backgroundColor || 'transparent',
+              borderBottom: styles.borderBottomWidth
+                ? `${styles.borderBottomWidth} ${styles.borderBottomStyle || 'solid'} ${styles.borderBottomColor || '#e5e7eb'}`
+                : undefined,
+            }}
+          >
+            <div
+              style={{
+                maxWidth: styles.contentMaxWidth || '100%',
+                margin: styles.contentMargin || '0',
+                padding: styles.padding || '0',
+                minHeight: styles.minHeight || undefined,
+              }}
+            >
+              {sectionComps.map((component) => {
+                // Special handling for ProductGrid - inject child pages
+                if (component.type === 'ProductGrid' && page.pageType === 'PLP') {
+                  return (
+                    <ProductGrid
+                      key={component.id}
+                      props={{ ...component.props, parentRowKey: page.rowKey }}
+                      styles={component.customStyles || {}}
+                      globalStyles={globalStyles}
+                      childPages={childPages}
+                    />
+                  );
+                }
+
+                return (
+                  <VisualComponentRenderer
+                    key={component.id}
+                    component={component}
+                    isSelected={false}
+                    onSelect={() => {}}
+                    viewMode="desktop"
+                    readOnly={true}
+                  />
+                );
+              })}
+
+              {/* If PLP but no ProductGrid component, show child pages in first section */}
+              {section.id === bodySections[0].id && page.pageType === 'PLP' && !hasProductGrid && childPages.length > 0 && (
                 <ProductGrid
-                  key={component.id}
-                  props={{ ...component.props, parentRowKey: page.rowKey }}
-                  styles={component.customStyles || {}}
+                  props={{ parentRowKey: page.rowKey }}
+                  styles={{}}
                   globalStyles={globalStyles}
                   childPages={childPages}
                 />
-              );
-            }
-
-            return (
-              <VisualComponentRenderer
-                key={component.id}
-                component={component}
-                isSelected={false}
-                onSelect={() => {}}
-                viewMode="desktop"
-                readOnly={true}
-              />
-            );
-          })}
-
-          {/* If PLP but no ProductGrid component, show child pages at bottom */}
-          {page.pageType === 'PLP' && !hasProductGrid && childPages.length > 0 && (
-            <ProductGrid
-              props={{ parentRowKey: page.rowKey }}
-              styles={{}}
-              globalStyles={globalStyles}
-              childPages={childPages}
-            />
-          )}
-        </div>
-      </main>
+              )}
+            </div>
+          </main>
+        );
+      })}
 
       {/* Layout Footer */}
       {footerComponents.length > 0 && (

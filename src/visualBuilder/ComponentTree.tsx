@@ -179,9 +179,14 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
 }
 
 export default function ComponentTree() {
-  const { components } = useVisualBuilderStore();
+  const { components, sectionComponents, activeSectionId } = useVisualBuilderStore();
 
-  if (components.length === 0) {
+  // Get components for the active section, fallback to deprecated components array
+  const activeComponents = activeSectionId && sectionComponents[activeSectionId]
+    ? sectionComponents[activeSectionId]
+    : components;
+
+  if (activeComponents.length === 0) {
     return (
       <div className="p-4 text-center text-gray-500 text-sm">
         <p>No components yet</p>
@@ -198,14 +203,14 @@ export default function ComponentTree() {
         </h3>
       </div>
       <div className="space-y-0.5">
-        {components.map((component, index) => (
+        {activeComponents.map((component, index) => (
           <div key={component.id} className="group">
             <TreeNode
               component={component}
               depth={0}
               index={index}
               isFirst={index === 0}
-              isLast={index === components.length - 1}
+              isLast={index === activeComponents.length - 1}
             />
           </div>
         ))}

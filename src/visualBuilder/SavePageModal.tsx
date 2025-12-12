@@ -37,7 +37,7 @@ interface SavePageModalProps {
 }
 
 export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, previewLayoutId }: SavePageModalProps) {
-  const { components, globalStyles, projectName } = useVisualBuilderStore();
+  const { components, sectionComponents, globalStyles, projectName } = useVisualBuilderStore();
 
   const isEditing = !!editingPage;
 
@@ -210,7 +210,8 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, p
           title: title.trim(),
           summary: summary.trim(),
           category: pageType === 'PLP' ? category.trim() : null,
-          components: JSON.stringify(components),
+          components: JSON.stringify(components), // Deprecated, keep for backward compatibility
+          sectionComponents: JSON.stringify(sectionComponents), // New: components per body section
           globalStyles: JSON.stringify(globalStyles),
           isPublished,
         };
@@ -241,7 +242,8 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, p
           title: title.trim(),
           summary: summary.trim(),
           category: pageType === 'PLP' ? category.trim() : null,
-          components: JSON.stringify(components),
+          components: JSON.stringify(components), // Deprecated, keep for backward compatibility
+          sectionComponents: JSON.stringify(sectionComponents), // New: components per body section
           globalStyles: JSON.stringify(globalStyles),
           isPublished,
         };

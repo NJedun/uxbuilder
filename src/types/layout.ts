@@ -22,6 +22,13 @@ export interface LayoutSection {
   };
 }
 
+// Body section - defines a body zone in the layout (multiple allowed)
+export interface BodySection {
+  id: string;
+  name: string;
+  styles: SectionStyles;
+}
+
 // Layout entity for storage
 export interface LayoutEntity {
   rowKey: string;
@@ -33,7 +40,8 @@ export interface LayoutEntity {
   isDefault?: boolean; // Is this the default layout for the project?
   headerComponents: string; // JSON string of VisualComponent[]
   footerComponents: string; // JSON string of VisualComponent[]
-  bodyStyles: string; // JSON string of body zone styles
+  bodySections: string; // JSON string of BodySection[]
+  bodyStyles: string; // JSON string of body zone styles (deprecated, use bodySections)
   globalStyles: string; // JSON string of GlobalStyles
   isPublished: boolean;
   createdAt: string;
@@ -50,6 +58,7 @@ export interface Layout {
   isDefault?: boolean;
   headerComponents: VisualComponent[];
   footerComponents: VisualComponent[];
+  bodySections: BodySection[];
   bodyStyles: {
     maxWidth?: string;
     margin?: string;
@@ -79,12 +88,16 @@ export interface PageWithLayout {
   title: string;
   summary: string;
   category: string | null;
-  components: string; // Body content components
+  components: string; // Body content components (deprecated, use sectionComponents)
+  sectionComponents: string; // JSON string of Record<string, VisualComponent[]>
   globalStyles: string;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+// Type for section components mapping
+export type SectionComponentsMap = Record<string, VisualComponent[]>;
 
 // Section styles interface (shared by header, body, footer)
 export interface SectionStyles {
@@ -143,3 +156,15 @@ export const defaultFooterStyles: SectionStyles = {
   borderBottomStyle: '',
   borderBottomColor: '',
 };
+
+// Create a default body section
+export const createDefaultBodySection = (index: number): BodySection => ({
+  id: `body-section-${index}`,
+  name: `Body Section ${index}`,
+  styles: { ...defaultBodyStyles },
+});
+
+// Get default body sections array (at least one section)
+export const getDefaultBodySections = (): BodySection[] => [
+  createDefaultBodySection(1),
+];
