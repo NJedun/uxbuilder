@@ -289,10 +289,14 @@ export default function LayoutEditor() {
       {/* Toolbar */}
       <div className="min-h-16 bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link to="/layouts" className="text-gray-500 hover:text-gray-700">
-            ← Back
+          <Link
+            to="/visual-builder"
+            className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
+          >
+            Visual AI Builder
           </Link>
-          <h1 className="text-xl font-bold text-purple-600">Layout Editor</h1>
+          <span className="text-gray-300">|</span>
+          <h1 className="text-lg font-semibold text-purple-600">Layout Editor</h1>
           <input
             type="text"
             value={projectName}

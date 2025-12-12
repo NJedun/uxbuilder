@@ -33,9 +33,10 @@ interface SavePageModalProps {
   onClose: () => void;
   onSaved?: () => void;
   editingPage?: EditingPage | null;
+  previewLayoutId?: string | null;
 }
 
-export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }: SavePageModalProps) {
+export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, previewLayoutId }: SavePageModalProps) {
   const { components, globalStyles, projectName } = useVisualBuilderStore();
 
   const isEditing = !!editingPage;
@@ -80,6 +81,13 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
     }
   }, [isOpen, editingPage]);
 
+  // Set previewLayoutId as initial layout when opening for new page
+  useEffect(() => {
+    if (isOpen && !isEditing && previewLayoutId) {
+      setLayoutRowKey(previewLayoutId);
+    }
+  }, [isOpen, isEditing, previewLayoutId]);
+
   // Fetch existing PLPs and layouts when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -121,11 +129,17 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage }:
         }));
         setLayoutOptions(layouts);
 
-        // Auto-select default layout for new pages
+        // Auto-select layout for new pages: prioritize previewLayoutId, then default layout
         if (!isEditing && !layoutRowKey) {
-          const defaultLayout = layouts.find((l: LayoutOption) => l.isDefault);
-          if (defaultLayout) {
-            setLayoutRowKey(defaultLayout.rowKey);
+          if (previewLayoutId) {
+            // Use the layout selected in the preview
+            setLayoutRowKey(previewLayoutId);
+          } else {
+            // Fall back to default layout
+            const defaultLayout = layouts.find((l: LayoutOption) => l.isDefault);
+            if (defaultLayout) {
+              setLayoutRowKey(defaultLayout.rowKey);
+            }
           }
         }
       }

@@ -7,6 +7,7 @@ import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AIStylerModal from '../visualBuilder/AIStylerModal';
 import SavePageModal from '../visualBuilder/SavePageModal';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
+import { Layout } from '../types/layout';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -91,11 +92,48 @@ export default function VisualBuilder() {
           summary: page.summary || '',
           category: page.category,
         });
+
+        // Load the associated layout if one exists
+        if (page.layoutRowKey) {
+          await loadLayoutForPreview(page.partitionKey, page.layoutRowKey);
+        }
       }
     } catch (err) {
       console.error('Failed to load page for editing:', err);
     } finally {
       setLoadingPage(false);
+    }
+  };
+
+  const loadLayoutForPreview = async (project: string, layoutRowKey: string) => {
+    try {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/pages/${project}/${layoutRowKey}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        const layoutEntity = data.data;
+
+        // Parse and set the layout
+        const layout: Layout = {
+          rowKey: layoutEntity.rowKey,
+          partitionKey: layoutEntity.partitionKey,
+          name: layoutEntity.name || layoutEntity.title,
+          slug: layoutEntity.slug,
+          description: layoutEntity.description,
+          isDefault: layoutEntity.isDefault,
+          headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
+          footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
+          bodyStyles: layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {},
+          globalStyles: layoutEntity.globalStyles ? JSON.parse(layoutEntity.globalStyles) : {},
+          isPublished: layoutEntity.isPublished,
+          createdAt: layoutEntity.createdAt || '',
+          updatedAt: layoutEntity.updatedAt || '',
+        };
+        setPreviewLayout(layout);
+      }
+    } catch (err) {
+      console.error('Failed to load layout for preview:', err);
     }
   };
 
@@ -108,6 +146,7 @@ export default function VisualBuilder() {
   const [showNewDropdown, setShowNewDropdown] = useState(false);
   const [showStylesDropdown, setShowStylesDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
+  const [previewLayout, setPreviewLayout] = useState<Layout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get canvas width based on view mode
@@ -530,7 +569,10 @@ export default function VisualBuilder() {
             transition-transform duration-300 ease-in-out
             ${showComponentLibrary ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}>
-            <VisualComponentLibrary />
+            <VisualComponentLibrary
+              onLayoutSelect={setPreviewLayout}
+              selectedLayoutId={previewLayout?.rowKey || null}
+            />
           </div>
 
           {/* Mobile Overlay */}
@@ -546,7 +588,7 @@ export default function VisualBuilder() {
 
           {/* Canvas Area */}
           <main className="flex-1 p-2 sm:p-6 overflow-auto bg-gray-50">
-            <VisualCanvas viewMode={viewMode} />
+            <VisualCanvas viewMode={viewMode} previewLayout={previewLayout} />
           </main>
 
           {/* Style Panel - Desktop always visible, Mobile toggleable */}
@@ -555,7 +597,7 @@ export default function VisualBuilder() {
             transition-transform duration-300 ease-in-out
             ${showStylePanel ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
           `}>
-            <VisualStylePanel />
+            <VisualStylePanel previewLayout={previewLayout} />
           </div>
 
           {/* Mobile Panel Toggles */}
@@ -594,6 +636,7 @@ export default function VisualBuilder() {
             isOpen={showSavePageModal}
             onClose={() => setShowSavePageModal(false)}
             editingPage={editingPage}
+            previewLayoutId={previewLayout?.rowKey || null}
           />
         )}
       </div>

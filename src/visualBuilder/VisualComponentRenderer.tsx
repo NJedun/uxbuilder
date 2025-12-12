@@ -1,7 +1,9 @@
 import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
 import type { ViewMode } from '../pages/VisualBuilder';
 import {
+  Breadcrumb,
   HeaderComponent,
+  HeaderAllegiant,
   HeroSection,
   ImageComponent,
   RowComponent,
@@ -79,6 +81,27 @@ export default function VisualComponentRenderer({
             styles={styles}
             globalStyles={globalStyles}
             viewMode={viewMode}
+            getStyle={getStyle}
+          />
+        );
+
+      case 'HeaderAllegiant':
+        return (
+          <HeaderAllegiant
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+            viewMode={viewMode}
+            getStyle={getStyle}
+          />
+        );
+
+      case 'Breadcrumb':
+        return (
+          <Breadcrumb
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
             getStyle={getStyle}
           />
         );

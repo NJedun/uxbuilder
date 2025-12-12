@@ -1,7 +1,13 @@
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useVisualBuilderStore, SeedProductRating, SeedProductAttribute } from '../store/visualBuilderStore';
+import { Layout } from '../types/layout';
 
-export default function VisualStylePanel() {
+interface VisualStylePanelProps {
+  previewLayout?: Layout | null;
+}
+
+export default function VisualStylePanel({ previewLayout }: VisualStylePanelProps = {}) {
   const { selectedComponentId, components, updateComponent } = useVisualBuilderStore();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     content: true,
@@ -17,6 +23,15 @@ export default function VisualStylePanel() {
     headerContainer: true,
     headerLogo: false,
     headerNav: false,
+    // HeaderAllegiant sections
+    headerAllegiantContent: true,
+    headerAllegiantContainer: true,
+    headerAllegiantLogo: false,
+    headerAllegiantNav: false,
+    headerAllegiantSearch: false,
+    // Breadcrumb sections
+    breadcrumbContent: true,
+    breadcrumbStyles: false,
     // Image sections
     imageContent: true,
     imageStyles: true,
@@ -202,6 +217,45 @@ export default function VisualStylePanel() {
       <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto h-full">
         <div className="p-4">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Properties</h2>
+
+          {/* Layout Preview Info */}
+          {previewLayout && (
+            <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
+                <span className="font-semibold text-purple-800">Layout Preview</span>
+              </div>
+              <p className="text-sm text-purple-700 mb-1">
+                <span className="font-medium">{previewLayout.name}</span>
+              </p>
+              <p className="text-xs text-purple-600 mb-4">
+                Header and footer from this layout are shown in preview mode. They are read-only here.
+              </p>
+              <div className="space-y-2">
+                <Link
+                  to={`/layout-editor?edit=${previewLayout.rowKey}&project=${previewLayout.partitionKey}`}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Layout
+                </Link>
+                <Link
+                  to="/layout-editor"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white text-purple-600 text-sm font-medium rounded-md border border-purple-300 hover:bg-purple-50 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create New Layout
+                </Link>
+              </div>
+            </div>
+          )}
+
           <div className="text-center text-gray-500 py-8">
             <svg
               className="mx-auto h-12 w-12 mb-4 text-gray-300"
@@ -713,6 +767,328 @@ export default function VisualStylePanel() {
             {renderTextInput('Divider Height', 'navDividerHeight', 'e.g., 20px')}
             {renderTextInput('Divider Margin', 'navDividerMargin', 'e.g., 0 8px')}
           </div>
+        </>
+      ))}
+
+      {/* HeaderAllegiant Content Section */}
+      {selectedComponent.type === 'HeaderAllegiant' && renderSection('Content', 'headerAllegiantContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Logo Text</label>
+            <input
+              type="text"
+              value={props.logoText || ''}
+              onChange={(e) => handlePropChange('logoText', e.target.value)}
+              placeholder="Enter logo text..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Logo Image URL</label>
+            <input
+              type="text"
+              value={props.logoImageUrl || ''}
+              onChange={(e) => handlePropChange('logoImageUrl', e.target.value)}
+              placeholder="https://example.com/logo.png"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showLogo"
+              checked={props.showLogo !== false}
+              onChange={(e) => handlePropChange('showLogo', e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="showLogo" className="text-xs text-gray-600">Show Logo</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showNavLinks"
+              checked={props.showNavLinks !== false}
+              onChange={(e) => handlePropChange('showNavLinks', e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="showNavLinks" className="text-xs text-gray-600">Show Navigation Links</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showSearch"
+              checked={props.showSearch !== false}
+              onChange={(e) => handlePropChange('showSearch', e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="showSearch" className="text-xs text-gray-600">Show Search Box</label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showBreadcrumb"
+              checked={props.showBreadcrumb === true}
+              onChange={(e) => handlePropChange('showBreadcrumb', e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+            />
+            <label htmlFor="showBreadcrumb" className="text-xs text-gray-600">Show Breadcrumb</label>
+          </div>
+
+          {/* Navigation Links Editor */}
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">Navigation Links</p>
+            {(props.navLinks || []).map((link: { text: string; url: string; hasDropdown?: boolean }, index: number) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={link.text}
+                  onChange={(e) => {
+                    const newLinks = [...(props.navLinks || [])];
+                    newLinks[index] = { ...newLinks[index], text: e.target.value };
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  placeholder="Link text"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+                <input
+                  type="text"
+                  value={link.url}
+                  onChange={(e) => {
+                    const newLinks = [...(props.navLinks || [])];
+                    newLinks[index] = { ...newLinks[index], url: e.target.value };
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  placeholder="URL"
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+                <button
+                  onClick={() => {
+                    const newLinks = (props.navLinks || []).filter((_: unknown, i: number) => i !== index);
+                    handlePropChange('navLinks', newLinks);
+                  }}
+                  className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newLinks = [...(props.navLinks || []), { text: 'New Link', url: '#' }];
+                handlePropChange('navLinks', newLinks);
+              }}
+              className="w-full px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+            >
+              + Add Link
+            </button>
+          </div>
+
+          {/* Breadcrumb Editor */}
+          {props.showBreadcrumb && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">Breadcrumb Items</p>
+              {(props.breadcrumbItems || []).map((item: { text: string; url: string }, index: number) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={item.text}
+                    onChange={(e) => {
+                      const newItems = [...(props.breadcrumbItems || [])];
+                      newItems[index] = { ...newItems[index], text: e.target.value };
+                      handlePropChange('breadcrumbItems', newItems);
+                    }}
+                    placeholder="Text"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                  />
+                  <input
+                    type="text"
+                    value={item.url}
+                    onChange={(e) => {
+                      const newItems = [...(props.breadcrumbItems || [])];
+                      newItems[index] = { ...newItems[index], url: e.target.value };
+                      handlePropChange('breadcrumbItems', newItems);
+                    }}
+                    placeholder="URL"
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                  />
+                  <button
+                    onClick={() => {
+                      const newItems = (props.breadcrumbItems || []).filter((_: unknown, i: number) => i !== index);
+                      handlePropChange('breadcrumbItems', newItems);
+                    }}
+                    className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  const newItems = [...(props.breadcrumbItems || []), { text: 'New Item', url: '#' }];
+                  handlePropChange('breadcrumbItems', newItems);
+                }}
+                className="w-full px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+              >
+                + Add Breadcrumb
+              </button>
+              <div className="mt-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Separator</label>
+                <input
+                  type="text"
+                  value={props.breadcrumbSeparator || '>'}
+                  onChange={(e) => handlePropChange('breadcrumbSeparator', e.target.value)}
+                  placeholder=">"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+              </div>
+            </div>
+          )}
+        </>
+      ))}
+
+      {/* HeaderAllegiant Container Section */}
+      {selectedComponent.type === 'HeaderAllegiant' && renderSection('Container', 'headerAllegiantContainer', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#ffffff')}
+          {renderTextInput('Padding', 'padding', 'e.g., 16px 32px')}
+          {renderTextInput('Width', 'width', 'e.g., 100%, 800px')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 1400px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 auto')}
+        </>
+      ))}
+
+      {/* HeaderAllegiant Logo Styles */}
+      {selectedComponent.type === 'HeaderAllegiant' && renderSection('Logo Styles', 'headerAllegiantLogo', (
+        <>
+          {renderColorInput('Logo Color', 'logoColor', '#003087')}
+          {renderTextInput('Logo Font Size', 'logoFontSize', 'e.g., 24px')}
+          {renderSelectInput('Logo Font Weight', 'logoFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Logo Image Height', 'logoHeight', 'e.g., 48px')}
+        </>
+      ))}
+
+      {/* HeaderAllegiant Nav Link Styles */}
+      {selectedComponent.type === 'HeaderAllegiant' && renderSection('Navigation Styles', 'headerAllegiantNav', (
+        <>
+          {renderColorInput('Link Color', 'navLinkColor', '#003087')}
+          {renderColorInput('Link Hover Color', 'navLinkHoverColor', '#0066cc')}
+          {renderTextInput('Link Font Size', 'navLinkFontSize', 'e.g., 15px')}
+          {renderSelectInput('Link Font Weight', 'navLinkFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Link Gap', 'navLinkGap', 'e.g., 32px')}
+        </>
+      ))}
+
+      {/* HeaderAllegiant Search Styles */}
+      {selectedComponent.type === 'HeaderAllegiant' && renderSection('Search Styles', 'headerAllegiantSearch', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Search Placeholder</label>
+            <input
+              type="text"
+              value={props.searchPlaceholder || 'Search'}
+              onChange={(e) => handlePropChange('searchPlaceholder', e.target.value)}
+              placeholder="Search"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {renderColorInput('Border Color', 'searchBorderColor', '#003087')}
+          {renderTextInput('Border Radius', 'searchBorderRadius', 'e.g., 4px')}
+          {renderColorInput('Background Color', 'searchBackgroundColor', '#ffffff')}
+          {renderColorInput('Text Color', 'searchTextColor', '#333333')}
+          {renderTextInput('Width', 'searchWidth', 'e.g., 180px')}
+        </>
+      ))}
+
+      {/* Breadcrumb Content Section */}
+      {selectedComponent.type === 'Breadcrumb' && renderSection('Content', 'breadcrumbContent', (
+        <>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Separator</label>
+            <input
+              type="text"
+              value={props.separator || '>'}
+              onChange={(e) => handlePropChange('separator', e.target.value)}
+              placeholder=">"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="showHomeIcon"
+              checked={props.showHomeIcon || false}
+              onChange={(e) => handlePropChange('showHomeIcon', e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="showHomeIcon" className="text-xs font-medium text-gray-600">Show Home Icon</label>
+          </div>
+          <div className="pt-2 border-t border-gray-100">
+            <label className="block text-xs font-medium text-gray-600 mb-2">Breadcrumb Items</label>
+            {(props.items || []).map((item: { text: string; url: string }, index: number) => (
+              <div key={index} className="mb-2 p-2 bg-gray-50 rounded">
+                <input
+                  type="text"
+                  value={item.text}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[index] = { ...newItems[index], text: e.target.value };
+                    handlePropChange('items', newItems);
+                  }}
+                  placeholder="Item text"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="text"
+                  value={item.url}
+                  onChange={(e) => {
+                    const newItems = [...(props.items || [])];
+                    newItems[index] = { ...newItems[index], url: e.target.value };
+                    handlePropChange('items', newItems);
+                  }}
+                  placeholder="URL"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    const newItems = (props.items || []).filter((_: any, i: number) => i !== index);
+                    handlePropChange('items', newItems);
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const newItems = [...(props.items || []), { text: 'New Item', url: '#' }];
+                handlePropChange('items', newItems);
+              }}
+              className="w-full px-3 py-1 text-xs text-blue-600 border border-blue-300 rounded hover:bg-blue-50"
+            >
+              + Add Item
+            </button>
+          </div>
+        </>
+      ))}
+
+      {/* Breadcrumb Styles Section */}
+      {selectedComponent.type === 'Breadcrumb' && renderSection('Styles', 'breadcrumbStyles', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#f8fafc')}
+          {renderTextInput('Padding', 'padding', 'e.g., 12px 32px')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 1400px')}
+          {renderTextInput('Margin', 'margin', 'e.g., 0 auto')}
+          {renderColorInput('Text Color', 'textColor', '#374151')}
+          {renderColorInput('Link Color', 'linkColor', '#003087')}
+          {renderColorInput('Link Hover Color', 'linkHoverColor', '#0066cc')}
+          {renderTextInput('Font Size', 'fontSize', 'e.g., 14px')}
+          {renderSelectInput('Font Weight', 'fontWeight', fontWeightOptions, 'Select weight')}
+          {renderColorInput('Separator Color', 'separatorColor', '#6b7280')}
+          {renderTextInput('Border Top Width', 'borderTopWidth', 'e.g., 1px')}
+          {renderColorInput('Border Top Color', 'borderTopColor', '#e5e7eb')}
+          {renderTextInput('Border Bottom Width', 'borderBottomWidth', 'e.g., 1px')}
+          {renderColorInput('Border Bottom Color', 'borderBottomColor', '#e5e7eb')}
         </>
       ))}
 

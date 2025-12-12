@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 interface PageEntity {
   rowKey: string;
   partitionKey: string;
-  pageType: 'PLP' | 'PDP';
+  pageType: 'PLP' | 'PDP' | 'landingPage';
   slug: string;
   parentRowKey: string | null;
   title: string;
@@ -29,9 +29,10 @@ export default function PageManager() {
     ? pages
     : pages.filter((p) => p.partitionKey === selectedProject);
 
-  // Separate PLPs and PDPs
+  // Separate PLPs, PDPs, and Landing Pages
   const plpPages = filteredPages.filter((p) => p.pageType === 'PLP');
   const pdpPages = filteredPages.filter((p) => p.pageType === 'PDP');
+  const landingPages = filteredPages.filter((p) => p.pageType === 'landingPage');
 
   // Get child PDPs for a PLP
   const getChildPDPs = (plpRowKey: string) => {
@@ -111,6 +112,10 @@ export default function PageManager() {
             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
+          ) : page.pageType === 'landingPage' ? (
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
           ) : (
             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -124,10 +129,12 @@ export default function PageManager() {
               className={`px-1.5 py-0.5 text-xs font-medium rounded ${
                 page.pageType === 'PLP'
                   ? 'bg-blue-100 text-blue-700'
+                  : page.pageType === 'landingPage'
+                  ? 'bg-purple-100 text-purple-700'
                   : 'bg-green-100 text-green-700'
               }`}
             >
-              {page.pageType}
+              {page.pageType === 'landingPage' ? 'Landing' : page.pageType}
             </span>
             <span
               className={`px-1.5 py-0.5 text-xs rounded ${
@@ -200,6 +207,18 @@ export default function PageManager() {
             );
           })}
 
+          {/* Landing Pages */}
+          {landingPages.length > 0 && (
+            <div className="bg-purple-50/30">
+              <div className="px-4 py-2 text-xs font-medium text-purple-600 uppercase tracking-wider bg-purple-100/50">
+                Landing Pages
+              </div>
+              {landingPages.map((page) => (
+                <PageRow key={page.rowKey} page={page} />
+              ))}
+            </div>
+          )}
+
           {/* Orphan PDPs (no parent) */}
           {orphanPDPs.length > 0 && (
             <div className="bg-gray-50/50">
@@ -223,13 +242,14 @@ export default function PageManager() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-gray-900">Page Manager</h1>
               <Link
                 to="/visual-builder"
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
               >
-                ← Back to Builder
+                Visual AI Builder
               </Link>
+              <span className="text-gray-300">|</span>
+              <h1 className="text-lg font-semibold text-gray-700">Page Manager</h1>
             </div>
             <div className="flex items-center gap-4">
               {/* Project Filter */}
@@ -270,7 +290,7 @@ export default function PageManager() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="text-2xl font-bold text-gray-900">{pages.length}</div>
                 <div className="text-sm text-gray-500">Total Pages</div>
@@ -282,6 +302,10 @@ export default function PageManager() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="text-2xl font-bold text-green-600">{pdpPages.length}</div>
                 <div className="text-sm text-gray-500">Product Pages (PDP)</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="text-2xl font-bold text-purple-600">{landingPages.length}</div>
+                <div className="text-sm text-gray-500">Landing Pages</div>
               </div>
             </div>
 

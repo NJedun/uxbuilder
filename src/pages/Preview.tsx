@@ -231,23 +231,29 @@ export default function Preview() {
       {/* Preview Banner */}
       <div className="bg-gray-900 text-white px-4 py-2 flex items-center justify-between text-sm">
         <div className="flex items-center gap-4">
-          <span className="font-medium">Preview Mode</span>
-          <span className="text-gray-400">|</span>
-          <span className="text-gray-300">{getPageTypeLabel()}</span>
-          <span className="text-gray-400">|</span>
+          <Link
+            to="/visual-builder"
+            className="font-bold text-white hover:text-gray-300 transition-colors"
+          >
+            Visual AI Builder
+          </Link>
+          <span className="text-gray-500">|</span>
+          <span className="font-medium text-gray-300">Preview</span>
+          <span className="text-gray-500">|</span>
+          <span className="text-gray-400">{getPageTypeLabel()}</span>
           <code className="text-gray-300 bg-gray-800 px-2 py-0.5 rounded">
             /{page.slug}
           </code>
           {layout && (
             <>
-              <span className="text-gray-400">|</span>
-              <span className="text-gray-300">Layout applied</span>
+              <span className="text-gray-500">|</span>
+              <span className="text-gray-400">Layout applied</span>
             </>
           )}
           {/* Show parent PLP link for PDP pages */}
           {page.pageType === 'PDP' && parentPage && (
             <>
-              <span className="text-gray-400">|</span>
+              <span className="text-gray-500">|</span>
               <Link
                 to={`/preview/${parentPage.slug}`}
                 className="text-blue-400 hover:text-blue-300 flex items-center gap-1"

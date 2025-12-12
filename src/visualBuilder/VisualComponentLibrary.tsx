@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useVisualBuilderStore, VisualComponent, defaultSeedProductData } from '../store/visualBuilderStore';
+import { Layout } from '../types/layout';
 import ComponentTree from './ComponentTree';
 
 // SVG Icon components for the component library
@@ -7,6 +8,16 @@ const ComponentIcons: Record<string, JSX.Element> = {
   Header: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h7" />
+    </svg>
+  ),
+  HeaderAllegiant: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM4 6h16M4 10h16" />
+    </svg>
+  ),
+  Breadcrumb: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h4l3-3 3 3h8M9 9l3 3M12 12l3-3" />
     </svg>
   ),
   HeroSection: (
@@ -119,6 +130,90 @@ const componentTemplates = [
       navDividerColor: '',
       navDividerHeight: '',
       navDividerMargin: '',
+    },
+  },
+  {
+    type: 'HeaderAllegiant',
+    label: 'Header Allegiant (with Search)',
+    canBeChild: false,
+    defaultProps: {
+      logoText: 'ALLEGIANT',
+      logoImageUrl: '',
+      navLinks: [
+        { text: 'Corn', url: '#' },
+        { text: 'Soybeans', url: '#' },
+        { text: 'Wheat', url: '#' },
+        { text: 'Forages', url: '#', hasDropdown: true, dropdownItems: [
+          { text: 'Alfalfa', url: '#' },
+          { text: 'Clover', url: '#' },
+          { text: 'Grass', url: '#' },
+        ]},
+        { text: 'Tech sheets', url: '#' },
+        { text: 'Plot data', url: '#' },
+        { text: 'Contact us', url: '#' },
+      ],
+      showLogo: true,
+      showNavLinks: true,
+      showSearch: true,
+      searchPlaceholder: 'Search',
+    },
+    defaultStyles: {
+      backgroundColor: '#ffffff',
+      padding: '16px 32px',
+      // Logo styles
+      logoColor: '#003087',
+      logoFontSize: '24px',
+      logoFontWeight: '700',
+      logoHeight: '48px',
+      // Nav link styles
+      navLinkColor: '#003087',
+      navLinkFontSize: '15px',
+      navLinkFontWeight: '500',
+      navLinkGap: '32px',
+      navLinkHoverColor: '#0066cc',
+      // Container
+      maxWidth: '1400px',
+      margin: '0 auto',
+      // Border
+      borderWidth: '',
+      borderStyle: '',
+      borderColor: '',
+      // Search styles
+      searchBorderColor: '#003087',
+      searchBorderRadius: '4px',
+      searchBackgroundColor: '#ffffff',
+      searchTextColor: '#333333',
+      searchWidth: '180px',
+    },
+  },
+  {
+    type: 'Breadcrumb',
+    label: 'Breadcrumb Navigation',
+    canBeChild: true,
+    defaultProps: {
+      items: [
+        { text: 'Home', url: '#' },
+        { text: 'Category', url: '#' },
+        { text: 'Current Page', url: '#' },
+      ],
+      separator: '>',
+      showHomeIcon: false,
+    },
+    defaultStyles: {
+      backgroundColor: '#f8fafc',
+      padding: '12px 32px',
+      maxWidth: '1400px',
+      margin: '0 auto',
+      textColor: '#374151',
+      linkColor: '#003087',
+      linkHoverColor: '#0066cc',
+      fontSize: '14px',
+      fontWeight: '400',
+      separatorColor: '#6b7280',
+      borderTopWidth: '1px',
+      borderTopColor: '#e5e7eb',
+      borderBottomWidth: '1px',
+      borderBottomColor: '#e5e7eb',
     },
   },
   {
@@ -389,17 +484,96 @@ const componentTemplates = [
   },
 ];
 
+interface LayoutEntity {
+  rowKey: string;
+  partitionKey: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isDefault?: boolean;
+  headerComponents: string;
+  footerComponents: string;
+  bodyStyles?: string;
+  isPublished: boolean;
+}
+
 interface VisualComponentLibraryProps {
   onAddComponent?: (component: VisualComponent) => void;
   components?: VisualComponent[];
+  onLayoutSelect?: (layout: Layout | null) => void;
+  selectedLayoutId?: string | null;
 }
 
-export default function VisualComponentLibrary({ onAddComponent: externalAddComponent, components: externalComponents }: VisualComponentLibraryProps = {}) {
+export default function VisualComponentLibrary({
+  onAddComponent: externalAddComponent,
+  components: externalComponents,
+  onLayoutSelect,
+  selectedLayoutId,
+}: VisualComponentLibraryProps = {}) {
   const store = useVisualBuilderStore();
   const addComponent = externalAddComponent || store.addComponent;
   const components = externalComponents || store.components;
   const selectedComponentId = store.selectedComponentId;
+  const projectName = store.projectName;
   const [targetColumn, setTargetColumn] = useState<number | null>(null);
+  const [layouts, setLayouts] = useState<LayoutEntity[]>([]);
+  const [loadingLayouts, setLoadingLayouts] = useState(false);
+  const [layoutsExpanded, setLayoutsExpanded] = useState(true);
+
+  // Fetch layouts for current project
+  useEffect(() => {
+    const fetchLayouts = async () => {
+      if (!projectName || projectName === 'Untitled Project') return;
+
+      setLoadingLayouts(true);
+      try {
+        const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+        const response = await fetch(`${baseUrl}/api/pages?type=layout&project=${encodeURIComponent(projectName)}`);
+        if (response.ok) {
+          const data = await response.json();
+          setLayouts(data.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch layouts:', err);
+      } finally {
+        setLoadingLayouts(false);
+      }
+    };
+
+    fetchLayouts();
+  }, [projectName]);
+
+  // Handle layout selection
+  const handleLayoutSelect = async (layoutEntity: LayoutEntity | null) => {
+    if (!onLayoutSelect) return;
+
+    if (!layoutEntity) {
+      onLayoutSelect(null);
+      return;
+    }
+
+    try {
+      // Parse the layout components
+      const layout: Layout = {
+        rowKey: layoutEntity.rowKey,
+        partitionKey: layoutEntity.partitionKey,
+        name: layoutEntity.name,
+        slug: layoutEntity.slug,
+        description: layoutEntity.description,
+        isDefault: layoutEntity.isDefault,
+        headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
+        footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
+        bodyStyles: layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {},
+        globalStyles: store.globalStyles,
+        isPublished: layoutEntity.isPublished,
+        createdAt: '',
+        updatedAt: '',
+      };
+      onLayoutSelect(layout);
+    } catch (err) {
+      console.error('Failed to parse layout:', err);
+    }
+  };
 
   // Find all Row components to allow adding children to them
   const findRowComponents = (comps: VisualComponent[]): { id: string; columns: number }[] => {
@@ -456,6 +630,128 @@ export default function VisualComponentLibrary({ onAddComponent: externalAddComp
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 overflow-y-auto h-full flex flex-col">
+      {/* Layout Preview Section */}
+      {onLayoutSelect && (
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <button
+            onClick={() => setLayoutsExpanded(!layoutsExpanded)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h2 className="text-lg font-semibold text-gray-800">Layout Preview</h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${layoutsExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {layoutsExpanded && (
+            <div className="mt-3">
+              {loadingLayouts ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400"></div>
+                  <span className="ml-2 text-xs text-gray-500">Loading layouts...</span>
+                </div>
+              ) : layouts.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-xs text-gray-500 mb-2">
+                    {projectName === 'Untitled Project'
+                      ? 'Name your project to see layouts'
+                      : 'No layouts for this project'}
+                  </p>
+                  <a
+                    href="/layout-editor"
+                    className="text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    Create a layout →
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* No Layout Option */}
+                  <div
+                    onClick={() => handleLayoutSelect(null)}
+                    className={`cursor-pointer rounded-lg border p-2 transition-all ${
+                      !selectedLayoutId
+                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">No Layout</p>
+                        <p className="text-[10px] text-gray-400">Content only</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Layout Options */}
+                  {layouts.map((layout) => (
+                    <div
+                      key={layout.rowKey}
+                      onClick={() => handleLayoutSelect(layout)}
+                      className={`cursor-pointer rounded-lg border p-2 transition-all ${
+                        selectedLayoutId === layout.rowKey
+                          ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {/* Mini Layout Preview */}
+                        <div className="w-12 h-8 bg-gray-100 rounded flex flex-col overflow-hidden">
+                          <div className="h-1.5 bg-gray-300" /> {/* Header */}
+                          <div className="flex-1 bg-white border-x border-dashed border-gray-200" /> {/* Body */}
+                          <div className="h-1.5 bg-gray-300" /> {/* Footer */}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-700 truncate">{layout.name}</p>
+                          <div className="flex items-center gap-1">
+                            {layout.isDefault && (
+                              <span className="text-[9px] px-1 py-0.5 bg-purple-100 text-purple-600 rounded">
+                                Default
+                              </span>
+                            )}
+                            <p className="text-[10px] text-gray-400 truncate">
+                              {layout.description || layout.slug}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Create New Layout Option */}
+                  <a
+                    href="/layout-editor"
+                    className="block cursor-pointer rounded-lg border border-dashed border-gray-300 p-2 transition-all hover:border-purple-400 hover:bg-purple-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-12 h-8 bg-purple-50 rounded flex items-center justify-center">
+                        <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-purple-600">Create New Layout</p>
+                        <p className="text-[10px] text-gray-400">Design header & footer</p>
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="p-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
 
