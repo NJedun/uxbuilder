@@ -37,7 +37,7 @@ export default function LayoutManager() {
     try {
       setLoading(true);
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
-      const response = await fetch(`${baseUrl}/api/pages?type=layout`);
+      const response = await fetch(`${baseUrl}/api/layouts`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch layouts');

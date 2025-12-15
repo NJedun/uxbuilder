@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
 
-function getPagesTableClient() {
+function getTableClient() {
   const accountName = process.env.AZURE_STORAGE_ACCOUNT;
   const accountKey = process.env.AZURE_STORAGE_KEY;
   const tableName = process.env.AZURE_TABLE_NAME;
@@ -18,6 +18,33 @@ function getPagesTableClient() {
   );
 }
 
+function formatEntityResponse(entity: any) {
+  return {
+    rowKey: entity.rowKey,
+    partitionKey: entity.partitionKey,
+    entityType: entity.entityType || 'page',
+    pageType: entity.pageType,
+    slug: entity.slug,
+    parentRowKey: entity.parentRowKey || null,
+    layoutRowKey: entity.layoutRowKey || null,
+    title: entity.title,
+    name: entity.name || entity.title,
+    summary: entity.summary || '',
+    category: entity.category || null,
+    sectionComponents: entity.sectionComponents || '{}',
+    globalStyles: entity.globalStyles || '{}',
+    headerComponents: entity.headerComponents || '[]',
+    footerComponents: entity.footerComponents || '[]',
+    bodySections: entity.bodySections || '[]',
+    headerStyles: entity.headerStyles || '{}',
+    footerStyles: entity.footerStyles || '{}',
+    isDefault: entity.isDefault || false,
+    isPublished: entity.isPublished || false,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { project, rowKey } = req.query;
 
@@ -25,82 +52,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing project or rowKey' });
   }
 
-  const tableClient = getPagesTableClient();
+  const tableClient = getTableClient();
 
-  // GET - Get single page
+  // GET - Get single entity (page or layout)
   if (req.method === 'GET') {
     try {
       const entity = await tableClient.getEntity(project, rowKey);
 
       return res.status(200).json({
         success: true,
-        data: {
-          rowKey: entity.rowKey,
-          partitionKey: entity.partitionKey,
-          pageType: entity.pageType,
-          slug: entity.slug,
-          parentRowKey: entity.parentRowKey || null,
-          layoutRowKey: entity.layoutRowKey || null,
-          title: entity.title,
-          name: entity.name || entity.title,
-          summary: entity.summary || '',
-          category: entity.category || null,
-          components: entity.components,
-          sectionComponents: entity.sectionComponents || '{}',
-          globalStyles: entity.globalStyles,
-          // Layout-specific fields
-          headerComponents: entity.headerComponents || '',
-          footerComponents: entity.footerComponents || '',
-          bodySections: entity.bodySections || '[]',
-          headerStyles: entity.headerStyles || '',
-          bodyStyles: entity.bodyStyles || '',
-          footerStyles: entity.footerStyles || '',
-          isDefault: entity.isDefault || false,
-          isPublished: entity.isPublished || false,
-          createdAt: entity.createdAt,
-          updatedAt: entity.updatedAt,
-        },
+        data: formatEntityResponse(entity),
       });
     } catch (error: any) {
       if (error.statusCode === 404) {
-        return res.status(404).json({ error: 'Page not found' });
+        return res.status(404).json({ error: 'Entity not found' });
       }
-      console.error('Page fetch error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to fetch page' });
+      console.error('Entity fetch error:', error);
+      return res.status(500).json({ error: error.message || 'Failed to fetch entity' });
     }
   }
 
-  // PUT - Update existing page
+  // PUT - Update existing entity
   if (req.method === 'PUT') {
     try {
-      const pageData = req.body;
+      const data = req.body;
 
       // Get existing entity first
       const existing = await tableClient.getEntity(project, rowKey);
+      const entityType = existing.entityType || 'page';
 
-      const entity = {
+      const entity: any = {
         partitionKey: project,
         rowKey: rowKey,
-        pageType: pageData.pageType || existing.pageType,
-        slug: pageData.slug || existing.slug,
-        parentRowKey: pageData.parentRowKey !== undefined ? pageData.parentRowKey : existing.parentRowKey,
-        layoutRowKey: pageData.layoutRowKey !== undefined ? pageData.layoutRowKey : existing.layoutRowKey,
-        title: pageData.title || existing.title,
-        name: pageData.name !== undefined ? pageData.name : existing.name,
-        summary: pageData.summary !== undefined ? pageData.summary : existing.summary,
-        category: pageData.category !== undefined ? pageData.category : existing.category,
-        components: pageData.components !== undefined ? pageData.components : existing.components,
-        sectionComponents: pageData.sectionComponents !== undefined ? pageData.sectionComponents : existing.sectionComponents,
-        globalStyles: pageData.globalStyles || existing.globalStyles,
-        // Layout-specific fields
-        headerComponents: pageData.headerComponents !== undefined ? pageData.headerComponents : existing.headerComponents,
-        footerComponents: pageData.footerComponents !== undefined ? pageData.footerComponents : existing.footerComponents,
-        bodySections: pageData.bodySections !== undefined ? pageData.bodySections : existing.bodySections,
-        headerStyles: pageData.headerStyles !== undefined ? pageData.headerStyles : existing.headerStyles,
-        bodyStyles: pageData.bodyStyles !== undefined ? pageData.bodyStyles : existing.bodyStyles,
-        footerStyles: pageData.footerStyles !== undefined ? pageData.footerStyles : existing.footerStyles,
-        isDefault: pageData.isDefault !== undefined ? pageData.isDefault : existing.isDefault,
-        isPublished: pageData.isPublished !== undefined ? pageData.isPublished : existing.isPublished,
+        entityType: entityType,
+        pageType: data.pageType !== undefined ? data.pageType : existing.pageType,
+        slug: data.slug !== undefined ? data.slug : existing.slug,
+        parentRowKey: data.parentRowKey !== undefined ? data.parentRowKey : existing.parentRowKey,
+        layoutRowKey: data.layoutRowKey !== undefined ? data.layoutRowKey : existing.layoutRowKey,
+        title: data.title !== undefined ? data.title : existing.title,
+        name: data.name !== undefined ? data.name : existing.name,
+        summary: data.summary !== undefined ? data.summary : existing.summary,
+        category: data.category !== undefined ? data.category : existing.category,
+        sectionComponents: data.sectionComponents !== undefined ? data.sectionComponents : existing.sectionComponents,
+        globalStyles: data.globalStyles !== undefined ? data.globalStyles : existing.globalStyles,
+        headerComponents: data.headerComponents !== undefined ? data.headerComponents : existing.headerComponents,
+        footerComponents: data.footerComponents !== undefined ? data.footerComponents : existing.footerComponents,
+        bodySections: data.bodySections !== undefined ? data.bodySections : existing.bodySections,
+        headerStyles: data.headerStyles !== undefined ? data.headerStyles : existing.headerStyles,
+        footerStyles: data.footerStyles !== undefined ? data.footerStyles : existing.footerStyles,
+        isDefault: data.isDefault !== undefined ? data.isDefault : existing.isDefault,
+        isPublished: data.isPublished !== undefined ? data.isPublished : existing.isPublished,
         createdAt: existing.createdAt,
         updatedAt: new Date().toISOString(),
       };
@@ -109,32 +110,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       return res.status(200).json({
         success: true,
-        message: 'Page updated successfully',
+        message: 'Entity updated successfully',
       });
     } catch (error: any) {
       if (error.statusCode === 404) {
-        return res.status(404).json({ error: 'Page not found' });
+        return res.status(404).json({ error: 'Entity not found' });
       }
-      console.error('Page update error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to update page' });
+      console.error('Entity update error:', error);
+      return res.status(500).json({ error: error.message || 'Failed to update entity' });
     }
   }
 
-  // DELETE - Delete page
+  // DELETE - Delete entity
   if (req.method === 'DELETE') {
     try {
       await tableClient.deleteEntity(project, rowKey);
 
       return res.status(200).json({
         success: true,
-        message: 'Page deleted successfully',
+        message: 'Entity deleted successfully',
       });
     } catch (error: any) {
       if (error.statusCode === 404) {
-        return res.status(404).json({ error: 'Page not found' });
+        return res.status(404).json({ error: 'Entity not found' });
       }
-      console.error('Page delete error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to delete page' });
+      console.error('Entity delete error:', error);
+      return res.status(500).json({ error: error.message || 'Failed to delete entity' });
     }
   }
 

@@ -27,9 +27,6 @@ function getTableClient() {
 function createRowKey(entityType: string, name: string): string {
   const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '_');
   const timestamp = Date.now();
-  if (entityType === 'settings') {
-    return ROW_KEY_PREFIX.settings;
-  }
   return `${ROW_KEY_PREFIX[entityType as keyof typeof ROW_KEY_PREFIX]}${sanitizedName}_${timestamp}`;
 }
 
@@ -37,7 +34,7 @@ function formatEntityResponse(entity: any) {
   return {
     rowKey: entity.rowKey,
     partitionKey: entity.partitionKey,
-    entityType: entity.entityType || 'page',
+    entityType: entity.entityType || 'layout',
     pageType: entity.pageType,
     slug: entity.slug,
     parentRowKey: entity.parentRowKey || null,
@@ -61,22 +58,16 @@ function formatEntityResponse(entity: any) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle GET - List all pages
+  // Handle GET - List all layouts
   if (req.method === 'GET') {
     try {
       const tableClient = getTableClient();
-      const { type, parentRowKey, project } = req.query;
+      const { project } = req.query;
 
       const entities: any[] = [];
 
-      // Build filter query - only get pages (not layouts, settings, or SeedProducts)
-      const filters = ["PartitionKey ne 'SeedProduct'", "entityType eq 'page'"];
-      if (type) {
-        filters.push(`pageType eq '${type}'`);
-      }
-      if (parentRowKey) {
-        filters.push(`parentRowKey eq '${parentRowKey}'`);
-      }
+      // Build filter query - only get layouts
+      const filters = ["entityType eq 'layout'"];
       if (project) {
         filters.push(`PartitionKey eq '${project}'`);
       }
@@ -95,12 +86,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data: entities,
       });
     } catch (error: any) {
-      console.error('Pages fetch error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to fetch pages' });
+      console.error('Layouts fetch error:', error);
+      return res.status(500).json({ error: error.message || 'Failed to fetch layouts' });
     }
   }
 
-  // Handle POST - Create new page
+  // Handle POST - Create new layout
   if (req.method === 'POST') {
     try {
       const tableClient = getTableClient();
@@ -113,30 +104,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      const pageData = req.body;
+      const layoutData = req.body;
 
-      if (!pageData.partitionKey || !pageData.title) {
-        return res.status(400).json({ error: 'Missing project (partitionKey) or title' });
+      if (!layoutData.partitionKey || !layoutData.name) {
+        return res.status(400).json({ error: 'Missing project (partitionKey) or name' });
       }
 
-      const rowKey = createRowKey('page', pageData.title);
+      const rowKey = createRowKey('layout', layoutData.name);
       const now = new Date().toISOString();
 
       const entity = {
-        partitionKey: pageData.partitionKey,
+        partitionKey: layoutData.partitionKey,
         rowKey: rowKey,
-        entityType: 'page',
-        pageType: pageData.pageType || 'PDP',
-        slug: pageData.slug || '',
-        parentRowKey: pageData.parentRowKey || '',
-        layoutRowKey: pageData.layoutRowKey || '',
-        title: pageData.title,
-        name: pageData.title,
-        summary: pageData.summary || '',
-        category: pageData.category || '',
-        sectionComponents: pageData.sectionComponents || '{}',
-        globalStyles: pageData.globalStyles || '{}',
-        isPublished: pageData.isPublished || false,
+        entityType: 'layout',
+        name: layoutData.name,
+        title: layoutData.name,
+        isDefault: layoutData.isDefault || false,
+        headerComponents: layoutData.headerComponents || '[]',
+        footerComponents: layoutData.footerComponents || '[]',
+        bodySections: layoutData.bodySections || '[]',
+        headerStyles: layoutData.headerStyles || '{}',
+        footerStyles: layoutData.footerStyles || '{}',
+        globalStyles: layoutData.globalStyles || '{}',
+        isPublished: layoutData.isPublished || false,
         createdAt: now,
         updatedAt: now,
       };
@@ -145,13 +135,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       return res.status(200).json({
         success: true,
-        message: 'Page saved successfully',
+        message: 'Layout saved successfully',
         rowKey: rowKey,
-        slug: pageData.slug,
       });
     } catch (error: any) {
-      console.error('Page save error:', error);
-      return res.status(500).json({ error: error.message || 'Failed to save page' });
+      console.error('Layout save error:', error);
+      return res.status(500).json({ error: error.message || 'Failed to save layout' });
     }
   }
 

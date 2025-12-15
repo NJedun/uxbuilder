@@ -117,7 +117,7 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, p
     try {
       setLoadingLayouts(true);
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
-      const response = await fetch(`${baseUrl}/api/pages?type=layout`);
+      const response = await fetch(`${baseUrl}/api/layouts`);
 
       if (response.ok) {
         const data = await response.json();

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { TableClient, AzureNamedKeyCredential } from '@azure/data-tables';
 
-function getPagesTableClient() {
+function getTableClient() {
   const accountName = process.env.AZURE_STORAGE_ACCOUNT;
   const accountKey = process.env.AZURE_STORAGE_KEY;
   const tableName = process.env.AZURE_TABLE_NAME;
@@ -18,14 +18,40 @@ function getPagesTableClient() {
   );
 }
 
+function formatEntityResponse(entity: any) {
+  return {
+    rowKey: entity.rowKey,
+    partitionKey: entity.partitionKey,
+    entityType: entity.entityType || 'page',
+    pageType: entity.pageType,
+    slug: entity.slug,
+    parentRowKey: entity.parentRowKey || null,
+    layoutRowKey: entity.layoutRowKey || null,
+    title: entity.title,
+    name: entity.name || entity.title,
+    summary: entity.summary || '',
+    category: entity.category || null,
+    sectionComponents: entity.sectionComponents || '{}',
+    globalStyles: entity.globalStyles || '{}',
+    headerComponents: entity.headerComponents || '[]',
+    footerComponents: entity.footerComponents || '[]',
+    bodySections: entity.bodySections || '[]',
+    headerStyles: entity.headerStyles || '{}',
+    footerStyles: entity.footerStyles || '{}',
+    isDefault: entity.isDefault || false,
+    isPublished: entity.isPublished || false,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow GET
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const slug = req.query.slug;
 
     if (!slug || typeof slug !== 'string') {
@@ -33,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const queryResults = tableClient.listEntities({
-      queryOptions: { filter: `slug eq '${slug}'` },
+      queryOptions: { filter: `slug eq '${slug}' and entityType eq 'page'` },
     });
 
     let foundEntity: any = null;
@@ -48,32 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       success: true,
-      data: {
-        rowKey: foundEntity.rowKey,
-        partitionKey: foundEntity.partitionKey,
-        pageType: foundEntity.pageType,
-        slug: foundEntity.slug,
-        parentRowKey: foundEntity.parentRowKey || null,
-        layoutRowKey: foundEntity.layoutRowKey || null,
-        title: foundEntity.title,
-        name: foundEntity.name || foundEntity.title,
-        summary: foundEntity.summary || '',
-        category: foundEntity.category || null,
-        components: foundEntity.components,
-        sectionComponents: foundEntity.sectionComponents || '{}',
-        globalStyles: foundEntity.globalStyles,
-        // Layout-specific fields
-        headerComponents: foundEntity.headerComponents || '',
-        footerComponents: foundEntity.footerComponents || '',
-        bodySections: foundEntity.bodySections || '[]',
-        headerStyles: foundEntity.headerStyles || '',
-        bodyStyles: foundEntity.bodyStyles || '',
-        footerStyles: foundEntity.footerStyles || '',
-        isDefault: foundEntity.isDefault || false,
-        isPublished: foundEntity.isPublished || false,
-        createdAt: foundEntity.createdAt,
-        updatedAt: foundEntity.updatedAt,
-      },
+      data: formatEntityResponse(foundEntity),
     });
   } catch (error: any) {
     console.error('Page by slug fetch error:', error);

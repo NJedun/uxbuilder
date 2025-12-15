@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useVisualBuilderStore, VisualComponent, defaultSeedProductData } from '../store/visualBuilderStore';
-import { Layout, BodySection, defaultBodyStyles } from '../types/layout';
+import { Layout, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 import ComponentTree from './ComponentTree';
 
 // SVG Icon components for the component library
@@ -564,14 +564,16 @@ const componentTemplates = [
 interface LayoutEntity {
   rowKey: string;
   partitionKey: string;
+  entityType?: string;
   name: string;
-  slug: string;
-  description?: string;
   isDefault?: boolean;
   headerComponents: string;
   footerComponents: string;
   bodySections?: string;
-  bodyStyles?: string;
+  headerStyles?: string;
+  footerStyles?: string;
+  bodyStyles?: string; // Deprecated
+  globalStyles?: string;
   isPublished: boolean;
 }
 
@@ -595,6 +597,8 @@ export default function VisualComponentLibrary({
   const activeSectionId = store.activeSectionId;
   const selectedComponentId = store.selectedComponentId;
   const projectName = store.projectName;
+  // Get selected column from store (shared with VisualStylePanel)
+  const selectedRowColumn = store.selectedRowColumn;
 
   // Get all components from active section and fallback deprecated components
   const getAllComponents = (): VisualComponent[] => {
@@ -608,38 +612,8 @@ export default function VisualComponentLibrary({
   const [loadingLayouts, setLoadingLayouts] = useState(false);
   const [layoutsExpanded, setLayoutsExpanded] = useState(true);
 
-  // Fetch layouts for current project
-  useEffect(() => {
-    const fetchLayouts = async () => {
-      if (!projectName || projectName === 'Untitled Project') return;
-
-      setLoadingLayouts(true);
-      try {
-        const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
-        const response = await fetch(`${baseUrl}/api/pages?type=layout&project=${encodeURIComponent(projectName)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setLayouts(data.data || []);
-        }
-      } catch (err) {
-        console.error('Failed to fetch layouts:', err);
-      } finally {
-        setLoadingLayouts(false);
-      }
-    };
-
-    fetchLayouts();
-  }, [projectName]);
-
-  // Handle layout selection
-  const handleLayoutSelect = async (layoutEntity: LayoutEntity | null) => {
-    if (!onLayoutSelect) return;
-
-    if (!layoutEntity) {
-      onLayoutSelect(null);
-      return;
-    }
-
+  // Helper function to parse layout entity into Layout object
+  const parseLayoutEntity = (layoutEntity: LayoutEntity): Layout | null => {
     try {
       // Parse body sections (or create default from bodyStyles for backward compatibility)
       let bodySections: BodySection[] = [];
@@ -657,25 +631,74 @@ export default function VisualComponentLibrary({
       }
 
       // Parse the layout components
-      const layout: Layout = {
+      return {
         rowKey: layoutEntity.rowKey,
         partitionKey: layoutEntity.partitionKey,
+        entityType: 'layout',
         name: layoutEntity.name,
-        slug: layoutEntity.slug,
-        description: layoutEntity.description,
-        isDefault: layoutEntity.isDefault,
+        isDefault: layoutEntity.isDefault || false,
         headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
         footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
         bodySections,
-        bodyStyles: layoutEntity.bodyStyles ? JSON.parse(layoutEntity.bodyStyles) : {},
+        headerStyles: layoutEntity.headerStyles ? JSON.parse(layoutEntity.headerStyles) : { ...defaultHeaderStyles },
+        footerStyles: layoutEntity.footerStyles ? JSON.parse(layoutEntity.footerStyles) : { ...defaultFooterStyles },
         globalStyles: store.globalStyles,
-        isPublished: layoutEntity.isPublished,
         createdAt: '',
         updatedAt: '',
       };
-      onLayoutSelect(layout);
     } catch (err) {
       console.error('Failed to parse layout:', err);
+      return null;
+    }
+  };
+
+  // Fetch layouts for current project
+  useEffect(() => {
+    const fetchLayouts = async () => {
+      if (!projectName || projectName === 'Untitled Project') return;
+
+      setLoadingLayouts(true);
+      try {
+        const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+        const response = await fetch(`${baseUrl}/api/layouts?project=${encodeURIComponent(projectName)}`);
+        if (response.ok) {
+          const data = await response.json();
+          const fetchedLayouts = data.data || [];
+          setLayouts(fetchedLayouts);
+
+          // Auto-select default layout if no layout is currently selected
+          if (!selectedLayoutId && onLayoutSelect && fetchedLayouts.length > 0) {
+            const defaultLayout = fetchedLayouts.find((l: LayoutEntity) => l.isDefault);
+            if (defaultLayout) {
+              const layout = parseLayoutEntity(defaultLayout);
+              if (layout) {
+                onLayoutSelect(layout);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch layouts:', err);
+      } finally {
+        setLoadingLayouts(false);
+      }
+    };
+
+    fetchLayouts();
+  }, [projectName, selectedLayoutId, onLayoutSelect]);
+
+  // Handle layout selection
+  const handleLayoutSelect = async (layoutEntity: LayoutEntity | null) => {
+    if (!onLayoutSelect) return;
+
+    if (!layoutEntity) {
+      onLayoutSelect(null);
+      return;
+    }
+
+    const layout = parseLayoutEntity(layoutEntity);
+    if (layout) {
+      onLayoutSelect(layout);
     }
   };
 
@@ -827,7 +850,7 @@ export default function VisualComponentLibrary({
                                 </span>
                               )}
                               <p className="text-[10px] text-gray-400 truncate">
-                                {layout.description || layout.slug}
+                                {layout.partitionKey}
                               </p>
                             </div>
                           </div>
@@ -862,19 +885,46 @@ export default function VisualComponentLibrary({
         <div className="p-4">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
 
-        <p className="text-xs text-gray-500 mb-4">Click to add to canvas</p>
+        <p className="text-xs text-gray-500 mb-4">
+          {selectedRow
+            ? `Click to add to Column ${selectedRowColumn + 1} of selected Row`
+            : 'Click to add to canvas'}
+        </p>
 
         <div className="space-y-2">
-          {componentTemplates.map((template) => (
-            <div
-              key={template.type}
-              className="relative group w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors border border-gray-200 hover:border-blue-300 flex items-center gap-3 cursor-pointer"
-              onClick={() => handleAddComponent(template)}
-            >
-              <span className="text-gray-500 group-hover:text-blue-500">{ComponentIcons[template.type]}</span>
-              <span className="font-medium flex-1">{template.label}</span>
-            </div>
-          ))}
+          {componentTemplates.map((template) => {
+            // When a Row is selected and component can be a child, add to the selected column
+            const shouldAddToRow = selectedRow && template.canBeChild;
+            return (
+              <div
+                key={template.type}
+                className={`relative group w-full px-4 py-3 text-left text-sm text-gray-700 rounded-lg transition-colors border flex items-center gap-3 cursor-pointer ${
+                  shouldAddToRow
+                    ? 'hover:bg-green-50 hover:text-green-600 border-gray-200 hover:border-green-300'
+                    : 'hover:bg-blue-50 hover:text-blue-600 border-gray-200 hover:border-blue-300'
+                }`}
+                onClick={() => {
+                  if (shouldAddToRow) {
+                    // Add to the selected column of the selected Row
+                    handleAddComponent(template, selectedRowColumn, selectedRow.id);
+                  } else {
+                    // Add to canvas root
+                    handleAddComponent(template);
+                  }
+                }}
+              >
+                <span className={`text-gray-500 ${shouldAddToRow ? 'group-hover:text-green-500' : 'group-hover:text-blue-500'}`}>
+                  {ComponentIcons[template.type]}
+                </span>
+                <span className="font-medium flex-1">{template.label}</span>
+                {shouldAddToRow && (
+                  <span className="text-[10px] text-green-600 bg-green-100 px-1.5 py-0.5 rounded">
+                    → Col {selectedRowColumn + 1}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Add to Row Column section */}

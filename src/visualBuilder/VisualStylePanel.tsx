@@ -1,14 +1,27 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useVisualBuilderStore, SeedProductRating, SeedProductAttribute } from '../store/visualBuilderStore';
+import { useVisualBuilderStore, SeedProductRating, SeedProductAttribute, VisualComponent } from '../store/visualBuilderStore';
 import { Layout } from '../types/layout';
+
+// Quick add component templates for Row columns
+const quickAddTemplates: { type: string; label: string; icon: string; defaultProps: Record<string, any> }[] = [
+  { type: 'Heading', label: 'Heading', icon: 'H', defaultProps: { text: 'Heading', level: 'h2' } },
+  { type: 'Text', label: 'Text', icon: 'T', defaultProps: { text: 'Add your text here...' } },
+  { type: 'Button', label: 'Button', icon: '▢', defaultProps: { text: 'Click Me', variant: 'primary' } },
+  { type: 'Image', label: 'Image', icon: '🖼', defaultProps: { src: '', alt: 'Image' } },
+  { type: 'IconBox', label: 'Icon Box', icon: '◎', defaultProps: { icon: '⭐', title: 'Title', description: 'Description' } },
+  { type: 'Divider', label: 'Divider', icon: '—', defaultProps: { orientation: 'horizontal' } },
+];
 
 interface VisualStylePanelProps {
   previewLayout?: Layout | null;
 }
 
 export default function VisualStylePanel({ previewLayout }: VisualStylePanelProps = {}) {
-  const { selectedComponentId, components, sectionComponents, updateComponent } = useVisualBuilderStore();
+  const { selectedComponentId, components, sectionComponents, updateComponent, addComponent, selectedRowColumn, setSelectedRowColumn } = useVisualBuilderStore();
+  // Use store state for column selection (shared with VisualComponentLibrary)
+  const selectedColumn = selectedRowColumn;
+  const setSelectedColumn = setSelectedRowColumn;
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     content: true,
     container: true,
@@ -404,6 +417,52 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
         <h2 className="text-lg font-semibold text-gray-800">Properties</h2>
         <p className="text-xs text-gray-500 mt-1">{selectedComponent.type}</p>
       </div>
+
+      {/* Quick Add to Column - Only for Row (at the top for easy access) */}
+      {selectedComponent.type === 'Row' && (
+        <div className="px-4 py-3 bg-blue-50 border-b border-blue-200">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">Quick Add to Column</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <label className="text-xs font-medium text-blue-700">Column:</label>
+            <div className="flex gap-1">
+              {Array.from({ length: props.columns || 2 }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedColumn(i)}
+                  className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
+                    selectedColumn === i
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-100'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {quickAddTemplates.map((template) => (
+              <button
+                key={template.type}
+                onClick={() => {
+                  const newComponent: VisualComponent = {
+                    id: `${template.type.toLowerCase()}-${Date.now()}`,
+                    type: template.type,
+                    props: { ...template.defaultProps, columnIndex: selectedColumn },
+                    customStyles: {},
+                  };
+                  addComponent(newComponent, selectedComponentId!);
+                }}
+                className="flex flex-col items-center gap-1 px-2 py-2 bg-white rounded border border-blue-200 hover:bg-blue-100 hover:border-blue-400 transition-colors"
+                title={`Add ${template.label} to Column ${selectedColumn + 1}`}
+              >
+                <span className="text-lg">{template.icon}</span>
+                <span className="text-xs text-gray-600">{template.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content Section - Only for HeroSection */}
       {selectedComponent.type === 'HeroSection' && renderSection('Content', 'content', (

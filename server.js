@@ -322,11 +322,19 @@ app.post('/api/seed-product', async (req, res) => {
 });
 
 // ============================================
-// Pages API (PLP/PDP Management)
+// Single Table Design API
 // ============================================
+// Entity types: 'layout', 'page', 'settings'
+// RowKey prefixes: layout_, page_, settings
 
-// Helper to get pages table client (uses same table as products, distinguished by PartitionKey)
-function getPagesTableClient() {
+const ROW_KEY_PREFIX = {
+  layout: 'layout_',
+  page: 'page_',
+  settings: 'settings',
+};
+
+// Helper to get table client
+function getTableClient() {
   const accountName = process.env.AZURE_STORAGE_ACCOUNT;
   const accountKey = process.env.AZURE_STORAGE_KEY;
   const tableName = process.env.AZURE_TABLE_NAME;
@@ -343,16 +351,55 @@ function getPagesTableClient() {
   );
 }
 
-// GET /api/pages - List all pages with optional filters
+// Helper to create rowKey with prefix
+function createRowKey(entityType, name) {
+  const sanitizedName = name.replace(/[^a-zA-Z0-9]/g, '_');
+  const timestamp = Date.now();
+  if (entityType === 'settings') {
+    return ROW_KEY_PREFIX.settings;
+  }
+  return `${ROW_KEY_PREFIX[entityType]}${sanitizedName}_${timestamp}`;
+}
+
+// Helper to format entity response
+function formatEntityResponse(entity) {
+  return {
+    rowKey: entity.rowKey,
+    partitionKey: entity.partitionKey,
+    entityType: entity.entityType || 'page', // Default for backward compatibility
+    pageType: entity.pageType,
+    slug: entity.slug,
+    parentRowKey: entity.parentRowKey || null,
+    layoutRowKey: entity.layoutRowKey || null,
+    title: entity.title,
+    name: entity.name || entity.title,
+    summary: entity.summary || '',
+    category: entity.category || null,
+    sectionComponents: entity.sectionComponents || '{}',
+    globalStyles: entity.globalStyles || '{}',
+    // Layout-specific fields
+    headerComponents: entity.headerComponents || '[]',
+    footerComponents: entity.footerComponents || '[]',
+    bodySections: entity.bodySections || '[]',
+    headerStyles: entity.headerStyles || '{}',
+    footerStyles: entity.footerStyles || '{}',
+    isDefault: entity.isDefault || false,
+    isPublished: entity.isPublished || false,
+    createdAt: entity.createdAt,
+    updatedAt: entity.updatedAt,
+  };
+}
+
+// GET /api/pages - List all pages (entityType = 'page')
 app.get('/api/pages', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const { type, parentRowKey, project } = req.query;
 
     const entities = [];
 
-    // Build filter query - always exclude SeedProduct partition
-    const filters = ["PartitionKey ne 'SeedProduct'"];
+    // Build filter query - only get pages (not layouts, settings, or SeedProducts)
+    const filters = ["PartitionKey ne 'SeedProduct'", "entityType eq 'page'"];
     if (type) {
       filters.push(`pageType eq '${type}'`);
     }
@@ -368,33 +415,7 @@ app.get('/api/pages', async (req, res) => {
     const queryResults = tableClient.listEntities({ queryOptions });
 
     for await (const entity of queryResults) {
-      entities.push({
-        rowKey: entity.rowKey,
-        partitionKey: entity.partitionKey,
-        pageType: entity.pageType,
-        slug: entity.slug,
-        parentRowKey: entity.parentRowKey || null,
-        layoutRowKey: entity.layoutRowKey || null,
-        title: entity.title,
-        name: entity.name || entity.title,
-        summary: entity.summary || '',
-        description: entity.summary || '',
-        category: entity.category || null,
-        components: entity.components,
-        sectionComponents: entity.sectionComponents || '{}',
-        globalStyles: entity.globalStyles,
-        // Layout-specific fields
-        headerComponents: entity.headerComponents || '',
-        footerComponents: entity.footerComponents || '',
-        bodySections: entity.bodySections || '[]',
-        headerStyles: entity.headerStyles || '',
-        bodyStyles: entity.bodyStyles || '',
-        footerStyles: entity.footerStyles || '',
-        isDefault: entity.isDefault || false,
-        isPublished: entity.isPublished || false,
-        createdAt: entity.createdAt,
-        updatedAt: entity.updatedAt,
-      });
+      entities.push(formatEntityResponse(entity));
     }
 
     return res.status(200).json({
@@ -408,56 +429,31 @@ app.get('/api/pages', async (req, res) => {
   }
 });
 
-// GET /api/pages/:project/:rowKey - Get single page
+// GET /api/pages/:project/:rowKey - Get single entity (page or layout)
 app.get('/api/pages/:project/:rowKey', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const { project, rowKey } = req.params;
 
     const entity = await tableClient.getEntity(project, rowKey);
 
     return res.status(200).json({
       success: true,
-      data: {
-        rowKey: entity.rowKey,
-        partitionKey: entity.partitionKey,
-        pageType: entity.pageType,
-        slug: entity.slug,
-        parentRowKey: entity.parentRowKey || null,
-        layoutRowKey: entity.layoutRowKey || null,
-        title: entity.title,
-        name: entity.name || entity.title,
-        summary: entity.summary || '',
-        category: entity.category || null,
-        components: entity.components,
-        sectionComponents: entity.sectionComponents || '{}',
-        globalStyles: entity.globalStyles,
-        // Layout-specific fields
-        headerComponents: entity.headerComponents || '',
-        footerComponents: entity.footerComponents || '',
-        bodySections: entity.bodySections || '[]',
-        headerStyles: entity.headerStyles || '',
-        bodyStyles: entity.bodyStyles || '',
-        footerStyles: entity.footerStyles || '',
-        isDefault: entity.isDefault || false,
-        isPublished: entity.isPublished || false,
-        createdAt: entity.createdAt,
-        updatedAt: entity.updatedAt,
-      },
+      data: formatEntityResponse(entity),
     });
   } catch (error) {
     if (error.statusCode === 404) {
-      return res.status(404).json({ error: 'Page not found' });
+      return res.status(404).json({ error: 'Entity not found' });
     }
-    console.error('Page fetch error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to fetch page' });
+    console.error('Entity fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch entity' });
   }
 });
 
-// GET /api/pages/by-slug?slug=xxx - Get page by slug (supports nested slugs like wheat/product1)
+// GET /api/pages/by-slug?slug=xxx - Get page by slug
 app.get('/api/pages/by-slug', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const slug = req.query.slug;
 
     if (!slug) {
@@ -465,7 +461,7 @@ app.get('/api/pages/by-slug', async (req, res) => {
     }
 
     const queryResults = tableClient.listEntities({
-      queryOptions: { filter: `slug eq '${slug}'` },
+      queryOptions: { filter: `slug eq '${slug}' and entityType eq 'page'` },
     });
 
     let foundEntity = null;
@@ -480,32 +476,7 @@ app.get('/api/pages/by-slug', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: {
-        rowKey: foundEntity.rowKey,
-        partitionKey: foundEntity.partitionKey,
-        pageType: foundEntity.pageType,
-        slug: foundEntity.slug,
-        parentRowKey: foundEntity.parentRowKey || null,
-        layoutRowKey: foundEntity.layoutRowKey || null,
-        title: foundEntity.title,
-        name: foundEntity.name || foundEntity.title,
-        summary: foundEntity.summary || '',
-        category: foundEntity.category || null,
-        components: foundEntity.components,
-        sectionComponents: foundEntity.sectionComponents || '{}',
-        globalStyles: foundEntity.globalStyles,
-        // Layout-specific fields
-        headerComponents: foundEntity.headerComponents || '',
-        footerComponents: foundEntity.footerComponents || '',
-        bodySections: foundEntity.bodySections || '[]',
-        headerStyles: foundEntity.headerStyles || '',
-        bodyStyles: foundEntity.bodyStyles || '',
-        footerStyles: foundEntity.footerStyles || '',
-        isDefault: foundEntity.isDefault || false,
-        isPublished: foundEntity.isPublished || false,
-        createdAt: foundEntity.createdAt,
-        updatedAt: foundEntity.updatedAt,
-      },
+      data: formatEntityResponse(foundEntity),
     });
   } catch (error) {
     console.error('Page by slug fetch error:', error);
@@ -516,7 +487,7 @@ app.get('/api/pages/by-slug', async (req, res) => {
 // POST /api/pages - Create new page
 app.post('/api/pages', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
 
     // Create table if it doesn't exist
     try {
@@ -533,35 +504,24 @@ app.post('/api/pages', async (req, res) => {
       return res.status(400).json({ error: 'Missing project (partitionKey) or title' });
     }
 
-    // Generate unique row key
-    const timestamp = Date.now();
-    const sanitizedTitle = pageData.title.replace(/[^a-zA-Z0-9]/g, '_');
-    const rowKey = `${sanitizedTitle}_${timestamp}`;
-
+    // Generate unique row key with prefix
+    const rowKey = createRowKey('page', pageData.title);
     const now = new Date().toISOString();
 
     const entity = {
       partitionKey: pageData.partitionKey,
       rowKey: rowKey,
+      entityType: 'page',
       pageType: pageData.pageType || 'PDP',
-      slug: pageData.slug,
+      slug: pageData.slug || '',
       parentRowKey: pageData.parentRowKey || '',
-      layoutRowKey: pageData.layoutRowKey || '', // Reference to layout
+      layoutRowKey: pageData.layoutRowKey || '',
       title: pageData.title,
-      name: pageData.name || pageData.title, // For layouts
+      name: pageData.title,
       summary: pageData.summary || '',
       category: pageData.category || '',
-      components: pageData.components || '[]',
       sectionComponents: pageData.sectionComponents || '{}',
       globalStyles: pageData.globalStyles || '{}',
-      // Layout-specific fields
-      headerComponents: pageData.headerComponents || '',
-      footerComponents: pageData.footerComponents || '',
-      bodySections: pageData.bodySections || '[]',
-      headerStyles: pageData.headerStyles || '',
-      bodyStyles: pageData.bodyStyles || '',
-      footerStyles: pageData.footerStyles || '',
-      isDefault: pageData.isDefault || false,
       isPublished: pageData.isPublished || false,
       createdAt: now,
       updatedAt: now,
@@ -581,39 +541,39 @@ app.post('/api/pages', async (req, res) => {
   }
 });
 
-// PUT /api/pages/:project/:rowKey - Update existing page
+// PUT /api/pages/:project/:rowKey - Update existing entity (page or layout)
 app.put('/api/pages/:project/:rowKey', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const { project, rowKey } = req.params;
-    const pageData = req.body;
+    const data = req.body;
 
     // Get existing entity first
     const existing = await tableClient.getEntity(project, rowKey);
+    const entityType = existing.entityType || 'page';
 
     const entity = {
       partitionKey: project,
       rowKey: rowKey,
-      pageType: pageData.pageType || existing.pageType,
-      slug: pageData.slug || existing.slug,
-      parentRowKey: pageData.parentRowKey !== undefined ? pageData.parentRowKey : existing.parentRowKey,
-      layoutRowKey: pageData.layoutRowKey !== undefined ? pageData.layoutRowKey : existing.layoutRowKey,
-      title: pageData.title || existing.title,
-      name: pageData.name !== undefined ? pageData.name : existing.name,
-      summary: pageData.summary !== undefined ? pageData.summary : existing.summary,
-      category: pageData.category !== undefined ? pageData.category : existing.category,
-      components: pageData.components !== undefined ? pageData.components : existing.components,
-      sectionComponents: pageData.sectionComponents !== undefined ? pageData.sectionComponents : existing.sectionComponents,
-      globalStyles: pageData.globalStyles || existing.globalStyles,
+      entityType: entityType,
+      pageType: data.pageType !== undefined ? data.pageType : existing.pageType,
+      slug: data.slug !== undefined ? data.slug : existing.slug,
+      parentRowKey: data.parentRowKey !== undefined ? data.parentRowKey : existing.parentRowKey,
+      layoutRowKey: data.layoutRowKey !== undefined ? data.layoutRowKey : existing.layoutRowKey,
+      title: data.title !== undefined ? data.title : existing.title,
+      name: data.name !== undefined ? data.name : existing.name,
+      summary: data.summary !== undefined ? data.summary : existing.summary,
+      category: data.category !== undefined ? data.category : existing.category,
+      sectionComponents: data.sectionComponents !== undefined ? data.sectionComponents : existing.sectionComponents,
+      globalStyles: data.globalStyles !== undefined ? data.globalStyles : existing.globalStyles,
       // Layout-specific fields
-      headerComponents: pageData.headerComponents !== undefined ? pageData.headerComponents : existing.headerComponents,
-      footerComponents: pageData.footerComponents !== undefined ? pageData.footerComponents : existing.footerComponents,
-      bodySections: pageData.bodySections !== undefined ? pageData.bodySections : existing.bodySections,
-      headerStyles: pageData.headerStyles !== undefined ? pageData.headerStyles : existing.headerStyles,
-      bodyStyles: pageData.bodyStyles !== undefined ? pageData.bodyStyles : existing.bodyStyles,
-      footerStyles: pageData.footerStyles !== undefined ? pageData.footerStyles : existing.footerStyles,
-      isDefault: pageData.isDefault !== undefined ? pageData.isDefault : existing.isDefault,
-      isPublished: pageData.isPublished !== undefined ? pageData.isPublished : existing.isPublished,
+      headerComponents: data.headerComponents !== undefined ? data.headerComponents : existing.headerComponents,
+      footerComponents: data.footerComponents !== undefined ? data.footerComponents : existing.footerComponents,
+      bodySections: data.bodySections !== undefined ? data.bodySections : existing.bodySections,
+      headerStyles: data.headerStyles !== undefined ? data.headerStyles : existing.headerStyles,
+      footerStyles: data.footerStyles !== undefined ? data.footerStyles : existing.footerStyles,
+      isDefault: data.isDefault !== undefined ? data.isDefault : existing.isDefault,
+      isPublished: data.isPublished !== undefined ? data.isPublished : existing.isPublished,
       createdAt: existing.createdAt,
       updatedAt: new Date().toISOString(),
     };
@@ -622,35 +582,247 @@ app.put('/api/pages/:project/:rowKey', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Page updated successfully',
+      message: 'Entity updated successfully',
     });
   } catch (error) {
     if (error.statusCode === 404) {
-      return res.status(404).json({ error: 'Page not found' });
+      return res.status(404).json({ error: 'Entity not found' });
     }
-    console.error('Page update error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to update page' });
+    console.error('Entity update error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to update entity' });
   }
 });
 
-// DELETE /api/pages/:project/:rowKey - Delete page
+// DELETE /api/pages/:project/:rowKey - Delete entity
 app.delete('/api/pages/:project/:rowKey', async (req, res) => {
   try {
-    const tableClient = getPagesTableClient();
+    const tableClient = getTableClient();
     const { project, rowKey } = req.params;
 
     await tableClient.deleteEntity(project, rowKey);
 
     return res.status(200).json({
       success: true,
-      message: 'Page deleted successfully',
+      message: 'Entity deleted successfully',
     });
   } catch (error) {
     if (error.statusCode === 404) {
-      return res.status(404).json({ error: 'Page not found' });
+      return res.status(404).json({ error: 'Entity not found' });
     }
-    console.error('Page delete error:', error);
-    return res.status(500).json({ error: error.message || 'Failed to delete page' });
+    console.error('Entity delete error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to delete entity' });
+  }
+});
+
+// ============================================
+// Layouts API
+// ============================================
+
+// GET /api/layouts - List all layouts
+app.get('/api/layouts', async (req, res) => {
+  try {
+    const tableClient = getTableClient();
+    const { project } = req.query;
+
+    const entities = [];
+
+    // Build filter query - only get layouts
+    const filters = ["entityType eq 'layout'"];
+    if (project) {
+      filters.push(`PartitionKey eq '${project}'`);
+    }
+
+    const filter = filters.join(' and ');
+    const queryOptions = { filter };
+    const queryResults = tableClient.listEntities({ queryOptions });
+
+    for await (const entity of queryResults) {
+      entities.push(formatEntityResponse(entity));
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: entities.length,
+      data: entities,
+    });
+  } catch (error) {
+    console.error('Layouts fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch layouts' });
+  }
+});
+
+// POST /api/layouts - Create new layout
+app.post('/api/layouts', async (req, res) => {
+  try {
+    const tableClient = getTableClient();
+
+    // Create table if it doesn't exist
+    try {
+      await tableClient.createTable();
+    } catch (err) {
+      if (err.statusCode !== 409) {
+        console.log('Table creation note:', err.message);
+      }
+    }
+
+    const layoutData = req.body;
+
+    if (!layoutData.partitionKey || !layoutData.name) {
+      return res.status(400).json({ error: 'Missing project (partitionKey) or name' });
+    }
+
+    // Generate unique row key with layout prefix
+    const rowKey = createRowKey('layout', layoutData.name);
+    const now = new Date().toISOString();
+
+    const entity = {
+      partitionKey: layoutData.partitionKey,
+      rowKey: rowKey,
+      entityType: 'layout',
+      name: layoutData.name,
+      title: layoutData.name,
+      isDefault: layoutData.isDefault || false,
+      headerComponents: layoutData.headerComponents || '[]',
+      footerComponents: layoutData.footerComponents || '[]',
+      bodySections: layoutData.bodySections || '[]',
+      headerStyles: layoutData.headerStyles || '{}',
+      footerStyles: layoutData.footerStyles || '{}',
+      globalStyles: layoutData.globalStyles || '{}',
+      isPublished: layoutData.isPublished || false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await tableClient.createEntity(entity);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Layout saved successfully',
+      rowKey: rowKey,
+    });
+  } catch (error) {
+    console.error('Layout save error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to save layout' });
+  }
+});
+
+// ============================================
+// Project Settings API
+// ============================================
+
+// GET /api/settings/:project - Get project settings
+app.get('/api/settings/:project', async (req, res) => {
+  try {
+    const tableClient = getTableClient();
+    const { project } = req.params;
+
+    try {
+      const entity = await tableClient.getEntity(project, 'settings');
+      return res.status(200).json({
+        success: true,
+        data: {
+          partitionKey: entity.partitionKey,
+          rowKey: entity.rowKey,
+          entityType: 'settings',
+          projectName: entity.projectName || project,
+          defaultLayoutRowKey: entity.defaultLayoutRowKey || null,
+          globalStyles: entity.globalStyles || '{}',
+          createdAt: entity.createdAt,
+          updatedAt: entity.updatedAt,
+        },
+      });
+    } catch (error) {
+      if (error.statusCode === 404) {
+        // Return default settings if not found
+        return res.status(200).json({
+          success: true,
+          data: {
+            partitionKey: project,
+            rowKey: 'settings',
+            entityType: 'settings',
+            projectName: project,
+            defaultLayoutRowKey: null,
+            globalStyles: '{}',
+            createdAt: null,
+            updatedAt: null,
+          },
+        });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Settings fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch settings' });
+  }
+});
+
+// PUT /api/settings/:project - Update project settings
+app.put('/api/settings/:project', async (req, res) => {
+  try {
+    const tableClient = getTableClient();
+    const { project } = req.params;
+    const data = req.body;
+
+    const now = new Date().toISOString();
+
+    // Try to get existing settings
+    let existing = null;
+    try {
+      existing = await tableClient.getEntity(project, 'settings');
+    } catch (error) {
+      if (error.statusCode !== 404) throw error;
+    }
+
+    const entity = {
+      partitionKey: project,
+      rowKey: 'settings',
+      entityType: 'settings',
+      projectName: data.projectName || project,
+      defaultLayoutRowKey: data.defaultLayoutRowKey !== undefined ? data.defaultLayoutRowKey : (existing?.defaultLayoutRowKey || ''),
+      globalStyles: data.globalStyles !== undefined ? data.globalStyles : (existing?.globalStyles || '{}'),
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+
+    await tableClient.upsertEntity(entity, 'Replace');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Settings saved successfully',
+    });
+  } catch (error) {
+    console.error('Settings save error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to save settings' });
+  }
+});
+
+// ============================================
+// Projects API
+// ============================================
+
+// GET /api/projects - List all projects (unique partitionKeys)
+app.get('/api/projects', async (req, res) => {
+  try {
+    const tableClient = getTableClient();
+    const projects = new Set();
+
+    // Get all entities and extract unique partitionKeys
+    const queryResults = tableClient.listEntities({
+      queryOptions: { filter: "PartitionKey ne 'SeedProduct'" },
+    });
+
+    for await (const entity of queryResults) {
+      projects.add(entity.partitionKey);
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: projects.size,
+      data: Array.from(projects),
+    });
+  } catch (error) {
+    console.error('Projects fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch projects' });
   }
 });
 

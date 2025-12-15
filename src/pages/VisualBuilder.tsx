@@ -6,8 +6,9 @@ import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AIStylerModal from '../visualBuilder/AIStylerModal';
 import SavePageModal from '../visualBuilder/SavePageModal';
+import ProjectSelector from '../components/ProjectSelector';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
-import { Layout, BodySection, defaultBodyStyles } from '../types/layout';
+import { Layout, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -149,16 +150,15 @@ export default function VisualBuilder() {
         const layout: Layout = {
           rowKey: layoutEntity.rowKey,
           partitionKey: layoutEntity.partitionKey,
+          entityType: 'layout',
           name: layoutEntity.name || layoutEntity.title,
-          slug: layoutEntity.slug,
-          description: layoutEntity.description,
-          isDefault: layoutEntity.isDefault,
+          isDefault: layoutEntity.isDefault || false,
           headerComponents: layoutEntity.headerComponents ? JSON.parse(layoutEntity.headerComponents) : [],
           footerComponents: layoutEntity.footerComponents ? JSON.parse(layoutEntity.footerComponents) : [],
           bodySections,
-          bodyStyles: parsedBodyStyles,
+          headerStyles: layoutEntity.headerStyles ? JSON.parse(layoutEntity.headerStyles) : { ...defaultHeaderStyles },
+          footerStyles: layoutEntity.footerStyles ? JSON.parse(layoutEntity.footerStyles) : { ...defaultFooterStyles },
           globalStyles: layoutEntity.globalStyles ? JSON.parse(layoutEntity.globalStyles) : {},
-          isPublished: layoutEntity.isPublished,
           createdAt: layoutEntity.createdAt || '',
           updatedAt: layoutEntity.updatedAt || '',
         };
@@ -334,13 +334,7 @@ export default function VisualBuilder() {
         <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Link to="/" className="text-lg sm:text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors">Visual AI Builder</Link>
-            <input
-              type="text"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              className="w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              placeholder="Project name"
-            />
+            <ProjectSelector />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">

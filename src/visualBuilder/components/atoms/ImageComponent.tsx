@@ -18,10 +18,21 @@ interface ImageComponentProps {
   };
 }
 
+// Placeholder image using data URI (no external dependency)
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml,' + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect fill="#f3f4f6" width="400" height="300"/>
+  <rect fill="#e5e7eb" x="150" y="100" width="100" height="80" rx="8"/>
+  <circle fill="#d1d5db" cx="180" cy="130" r="15"/>
+  <path fill="#d1d5db" d="M155 165 L175 145 L195 160 L215 135 L245 165 Z"/>
+  <text x="200" y="210" font-family="system-ui, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">Add Image URL</text>
+</svg>
+`);
+
 export default function ImageComponent({ props, styles }: ImageComponentProps) {
   const imageElement = (
     <img
-      src={props.src || 'https://via.placeholder.com/400x300?text=Add+Image+URL'}
+      src={props.src || PLACEHOLDER_IMAGE}
       alt={props.alt || 'Image'}
       style={{
         width: styles.width || '100%',

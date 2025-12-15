@@ -4,6 +4,7 @@ import VisualComponentLibrary from '../visualBuilder/VisualComponentLibrary';
 import VisualComponentRenderer from '../visualBuilder/VisualComponentRenderer';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
+import ProjectSelector from '../components/ProjectSelector';
 import { useVisualBuilderStore, VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
 import { SectionStyles, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles, createDefaultBodySection, getDefaultBodySections } from '../types/layout';
 
@@ -17,10 +18,6 @@ export default function LayoutEditor() {
   // Layout metadata
   const [layoutName, setLayoutName] = useState('');
   const [layoutDescription, setLayoutDescription] = useState('');
-  const [projectName, setProjectName] = useState(() => {
-    // Load last used project name from localStorage (shared with Visual Builder)
-    return localStorage.getItem('uxBuilder_lastProjectName') || '';
-  });
   const [isDefault, setIsDefault] = useState(false);
 
   // Section components (stored separately from the main store)
@@ -49,6 +46,8 @@ export default function LayoutEditor() {
 
   // Use store for current editing
   const {
+    projectName,
+    setProjectName,
     components,
     globalStyles,
     selectedComponentId,
@@ -159,13 +158,6 @@ export default function LayoutEditor() {
       )
     );
   };
-
-  // Persist project name to localStorage whenever it changes (shared with Visual Builder)
-  useEffect(() => {
-    if (projectName) {
-      localStorage.setItem('uxBuilder_lastProjectName', projectName);
-    }
-  }, [projectName]);
 
   // Cleanup: Clear store components when leaving Layout Editor to not pollute Visual Builder
   useEffect(() => {
@@ -309,13 +301,15 @@ export default function LayoutEditor() {
 
       let response;
       if (editingRowKey) {
+        // Update existing layout via pages endpoint (handles both pages and layouts)
         response = await fetch(`${baseUrl}/api/pages/${projectName}/${editingRowKey}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(layoutData),
         });
       } else {
-        response = await fetch(`${baseUrl}/api/pages`, {
+        // Create new layout via layouts endpoint
+        response = await fetch(`${baseUrl}/api/layouts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(layoutData),
@@ -371,14 +365,7 @@ export default function LayoutEditor() {
           </Link>
           <span className="text-gray-300">|</span>
           <h1 className="text-lg font-semibold text-purple-600">Layout Editor</h1>
-          <input
-            type="text"
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            placeholder="Project name"
-            disabled={!!editingRowKey}
-          />
+          <ProjectSelector />
           <input
             type="text"
             value={layoutName}

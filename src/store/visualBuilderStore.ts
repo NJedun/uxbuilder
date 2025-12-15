@@ -222,8 +222,11 @@ interface VisualBuilderState {
   globalStyles: GlobalStyles;
   selectedComponentId: string | null;
   draggedComponentType: string | null;
+  // State for adding components to a specific column when a Row is selected
+  selectedRowColumn: number;
 
   setProjectName: (name: string) => void;
+  setSelectedRowColumn: (column: number) => void;
   addComponent: (component: VisualComponent, parentId?: string) => void;
   updateComponent: (id: string, updates: Partial<VisualComponent>) => void;
   deleteComponent: (id: string) => void;
@@ -383,6 +386,7 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   globalStyles: { ...defaultGlobalStyles },
   selectedComponentId: null,
   draggedComponentType: null,
+  selectedRowColumn: 0,
 
   setProjectName: (name: string) => {
     set({ projectName: name });
@@ -391,6 +395,10 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       localStorage.setItem(PROJECT_NAME_KEY, name);
     }
     get().saveToLocalStorage();
+  },
+
+  setSelectedRowColumn: (column: number) => {
+    set({ selectedRowColumn: column });
   },
 
   addComponent: (component: VisualComponent, parentId?: string) => {
