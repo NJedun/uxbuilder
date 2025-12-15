@@ -36,7 +36,7 @@ export default function Heading({ props, styles, getStyle }: HeadingProps) {
   const Tag = level;
 
   const style: React.CSSProperties = {
-    color: getStyle(styles.color, 'titleColor'),
+    color: styles.color || '#000000',
     fontSize: styles.fontSize || defaultFontSizes[level],
     fontWeight: getStyle(styles.fontWeight, 'titleFontWeight') || '700',
     lineHeight: styles.lineHeight || '1.2',

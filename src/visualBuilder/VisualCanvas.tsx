@@ -76,7 +76,10 @@ export default function VisualCanvas({ viewMode = 'desktop', previewLayout }: Vi
       >
       {/* Layout Header Preview */}
       {previewLayout && previewLayout.headerComponents.length > 0 && (
-        <div className="relative">
+        <div
+          className="relative cursor-pointer"
+          onClick={() => selectComponent(null)}
+        >
           <div className="absolute top-1 left-1 z-10 px-2 py-0.5 bg-purple-500 text-white text-[10px] rounded opacity-75">
             Layout Header
           </div>
@@ -85,7 +88,7 @@ export default function VisualCanvas({ viewMode = 'desktop', previewLayout }: Vi
               key={`layout-header-${component.id}`}
               component={component}
               isSelected={false}
-              onSelect={() => {}}
+              onSelect={() => selectComponent(null)}
               viewMode={viewMode}
               readOnly={true}
             />
@@ -175,7 +178,10 @@ export default function VisualCanvas({ viewMode = 'desktop', previewLayout }: Vi
 
       {/* Layout Footer Preview */}
       {previewLayout && previewLayout.footerComponents.length > 0 && (
-        <div className="relative">
+        <div
+          className="relative cursor-pointer"
+          onClick={() => selectComponent(null)}
+        >
           <div className="absolute top-1 left-1 z-10 px-2 py-0.5 bg-purple-500 text-white text-[10px] rounded opacity-75">
             Layout Footer
           </div>
@@ -184,7 +190,7 @@ export default function VisualCanvas({ viewMode = 'desktop', previewLayout }: Vi
               key={`layout-footer-${component.id}`}
               component={component}
               isSelected={false}
-              onSelect={() => {}}
+              onSelect={() => selectComponent(null)}
               viewMode={viewMode}
               readOnly={true}
             />

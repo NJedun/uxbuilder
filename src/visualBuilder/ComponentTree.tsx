@@ -46,7 +46,7 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
       case 'Image': return '🖼️';
       case 'Row': return '⊞';
       case 'LinkList': return '📋';
-      case 'IconBox': return '✨';
+      case 'ImageBox': return '🖼️';
       case 'Text': return '📝';
       case 'Button': return '🔘';
       case 'Divider': return '➖';
@@ -73,9 +73,9 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
     if (comp.type === 'LinkList') {
       return comp.props?.label || 'Link List';
     }
-    if (comp.type === 'IconBox') {
+    if (comp.type === 'ImageBox') {
       const title = comp.props?.title || '';
-      return title.length > 20 ? title.substring(0, 20) + '...' : title || 'Icon Box';
+      return title.length > 20 ? title.substring(0, 20) + '...' : title || 'Image Box';
     }
     if (comp.type === 'Text') {
       const content = comp.props?.content || '';

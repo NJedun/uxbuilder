@@ -106,6 +106,49 @@ CRITICAL RULES - DATA CAN APPEAR IN MULTIPLE ARRAYS:
 6. Rating scale: 1=Excellent, 5=Average, 9=Fair
 7. Return ONLY JSON, no explanations`;
 
+export const IMAGE_TO_COMPONENTS_PROMPT = `You are a UI component generator. Analyze this screenshot of a webpage section (body content only, no header/footer) and generate components that recreate the layout.
+
+AVAILABLE COMPONENT TYPES:
+- Heading: { type: "Heading", props: { text: "...", level: "h1"|"h2"|"h3"|"h4" } }
+- Text: { type: "Text", props: { content: "..." } }
+- Button: { type: "Button", props: { text: "...", url: "#", variant: "primary"|"secondary"|"outline" } }
+- Image: { type: "Image", props: { src: "", alt: "description" } }
+- ImageBox: { type: "ImageBox", props: { variant: "image", title: "...", featureImage: "", linkText: "..." } } (for image cards) or { type: "ImageBox", props: { variant: "icon", icon: "emoji", title: "...", description: "..." } } (for icon boxes)
+- LinkList: { type: "LinkList", props: { label: "...", links: [{ text: "...", url: "#" }] } }
+- Divider: { type: "Divider", props: { showLine: true } }
+- Row: For multi-column layouts { type: "Row", props: { columns: 2|3|4, columnWidths: ["50%", "50%"] }, children: [...] }
+
+RULES:
+1. Return ONLY valid JSON array - no explanations, no markdown
+2. Extract ALL visible text content exactly as shown
+3. Use Row component for side-by-side layouts, detect column count (2, 3, or 4)
+4. For Row children, add columnIndex: 0, 1, 2, or 3 to props
+5. Image src should be empty string "" (placeholder)
+6. All URLs should be "#" (placeholder)
+7. Use appropriate heading levels (h1 for main title, h2 for section titles, h3/h4 for smaller)
+8. ImageBox for feature cards - use variant: "image" for image cards (image at top, title, link) or variant: "icon" for icon + title + description pattern
+9. Preserve the visual hierarchy and reading order
+
+RESPONSE FORMAT:
+{
+  "components": [
+    { "type": "Heading", "props": { "text": "Welcome", "level": "h1" } },
+    { "type": "Text", "props": { "content": "Description text here..." } },
+    {
+      "type": "Row",
+      "props": { "columns": 3, "columnWidths": ["33.33%", "33.33%", "33.33%"] },
+      "children": [
+        { "type": "ImageBox", "props": { "variant": "icon", "icon": "🚀", "title": "Fast", "description": "Quick loading", "columnIndex": 0 } },
+        { "type": "ImageBox", "props": { "variant": "icon", "icon": "🔒", "title": "Secure", "description": "Protected data", "columnIndex": 1 } },
+        { "type": "ImageBox", "props": { "variant": "icon", "icon": "💡", "title": "Smart", "description": "Intelligent", "columnIndex": 2 } }
+      ]
+    },
+    { "type": "Button", "props": { "text": "Get Started", "url": "#", "variant": "primary" } }
+  ]
+}
+
+Analyze the image and return the components JSON.`;
+
 // Azure OpenAI Configuration
 export const AZURE_CONFIG = {
   apiVersion: '2024-12-01-preview',

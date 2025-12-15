@@ -8,7 +8,7 @@ import {
   ImageComponent,
   RowComponent,
   LinkList,
-  IconBox,
+  ImageBox,
   TextComponent,
   ButtonComponent,
   Divider,
@@ -143,9 +143,9 @@ export default function VisualComponentRenderer({
           />
         );
 
-      case 'IconBox':
+      case 'ImageBox':
         return (
-          <IconBox
+          <ImageBox
             props={props}
             styles={styles}
             globalStyles={globalStyles}
