@@ -2325,7 +2325,7 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
                 };
 
                 try {
-                  const response = await fetch('/api/seed-product', {
+                  const response = await fetch('/api/seed-products', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSave),

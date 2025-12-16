@@ -311,8 +311,8 @@ app.get('/api/seed-products', async (req, res) => {
   }
 });
 
-// Save Seed Product to Azure Table Storage
-app.post('/api/seed-product', async (req, res) => {
+// Save Seed Product to Azure Table Storage (POST to same endpoint as GET)
+app.post('/api/seed-products', async (req, res) => {
   const accountName = process.env.AZURE_STORAGE_ACCOUNT;
   const accountKey = process.env.AZURE_STORAGE_KEY;
   const tableName = process.env.AZURE_TABLE_NAME;
