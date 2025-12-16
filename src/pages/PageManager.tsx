@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import AppHeader from '../components/AppHeader';
 
 interface PageEntity {
   rowKey: string;
@@ -92,6 +93,31 @@ export default function PageManager() {
       fetchPages();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete page');
+    }
+  };
+
+  const handleDeleteProject = async (project: string) => {
+    const projectPages = pages.filter(p => p.partitionKey === project);
+    const message = `Are you sure you want to delete the project "${project}"?\n\nThis will permanently delete ${projectPages.length} page(s) and all associated layouts.\n\nThis action cannot be undone.`;
+
+    if (!confirm(message)) return;
+
+    try {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/projects/${encodeURIComponent(project)}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete project');
+      }
+
+      // Reset selection and refresh list
+      setSelectedProject('all');
+      fetchPages();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete project');
     }
   };
 
@@ -237,44 +263,43 @@ export default function PageManager() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                to="/visual-builder"
-                className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
-              >
-                Visual AI Builder
-              </Link>
-              <span className="text-gray-300">|</span>
-              <h1 className="text-lg font-semibold text-gray-700">Page Manager</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Project Filter */}
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Projects</option>
-                {projects.map((project) => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))}
-              </select>
-              <Link
-                to="/visual-builder"
-                className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
-              >
-                + Create Page
-              </Link>
-            </div>
-          </div>
+      {/* Header with Navigation */}
+      <AppHeader rightContent={
+        <div className="flex items-center gap-4">
+          {/* Project Filter */}
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Projects</option>
+            {projects.map((project) => (
+              <option key={project} value={project}>
+                {project}
+              </option>
+            ))}
+          </select>
+          {/* Delete Project Button - only show when a project is selected */}
+          {selectedProject !== 'all' && (
+            <button
+              onClick={() => handleDeleteProject(selectedProject)}
+              className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors font-medium text-sm flex items-center gap-1"
+              title={`Delete project "${selectedProject}"`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete Project
+            </button>
+          )}
+          <Link
+            to="/visual-builder"
+            className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
+          >
+            + Create Page
+          </Link>
         </div>
-      </header>
+      } />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

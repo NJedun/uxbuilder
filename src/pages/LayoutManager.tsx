@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Layout } from '../types/layout';
+import AppHeader from '../components/AppHeader';
 
 interface LayoutEntity {
   rowKey: string;
@@ -104,44 +104,30 @@ export default function LayoutManager() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                to="/visual-builder"
-                className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
-              >
-                Visual AI Builder
-              </Link>
-              <span className="text-gray-300">|</span>
-              <h1 className="text-lg font-semibold text-gray-700">Layout Manager</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* Project Filter */}
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Projects</option>
-                {projects.map((project) => (
-                  <option key={project} value={project}>
-                    {project}
-                  </option>
-                ))}
-              </select>
-              <Link
-                to="/layout-editor"
-                className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
-              >
-                + Create Layout
-              </Link>
-            </div>
-          </div>
+      {/* Header with Navigation */}
+      <AppHeader rightContent={
+        <div className="flex items-center gap-4">
+          {/* Project Filter */}
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Projects</option>
+            {projects.map((project) => (
+              <option key={project} value={project}>
+                {project}
+              </option>
+            ))}
+          </select>
+          <Link
+            to="/layout-editor"
+            className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors font-medium text-sm"
+          >
+            + Create Layout
+          </Link>
         </div>
-      </header>
+      } />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -885,6 +885,97 @@ app.get('/api/projects', async (req, res) => {
   }
 });
 
+// DELETE /api/projects/:project - Delete all entities in a project
+app.delete('/api/projects/:project', async (req, res) => {
+  const { project } = req.params;
+
+  if (!project) {
+    return res.status(400).json({ error: 'Project name is required' });
+  }
+
+  try {
+    const tableClient = getTableClient();
+
+    // Get all entities with this partitionKey
+    const queryResults = tableClient.listEntities({
+      queryOptions: { filter: `PartitionKey eq '${project}'` },
+    });
+
+    const entitiesToDelete = [];
+    for await (const entity of queryResults) {
+      entitiesToDelete.push({
+        partitionKey: entity.partitionKey,
+        rowKey: entity.rowKey,
+      });
+    }
+
+    if (entitiesToDelete.length === 0) {
+      return res.status(404).json({ error: 'Project not found or already empty' });
+    }
+
+    // Delete all entities
+    let deletedCount = 0;
+    for (const entity of entitiesToDelete) {
+      try {
+        await tableClient.deleteEntity(entity.partitionKey, entity.rowKey);
+        deletedCount++;
+      } catch (error) {
+        console.error(`Failed to delete entity ${entity.rowKey}:`, error);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Project "${project}" deleted successfully`,
+      deletedCount,
+      totalEntities: entitiesToDelete.length,
+    });
+  } catch (error) {
+    console.error('Project delete error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to delete project' });
+  }
+});
+
+// GET /api/projects/:project - Get project details
+app.get('/api/projects/:project', async (req, res) => {
+  const { project } = req.params;
+
+  if (!project) {
+    return res.status(400).json({ error: 'Project name is required' });
+  }
+
+  try {
+    const tableClient = getTableClient();
+
+    const queryResults = tableClient.listEntities({
+      queryOptions: { filter: `PartitionKey eq '${project}'` },
+    });
+
+    let pageCount = 0;
+    let layoutCount = 0;
+
+    for await (const entity of queryResults) {
+      const entityType = entity.entityType;
+      if (entityType === 'layout') {
+        layoutCount++;
+      } else {
+        pageCount++;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      project,
+      pageCount,
+      layoutCount,
+      totalCount: pageCount + layoutCount,
+    });
+  } catch (error) {
+    console.error('Project fetch error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch project details' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API server running on http://localhost:${PORT}`);
 });

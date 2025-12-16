@@ -6,6 +6,7 @@ import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AIStylerModal from '../visualBuilder/AIStylerModal';
 import SavePageModal from '../visualBuilder/SavePageModal';
+import AppHeader from '../components/AppHeader';
 import ProjectSelector from '../components/ProjectSelector';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { Layout, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
@@ -330,14 +331,9 @@ export default function VisualBuilder() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-        {/* Toolbar */}
-        <div className="min-h-16 bg-white border-b border-gray-200 px-2 sm:px-6 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-            <Link to="/" className="text-lg sm:text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors">Visual AI Builder</Link>
-            <ProjectSelector />
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+        {/* Header with Navigation */}
+        <AppHeader rightContent={
+          <div className="flex items-center gap-2 flex-wrap">
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <button
@@ -567,18 +563,6 @@ export default function VisualBuilder() {
             </div>
 
             <div className="hidden sm:block h-6 w-px bg-gray-300" />
-            <Link
-              to="/layouts"
-              className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              Layouts
-            </Link>
-            <Link
-              to="/pages"
-              className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors font-medium text-xs sm:text-sm whitespace-nowrap"
-            >
-              Pages
-            </Link>
 
             <button
               onClick={() => setShowSavePageModal(true)}
@@ -590,7 +574,9 @@ export default function VisualBuilder() {
               Save Page
             </button>
           </div>
-        </div>
+        }>
+          <ProjectSelector />
+        </AppHeader>
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden relative">

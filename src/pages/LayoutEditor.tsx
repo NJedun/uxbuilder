@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import VisualComponentLibrary from '../visualBuilder/VisualComponentLibrary';
 import VisualComponentRenderer from '../visualBuilder/VisualComponentRenderer';
 import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
+import AppHeader from '../components/AppHeader';
 import ProjectSelector from '../components/ProjectSelector';
 import { useVisualBuilderStore, VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
 import { SectionStyles, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles, createDefaultBodySection, getDefaultBodySections } from '../types/layout';
@@ -354,27 +355,8 @@ export default function LayoutEditor() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      {/* Toolbar */}
-      <div className="min-h-16 bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/visual-builder"
-            className="text-xl font-bold text-gray-800 hover:text-gray-600 transition-colors"
-          >
-            Visual AI Builder
-          </Link>
-          <span className="text-gray-300">|</span>
-          <h1 className="text-lg font-semibold text-purple-600">Layout Editor</h1>
-          <ProjectSelector />
-          <input
-            type="text"
-            value={layoutName}
-            onChange={(e) => setLayoutName(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            placeholder="Layout name"
-          />
-        </div>
-
+      {/* Header with Navigation */}
+      <AppHeader title="Layout Editor" titleColor="text-purple-600" rightContent={
         <div className="flex items-center gap-2">
           {/* View Mode Toggle */}
           <div className="flex items-center bg-gray-100 rounded-lg p-1">
@@ -424,7 +406,16 @@ export default function LayoutEditor() {
             {saving ? 'Saving...' : 'Save Layout'}
           </button>
         </div>
-      </div>
+      }>
+        <ProjectSelector />
+        <input
+          type="text"
+          value={layoutName}
+          onChange={(e) => setLayoutName(e.target.value)}
+          className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+          placeholder="Layout name"
+        />
+      </AppHeader>
 
       {/* Section Tabs */}
       <div className="bg-white border-b border-gray-200 px-4">

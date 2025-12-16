@@ -104,7 +104,7 @@ export default function ProjectSelector({ onProjectChange }: ProjectSelectorProp
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
           {/* Projects List */}
           <div className="max-h-60 overflow-y-auto">
             {projects.length === 0 && !loading ? (
@@ -153,7 +153,7 @@ export default function ProjectSelector({ onProjectChange }: ProjectSelectorProp
                 <button
                   onClick={handleCreateProject}
                   disabled={!newProjectName.trim()}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
                 >
                   Create
                 </button>
