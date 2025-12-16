@@ -231,6 +231,7 @@ export default function VisualComponentRenderer({
             props={props}
             styles={styles}
             globalStyles={globalStyles}
+            getStyle={getStyle}
           />
         );
 

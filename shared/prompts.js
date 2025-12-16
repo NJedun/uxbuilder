@@ -8,6 +8,22 @@ IMPORTANT RULES:
 3. Only modify style-related properties: customStyles, globalStyles
 4. Use CSS-in-JS format (camelCase properties, string values)
 
+GLOBAL STYLES TO SET (update globalStyles object):
+- Container: containerBackgroundColor, containerPadding
+- Header: headerBackgroundColor, headerPadding, headerMaxWidth
+- Logo: logoColor, logoFontSize, logoFontWeight
+- Navigation: navLinkColor, navLinkFontSize, navLinkFontWeight, navLinkHoverColor
+- Headings: titleColor/titleFontSize (H1), h2Color/h2FontSize, h3Color/h3FontSize
+- Text: subtitleColor, subtitleFontSize
+- Buttons: buttonBackgroundColor, buttonTextColor, buttonPadding, buttonBorderRadius, buttonFontSize
+- Links: linkColor, linkHoverColor
+- Rows/Columns: rowGap, rowPadding, rowBackgroundColor, columnBackgroundColor, columnPadding, columnBorderRadius
+- ImageBox/IconBox: iconBoxIconSize, iconBoxTitleColor, iconBoxTitleFontSize, iconBoxDescriptionColor, iconBoxDescriptionFontSize
+- LinkList: linkListLabelColor, linkListLabelFontSize, linkListItemColor, linkListItemFontSize
+- Footer: footerBackgroundColor, footerPadding, footerTextColor
+- Divider: dividerColor, dividerHeight
+- SeedProduct: seedProductTitleColor, seedProductRatingBarColor, seedProductCardBgColor, seedProductCardTitleColor
+
 Return the complete styled JSON with:
 - globalStyles: Overall theme styles (colors, fonts, spacing)
 - components: Array with updated customStyles for each component`;
@@ -16,51 +32,92 @@ export const IMAGE_STYLE_PROMPT = `Analyze this UI screenshot and extract a comp
 
 {
   "globalStyles": {
-    "primaryColor": "#hex",
-    "secondaryColor": "#hex",
-    "backgroundColor": "#hex",
-    "textColor": "#hex",
-    "headingColor": "#hex",
-    "headingFontSize": "px value",
-    "headingFontWeight": "weight",
-    "paragraphFontSize": "px value",
-    "paragraphLineHeight": "value",
+    "containerBackgroundColor": "#hex (page background)",
+    "containerPadding": "px values",
+
+    "headerBackgroundColor": "#hex",
+    "headerPadding": "px values",
+    "headerMaxWidth": "px value",
+
+    "logoColor": "#hex",
+    "logoFontSize": "px value",
+    "logoFontWeight": "weight",
+
+    "navLinkColor": "#hex",
+    "navLinkFontSize": "px value",
+    "navLinkFontWeight": "weight",
+    "navLinkHoverColor": "#hex",
+
+    "titleColor": "#hex (H1 color)",
+    "titleFontSize": "px value",
+    "titleFontWeight": "weight",
+
+    "h2Color": "#hex",
+    "h2FontSize": "px value",
+    "h2FontWeight": "weight",
+
+    "h3Color": "#hex",
+    "h3FontSize": "px value",
+    "h3FontWeight": "weight",
+
+    "subtitleColor": "#hex (paragraph/body text)",
+    "subtitleFontSize": "px value",
+
     "buttonBackgroundColor": "#hex",
     "buttonTextColor": "#hex",
     "buttonPadding": "px values",
     "buttonBorderRadius": "px value",
     "buttonFontSize": "px value",
     "buttonFontWeight": "weight",
-    "inputBackgroundColor": "#hex",
-    "inputBorderColor": "#hex",
-    "inputBorderRadius": "px value",
-    "inputPadding": "px values",
-    "inputFontSize": "px value",
-    "cardBackgroundColor": "#hex",
-    "cardBorderRadius": "px value",
-    "cardPadding": "px values",
-    "cardShadow": "shadow value",
+
     "linkColor": "#hex",
     "linkHoverColor": "#hex",
-    "navBackgroundColor": "#hex",
-    "navTextColor": "#hex",
-    "navPadding": "px values",
+
+    "rowGap": "px value (spacing between columns)",
+    "rowPadding": "px values",
+    "rowBackgroundColor": "#hex",
+
+    "columnBackgroundColor": "#hex",
+    "columnPadding": "px values",
+    "columnBorderRadius": "px value",
+
+    "iconBoxIconSize": "px value (48px-80px typical)",
+    "iconBoxTitleColor": "#hex",
+    "iconBoxTitleFontSize": "px value",
+    "iconBoxTitleFontWeight": "weight",
+    "iconBoxDescriptionColor": "#hex",
+    "iconBoxDescriptionFontSize": "px value",
+
+    "linkListLabelColor": "#hex",
+    "linkListLabelFontSize": "px value",
+    "linkListLabelFontWeight": "weight",
+    "linkListItemColor": "#hex",
+    "linkListItemFontSize": "px value",
+
     "footerBackgroundColor": "#hex",
-    "footerTextColor": "#hex",
     "footerPadding": "px values",
-    "sectionPadding": "px values",
-    "containerMaxWidth": "px value",
-    "borderRadius": "px value",
-    "spacing": "px value",
-    "seedProductRatingBarColor": "#hex (use primaryColor value)",
-    "seedProductCardTitleColor": "#hex (use primaryColor value)",
-    "seedProductTitleColor": "#hex (use headingColor or primaryColor)"
+    "footerTextColor": "#hex",
+
+    "dividerColor": "#hex",
+    "dividerHeight": "px value",
+
+    "seedProductTitleColor": "#hex (use primary brand color)",
+    "seedProductDescriptionColor": "#hex",
+    "seedProductRatingBarColor": "#hex (use primary brand color)",
+    "seedProductCardBgColor": "#hex",
+    "seedProductCardTitleColor": "#hex (use primary brand color)",
+    "seedProductLabelColor": "#hex",
+    "seedProductValueColor": "#hex"
   }
 }
 
-IMPORTANT: For seedProductRatingBarColor, seedProductCardTitleColor, and seedProductTitleColor - use the primaryColor value you extracted. These should match the brand's primary color.
-
-Extract colors, sizes, and spacing from the visual design. Return ONLY the JSON, no explanations.`;
+IMPORTANT RULES:
+1. Extract actual colors, sizes, and spacing from the visual design
+2. For seed product styles, use the primary brand color you identified
+3. IconBox styles apply to feature cards with icon/image + title + description
+4. LinkList styles apply to grouped link sections
+5. Use the heading hierarchy (H1 largest, H3 smallest)
+6. Return ONLY the JSON, no explanations`;
 
 export const PDF_EXTRACT_PROMPT = `You are a seed product data extractor. Analyze the provided PDF/document image and extract all seed product information.
 

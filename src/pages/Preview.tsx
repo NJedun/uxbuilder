@@ -259,6 +259,12 @@ export default function Preview() {
   const hasProductGrid = allComponents.some((c) => c.type === 'ProductGrid') ||
                          components.some((c) => c.type === 'ProductGrid');
 
+  // Helper function to get style from component or global styles
+  const getStyle = (componentStyle: string | undefined, globalKey: keyof GlobalStyles): string | undefined => {
+    if (componentStyle) return componentStyle;
+    return globalStyles[globalKey] as string | undefined;
+  };
+
   // Get page type label
   const getPageTypeLabel = () => {
     switch (page.pageType) {
@@ -396,6 +402,7 @@ export default function Preview() {
                       props={{ ...component.props, parentRowKey: page.rowKey }}
                       styles={component.customStyles || {}}
                       globalStyles={globalStyles}
+                      getStyle={getStyle}
                       childPages={childPages}
                     />
                   );
@@ -419,6 +426,7 @@ export default function Preview() {
                   props={{ parentRowKey: page.rowKey }}
                   styles={{}}
                   globalStyles={globalStyles}
+                  getStyle={getStyle}
                   childPages={childPages}
                 />
               )}

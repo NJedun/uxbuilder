@@ -56,6 +56,7 @@ interface ProductGridProps {
     badgeTextColor?: string;
   };
   globalStyles: GlobalStyles;
+  getStyle: (componentStyle: string | undefined, globalKey: keyof GlobalStyles) => string | undefined;
   childPages?: ChildPage[];
 }
 
@@ -265,6 +266,7 @@ const defaultGridStyles = {
 export default function ProductGrid({
   props,
   styles,
+  getStyle,
   childPages: injectedChildren,
 }: ProductGridProps) {
   const [children, setChildren] = useState<ChildPage[]>(injectedChildren || []);
@@ -280,8 +282,25 @@ export default function ProductGrid({
   const learnMoreText = props.learnMoreText || 'Learn more';
   const downloadLinkText = props.downloadLinkText || 'Download tech sheet';
 
-  // Merge provided styles with defaults
-  const mergedStyles = { ...defaultGridStyles, ...styles };
+  // Use getStyle to check globalStyles, then component styles, then defaults
+  const mergedStyles = {
+    padding: styles.padding || defaultGridStyles.padding,
+    backgroundColor: styles.backgroundColor || defaultGridStyles.backgroundColor,
+    cardBackgroundColor: getStyle(styles.cardBackgroundColor, 'seedProductCardBgColor') || defaultGridStyles.cardBackgroundColor,
+    cardBorderColor: getStyle(styles.cardBorderColor, 'seedProductCardBorderColor') || defaultGridStyles.cardBorderColor,
+    cardBorderRadius: styles.cardBorderRadius || defaultGridStyles.cardBorderRadius,
+    cardPadding: styles.cardPadding || defaultGridStyles.cardPadding,
+    cardBorderWidth: styles.cardBorderWidth || defaultGridStyles.cardBorderWidth,
+    titleColor: getStyle(styles.titleColor, 'seedProductCardTitleColor') || defaultGridStyles.titleColor,
+    titleFontSize: styles.titleFontSize || defaultGridStyles.titleFontSize,
+    titleFontWeight: styles.titleFontWeight || defaultGridStyles.titleFontWeight,
+    textColor: getStyle(styles.textColor, 'subtitleColor') || defaultGridStyles.textColor,
+    textFontSize: getStyle(styles.textFontSize, 'subtitleFontSize') || defaultGridStyles.textFontSize,
+    linkColor: getStyle(styles.linkColor, 'linkColor') || defaultGridStyles.linkColor,
+    linkFontSize: styles.linkFontSize || defaultGridStyles.linkFontSize,
+    badgeBackgroundColor: getStyle(styles.badgeBackgroundColor, 'buttonBackgroundColor') || defaultGridStyles.badgeBackgroundColor,
+    badgeTextColor: getStyle(styles.badgeTextColor, 'buttonTextColor') || defaultGridStyles.badgeTextColor,
+  };
 
   useEffect(() => {
     if (injectedChildren) {
