@@ -11,6 +11,10 @@ interface AIGenerateModalProps {
 function repairJson(jsonStr: string): string {
   let repaired = jsonStr;
 
+  // Remove markdown code blocks if present
+  repaired = repaired.replace(/```json\s*/gi, '');
+  repaired = repaired.replace(/```\s*/g, '');
+
   // Remove any text before the first { or [
   const firstBrace = repaired.indexOf('{');
   const firstBracket = repaired.indexOf('[');
@@ -33,11 +37,14 @@ function repairJson(jsonStr: string): string {
   // Fix trailing commas before closing brackets/braces
   repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
 
-  // Fix unquoted property names
+  // Fix unquoted property names (but be careful not to break already quoted ones)
   repaired = repaired.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)(\s*:)/g, '$1"$2"$3');
 
-  // Replace single quotes with double quotes (but not inside strings)
-  repaired = repaired.replace(/'/g, '"');
+  // Replace single quotes with double quotes for property names and values
+  // Match property names with single quotes: 'key':
+  repaired = repaired.replace(/'([^']+)'(\s*:)/g, '"$1"$2');
+  // Match string values with single quotes: : 'value'
+  repaired = repaired.replace(/:\s*'([^']*)'/g, ': "$1"');
 
   // Remove control characters except newlines and tabs
   repaired = repaired.replace(/[\x00-\x1F\x7F]/g, (char) => {
@@ -52,10 +59,41 @@ function repairJson(jsonStr: string): string {
   repaired = repaired.replace(/\](\s*)\{/g, '],$1{');
 
   // Fix missing commas after string values followed by a key
-  repaired = repaired.replace(/"(\s*)"([a-zA-Z_])/g, '",$1"$2');
+  // "value" "key" -> "value", "key"
+  repaired = repaired.replace(/"(\s+)"/g, '",$1"');
+
+  // Fix missing commas after numbers followed by a key
+  // 123 "key" -> 123, "key"
+  repaired = repaired.replace(/(\d)(\s+)"/g, '$1,$2"');
+
+  // Fix missing commas after true/false/null followed by a key
+  repaired = repaired.replace(/(true|false|null)(\s+)"/g, '$1,$2"');
 
   // Fix double commas
   repaired = repaired.replace(/,\s*,/g, ',');
+
+  // Fix comma before closing bracket/brace (trailing comma)
+  repaired = repaired.replace(/,(\s*[}\]])/g, '$1');
+
+  // Try to fix truncated JSON by adding missing closing brackets/braces
+  let openBraces = 0;
+  let openBrackets = 0;
+  for (const char of repaired) {
+    if (char === '{') openBraces++;
+    if (char === '}') openBraces--;
+    if (char === '[') openBrackets++;
+    if (char === ']') openBrackets--;
+  }
+
+  // Add missing closing brackets/braces
+  while (openBrackets > 0) {
+    repaired += ']';
+    openBrackets--;
+  }
+  while (openBraces > 0) {
+    repaired += '}';
+    openBraces--;
+  }
 
   return repaired;
 }
@@ -65,13 +103,27 @@ function generateId(type: string): string {
   return `${type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
+// Clean up ImageBox props - remove deprecated 'variant' prop and normalize
+function cleanImageBoxProps(props: Record<string, any>): Record<string, any> {
+  const cleaned = { ...props };
+  // Remove deprecated variant prop
+  delete cleaned.variant;
+  // Remove deprecated featureImage props
+  delete cleaned.featureImage;
+  delete cleaned.featureImageHeight;
+  return cleaned;
+}
+
 // Process AI response and add IDs to components
 function processComponents(components: any[]): VisualComponent[] {
   return components.map((comp) => {
+    // Clean up ImageBox props
+    const props = comp.type === 'ImageBox' ? cleanImageBoxProps(comp.props || {}) : (comp.props || {});
+
     const processed: VisualComponent = {
       id: generateId(comp.type),
       type: comp.type,
-      props: comp.props || {},
+      props,
       customStyles: comp.customStyles || {},
     };
 
@@ -375,7 +427,7 @@ export default function AIGenerateModal({ isOpen, onClose }: AIGenerateModalProp
               {comp.type === 'Text' && `"${comp.props.content?.substring(0, 30)}..."`}
               {comp.type === 'Button' && `"${comp.props.text}"`}
               {comp.type === 'Row' && `${comp.props.columns} columns`}
-              {comp.type === 'ImageBox' && `${comp.props.icon || '🖼️'} ${comp.props.title}`}
+              {comp.type === 'ImageBox' && `[img] ${comp.props.title}`}
               {comp.type === 'Image' && '[placeholder]'}
               {comp.type === 'LinkList' && `${comp.props.links?.length || 0} links`}
             </span>

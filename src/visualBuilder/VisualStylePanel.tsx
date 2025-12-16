@@ -8,10 +8,10 @@ import AIGenerateModal from './AIGenerateModal';
 const quickAddTemplates: { type: string; label: string; icon: string; defaultProps: Record<string, any> }[] = [
   { type: 'Heading', label: 'Heading', icon: 'H', defaultProps: { text: 'Heading', level: 'h2' } },
   { type: 'Text', label: 'Text', icon: 'T', defaultProps: { text: 'Add your text here...' } },
-  { type: 'Button', label: 'Button', icon: '▢', defaultProps: { text: 'Click Me', variant: 'primary' } },
-  { type: 'Image', label: 'Image', icon: '🖼', defaultProps: { src: '', alt: 'Image' } },
-  { type: 'ImageBox', label: 'Image Box', icon: '◎', defaultProps: { variant: 'image', title: 'Title', featureImage: '', linkText: '' } },
-  { type: 'Divider', label: 'Divider', icon: '—', defaultProps: { orientation: 'horizontal' } },
+  { type: 'Button', label: 'Button', icon: 'B', defaultProps: { text: 'Click Me', variant: 'primary' } },
+  { type: 'Image', label: 'Image', icon: 'I', defaultProps: { src: '', alt: 'Image' } },
+  { type: 'ImageBox', label: 'Image Box', icon: 'IB', defaultProps: { layout: 'top', icon: '', title: 'Title', description: '' } },
+  { type: 'Divider', label: 'Divider', icon: '-', defaultProps: { orientation: 'horizontal' } },
 ];
 
 interface VisualStylePanelProps {
@@ -19,7 +19,7 @@ interface VisualStylePanelProps {
 }
 
 export default function VisualStylePanel({ previewLayout }: VisualStylePanelProps = {}) {
-  const { selectedComponentId, components, sectionComponents, updateComponent, addComponent, selectedRowColumn, setSelectedRowColumn } = useVisualBuilderStore();
+  const { selectedComponentId, components, sectionComponents, updateComponent, addComponent, selectedRowColumn, setSelectedRowColumn, selectComponent } = useVisualBuilderStore();
   // Use store state for column selection (shared with VisualComponentLibrary)
   const selectedColumn = selectedRowColumn;
   const setSelectedColumn = setSelectedRowColumn;
@@ -446,7 +446,19 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
   return (
     <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto h-full">
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 z-10">
-        <h2 className="text-lg font-semibold text-gray-800">Properties</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-800">Properties</h2>
+          <button
+            onClick={() => selectComponent(null)}
+            className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            title="Close properties"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
         <p className="text-xs text-gray-500 mt-1">{selectedComponent.type}</p>
       </div>
 
@@ -1630,117 +1642,46 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
       ))}
 
       {/* ImageBox Content */}
-      {selectedComponent.type === 'ImageBox' && renderSection('Content', 'imageBoxContent', (
+      {selectedComponent.type === 'ImageBox' && renderSection('Content', 'iconBoxContent', (
         <>
-          {/* Variant Selector */}
+          {/* Layout */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Variant</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Layout</label>
             <select
-              value={props.variant || 'image'}
-              onChange={(e) => handlePropChange('variant', e.target.value)}
+              value={props.layout || 'top'}
+              onChange={(e) => handlePropChange('layout', e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="image">Image Box (default)</option>
-              <option value="icon">Icon Box</option>
+              <option value="top">Image/Icon on Top</option>
+              <option value="left">Image/Icon on Left</option>
+              <option value="right">Image/Icon on Right</option>
             </select>
           </div>
 
-          {/* Icon variant fields */}
-          {props.variant === 'icon' && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Icon (emoji)</label>
-                <input
-                  type="text"
-                  value={props.icon || ''}
-                  onChange={(e) => handlePropChange('icon', e.target.value)}
-                  placeholder="🚀"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Icon Image URL</label>
-                <input
-                  type="text"
-                  value={props.iconImageUrl || ''}
-                  onChange={(e) => handlePropChange('iconImageUrl', e.target.value)}
-                  placeholder="https://example.com/icon.png"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-400 mt-1">If set, image will be used instead of emoji</p>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                <textarea
-                  value={props.description || ''}
-                  onChange={(e) => handlePropChange('description', e.target.value)}
-                  placeholder="Description text..."
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Layout</label>
-                <select
-                  value={props.layout || 'top'}
-                  onChange={(e) => handlePropChange('layout', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="top">Icon on Top</option>
-                  <option value="left">Icon on Left</option>
-                  <option value="right">Icon on Right</option>
-                </select>
-              </div>
-            </>
-          )}
+          {/* Icon/Image */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Icon (emoji)</label>
+            <input
+              type="text"
+              value={props.icon || ''}
+              onChange={(e) => handlePropChange('icon', e.target.value)}
+              placeholder="🚀"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Image URL (overrides icon)</label>
+            <input
+              type="text"
+              value={props.iconImageUrl || ''}
+              onChange={(e) => handlePropChange('iconImageUrl', e.target.value)}
+              placeholder="https://example.com/image.png"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-400 mt-1">If set, image will be used instead of emoji</p>
+          </div>
 
-          {/* Image variant fields (default) */}
-          {(props.variant === 'image' || !props.variant) && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Feature Image URL</label>
-                <input
-                  type="text"
-                  value={props.featureImage || ''}
-                  onChange={(e) => handlePropChange('featureImage', e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Image Height</label>
-                <input
-                  type="text"
-                  value={props.featureImageHeight || ''}
-                  onChange={(e) => handlePropChange('featureImageHeight', e.target.value)}
-                  placeholder="150px"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Link Text</label>
-                <input
-                  type="text"
-                  value={props.linkText || ''}
-                  onChange={(e) => handlePropChange('linkText', e.target.value)}
-                  placeholder="View new products"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Link URL</label>
-                <input
-                  type="text"
-                  value={props.linkUrl || ''}
-                  onChange={(e) => handlePropChange('linkUrl', e.target.value)}
-                  placeholder="#"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Common fields */}
+          {/* Title */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
             <input
@@ -1751,38 +1692,61 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <textarea
+              value={props.description || ''}
+              onChange={(e) => handlePropChange('description', e.target.value)}
+              placeholder="Description text..."
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Link Text</label>
+            <input
+              type="text"
+              value={props.linkText || ''}
+              onChange={(e) => handlePropChange('linkText', e.target.value)}
+              placeholder="Learn more"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Link URL</label>
+            <input
+              type="text"
+              value={props.linkUrl || ''}
+              onChange={(e) => handlePropChange('linkUrl', e.target.value)}
+              placeholder="#"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </>
       ))}
 
       {/* ImageBox Styles */}
-      {selectedComponent.type === 'ImageBox' && renderSection('Styles', 'imageBoxStyles', (
+      {selectedComponent.type === 'ImageBox' && renderSection('Styles', 'iconBoxStyles', (
         <>
-          {/* Icon variant styles */}
-          {props.variant === 'icon' && (
-            <>
-              {renderTextInput('Icon Size', 'iconSize', 'e.g., 48px, 64px')}
-              {renderTextInput('Title Margin Bottom', 'titleMarginBottom', 'e.g., 8px')}
-              {renderColorInput('Description Color', 'descriptionColor', '#666666')}
-              {renderTextInput('Description Font Size', 'descriptionFontSize', 'e.g., 14px')}
-              {renderSelectInput('Text Align', 'textAlign', [
-                { value: 'left', label: 'Left' },
-                { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Right' },
-              ], 'Select alignment')}
-            </>
-          )}
-          {/* Image variant styles (default) */}
-          {(props.variant === 'image' || !props.variant) && (
-            <>
-              {renderColorInput('Link Color', 'linkColor', '#2563eb')}
-              {renderTextInput('Link Font Size', 'linkFontSize', 'e.g., 14px')}
-              {renderTextInput('Title Margin Bottom', 'titleMarginBottom', 'e.g., 8px')}
-            </>
-          )}
-          {/* Common styles */}
+          {renderTextInput('Icon/Image Size', 'iconSize', 'e.g., 48px, 64px')}
+          {renderColorInput('Icon Color', 'iconColor', '#000000')}
           {renderColorInput('Title Color', 'titleColor', '#1a1a2e')}
           {renderTextInput('Title Font Size', 'titleFontSize', 'e.g., 18px')}
           {renderSelectInput('Title Font Weight', 'titleFontWeight', fontWeightOptions, 'Select weight')}
+          {renderTextInput('Title Margin Bottom', 'titleMarginBottom', 'e.g., 8px')}
+          {renderColorInput('Description Color', 'descriptionColor', '#666666')}
+          {renderTextInput('Description Font Size', 'descriptionFontSize', 'e.g., 14px')}
+          {renderColorInput('Link Color', 'linkColor', '#2563eb')}
+          {renderTextInput('Link Font Size', 'linkFontSize', 'e.g., 14px')}
+          {renderSelectInput('Text Align', 'textAlign', [
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ], 'Select alignment')}
           {renderTextInput('Padding', 'padding', 'e.g., 20px')}
           {renderColorInput('Background', 'backgroundColor', 'transparent')}
           {renderTextInput('Border Radius', 'borderRadius', 'e.g., 8px')}

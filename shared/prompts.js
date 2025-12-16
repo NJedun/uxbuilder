@@ -113,7 +113,7 @@ AVAILABLE COMPONENT TYPES:
 - Text: { type: "Text", props: { content: "..." } }
 - Button: { type: "Button", props: { text: "...", url: "#", variant: "primary"|"secondary"|"outline" } }
 - Image: { type: "Image", props: { src: "", alt: "description" } }
-- ImageBox: { type: "ImageBox", props: { variant: "image", title: "...", featureImage: "", linkText: "..." } } (for image cards) or { type: "ImageBox", props: { variant: "icon", icon: "emoji", title: "...", description: "..." } } (for icon boxes)
+- ImageBox: { type: "ImageBox", props: { layout: "top"|"left"|"right", iconImageUrl: "", title: "...", description: "...", linkText: "", linkUrl: "#" } }
 - LinkList: { type: "LinkList", props: { label: "...", links: [{ text: "...", url: "#" }] } }
 - Divider: { type: "Divider", props: { showLine: true } }
 - Row: For multi-column layouts { type: "Row", props: { columns: 2|3|4, columnWidths: ["50%", "50%"] }, children: [...] }
@@ -123,11 +123,12 @@ RULES:
 2. Extract ALL visible text content exactly as shown
 3. Use Row component for side-by-side layouts, detect column count (2, 3, or 4)
 4. For Row children, add columnIndex: 0, 1, 2, or 3 to props
-5. Image src should be empty string "" (placeholder)
+5. Image src and iconImageUrl should be empty string "" (placeholder)
 6. All URLs should be "#" (placeholder)
 7. Use appropriate heading levels (h1 for main title, h2 for section titles, h3/h4 for smaller)
-8. ImageBox for feature cards - use variant: "image" for image cards (image at top, title, link) or variant: "icon" for icon + title + description pattern
+8. ImageBox for feature cards with image + title + description + optional link. Use layout: "top" for vertical, "left"/"right" for horizontal
 9. Preserve the visual hierarchy and reading order
+10. Do NOT use emojis - leave iconImageUrl as empty string for placeholder
 
 RESPONSE FORMAT:
 {
@@ -138,9 +139,9 @@ RESPONSE FORMAT:
       "type": "Row",
       "props": { "columns": 3, "columnWidths": ["33.33%", "33.33%", "33.33%"] },
       "children": [
-        { "type": "ImageBox", "props": { "variant": "icon", "icon": "🚀", "title": "Fast", "description": "Quick loading", "columnIndex": 0 } },
-        { "type": "ImageBox", "props": { "variant": "icon", "icon": "🔒", "title": "Secure", "description": "Protected data", "columnIndex": 1 } },
-        { "type": "ImageBox", "props": { "variant": "icon", "icon": "💡", "title": "Smart", "description": "Intelligent", "columnIndex": 2 } }
+        { "type": "ImageBox", "props": { "layout": "top", "iconImageUrl": "", "title": "Fast", "description": "Quick loading", "columnIndex": 0 } },
+        { "type": "ImageBox", "props": { "layout": "top", "iconImageUrl": "", "title": "Secure", "description": "Protected data", "columnIndex": 1 } },
+        { "type": "ImageBox", "props": { "layout": "top", "iconImageUrl": "", "title": "Smart", "description": "Intelligent", "columnIndex": 2 } }
       ]
     },
     { "type": "Button", "props": { "text": "Get Started", "url": "#", "variant": "primary" } }

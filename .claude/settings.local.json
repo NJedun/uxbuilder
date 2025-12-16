@@ -10,7 +10,8 @@
       "Bash(ls -la \"c:\\Project\\uxBuilder\\src\"\" 2>/dev/null || echo \"src directory structure \")",
       "Bash(find:*)",
       "Bash(npm run build:*)",
-      "Bash(timeout 3 node:*)"
+      "Bash(timeout 3 node:*)",
+      "Bash(npx tsc --noEmit)"
     ],
     "deny": [],
     "ask": []

@@ -2,15 +2,11 @@ import { GlobalStyles } from '../../../store/visualBuilderStore';
 
 interface ImageBoxProps {
   props: {
-    variant?: 'icon' | 'image'; // 'icon' = emoji/icon, 'image' = image at top
     layout?: 'top' | 'left' | 'right';
-    icon?: string;
-    iconImageUrl?: string;
+    icon?: string; // Emoji or text icon
+    iconImageUrl?: string; // Image URL (takes precedence over icon)
     title?: string;
     description?: string;
-    // Image variant props
-    featureImage?: string;
-    featureImageHeight?: string;
     linkText?: string;
     linkUrl?: string;
   };
@@ -20,13 +16,13 @@ interface ImageBoxProps {
     borderRadius?: string;
     textAlign?: string;
     iconSize?: string;
+    iconColor?: string;
     titleColor?: string;
     titleFontSize?: string;
     titleFontWeight?: string;
     titleMarginBottom?: string;
     descriptionColor?: string;
     descriptionFontSize?: string;
-    // Link styles
     linkColor?: string;
     linkFontSize?: string;
   };
@@ -35,96 +31,123 @@ interface ImageBoxProps {
 }
 
 export default function ImageBox({ props, styles, getStyle }: ImageBoxProps) {
-  const isTopLayout = props.layout === 'top' || props.variant !== 'icon';
-  const isLeftLayout = props.layout === 'left' && props.variant === 'icon';
+  const layout = props.layout || 'top';
+  const isTopLayout = layout === 'top';
+  const isLeftLayout = layout === 'left';
+  const isRightLayout = layout === 'right';
 
-  // Image variant (default) - image at top with title and link below
-  if (props.variant !== 'icon') {
+  const iconSize = getStyle(styles.iconSize, 'iconBoxIconSize') || '48px';
+
+  // Render icon/image element
+  const renderIcon = () => {
+    // If image URL is set, show the image
+    if (props.iconImageUrl) {
+      return (
+        <img
+          src={props.iconImageUrl}
+          alt=""
+          style={{
+            width: iconSize,
+            height: iconSize,
+            objectFit: 'contain',
+            borderRadius: '4px',
+          }}
+        />
+      );
+    }
+
+    // If text icon is set, show it
+    if (props.icon) {
+      return (
+        <span
+          style={{
+            fontSize: iconSize,
+            display: 'block',
+            color: styles.iconColor,
+          }}
+        >
+          {props.icon}
+        </span>
+      );
+    }
+
+    // Default: show image placeholder
     return (
       <div
         style={{
+          width: iconSize,
+          height: iconSize,
+          backgroundColor: '#f3f4f6',
+          borderRadius: '4px',
           display: 'flex',
-          flexDirection: 'column',
-          padding: styles.padding,
-          backgroundColor: styles.backgroundColor,
-          borderRadius: styles.borderRadius,
-          textAlign: styles.textAlign as React.CSSProperties['textAlign'],
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px dashed #d1d5db',
         }}
       >
-        {/* Feature Image */}
-        <div
-          style={{
-            width: '100%',
-            height: props.featureImageHeight || '150px',
-            borderRadius: styles.borderRadius || '8px',
-            overflow: 'hidden',
-            marginBottom: '12px',
-            backgroundColor: '#f3f4f6',
-          }}
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#9ca3af"
+          strokeWidth="1.5"
         >
-          {props.featureImage ? (
-            <img
-              src={props.featureImage}
-              alt={props.title || ''}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#9ca3af',
-                fontSize: '14px',
-              }}
-            >
-              Add Image
-            </div>
-          )}
-        </div>
-        {/* Title */}
-        {props.title && (
-          <div
-            style={{
-              color: getStyle(styles.titleColor, 'iconBoxTitleColor'),
-              fontSize: getStyle(styles.titleFontSize, 'iconBoxTitleFontSize'),
-              fontWeight: getStyle(styles.titleFontWeight, 'iconBoxTitleFontWeight'),
-              marginBottom: styles.titleMarginBottom || '8px',
-            }}
-          >
-            {props.title}
-          </div>
-        )}
-        {/* Link */}
-        {props.linkText && (
-          <a
-            href={props.linkUrl || '#'}
-            style={{
-              color: styles.linkColor || getStyle(undefined, 'linkColor') || '#2563eb',
-              fontSize: styles.linkFontSize || '14px',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-            }}
-          >
-            {props.linkText}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </a>
-        )}
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
       </div>
     );
-  }
+  };
 
-  // Traditional icon layout (default)
+  // Render content (title, description, link)
+  const renderContent = () => (
+    <div style={{ flex: 1 }}>
+      {props.title && (
+        <div
+          style={{
+            color: getStyle(styles.titleColor, 'iconBoxTitleColor'),
+            fontSize: getStyle(styles.titleFontSize, 'iconBoxTitleFontSize'),
+            fontWeight: getStyle(styles.titleFontWeight, 'iconBoxTitleFontWeight'),
+            marginBottom: styles.titleMarginBottom || '8px',
+          }}
+        >
+          {props.title}
+        </div>
+      )}
+      {props.description && (
+        <div
+          style={{
+            color: getStyle(styles.descriptionColor, 'iconBoxDescriptionColor'),
+            fontSize: getStyle(styles.descriptionFontSize, 'iconBoxDescriptionFontSize'),
+            whiteSpace: 'pre-line',
+            marginBottom: props.linkText ? '8px' : undefined,
+          }}
+        >
+          {props.description}
+        </div>
+      )}
+      {props.linkText && (
+        <a
+          href={props.linkUrl || '#'}
+          style={{
+            color: styles.linkColor || getStyle(undefined, 'linkColor') || '#2563eb',
+            fontSize: styles.linkFontSize || '14px',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          {props.linkText}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </a>
+      )}
+    </div>
+  );
 
   return (
     <div
@@ -143,59 +166,19 @@ export default function ImageBox({ props, styles, getStyle }: ImageBoxProps) {
         textAlign: styles.textAlign as React.CSSProperties['textAlign'],
       }}
     >
-      {/* Icon */}
+      {/* Icon/Image - order based on layout */}
       <div
         style={{
           flexShrink: 0,
-          order: isLeftLayout ? 0 : props.layout === 'right' ? 1 : 0,
+          order: isRightLayout ? 1 : 0,
         }}
       >
-        {props.iconImageUrl ? (
-          <img
-            src={props.iconImageUrl}
-            alt=""
-            style={{
-              width: getStyle(styles.iconSize, 'iconBoxIconSize'),
-              height: getStyle(styles.iconSize, 'iconBoxIconSize'),
-              objectFit: 'contain',
-            }}
-          />
-        ) : (
-          <span
-            style={{
-              fontSize: getStyle(styles.iconSize, 'iconBoxIconSize'),
-              display: 'block',
-            }}
-          >
-            {props.icon || '🚀'}
-          </span>
-        )}
+        {renderIcon()}
       </div>
-      {/* Content */}
-      <div style={{ order: isLeftLayout ? 1 : props.layout === 'right' ? 0 : 1 }}>
-        {props.title && (
-          <div
-            style={{
-              color: getStyle(styles.titleColor, 'iconBoxTitleColor'),
-              fontSize: getStyle(styles.titleFontSize, 'iconBoxTitleFontSize'),
-              fontWeight: getStyle(styles.titleFontWeight, 'iconBoxTitleFontWeight'),
-              marginBottom: styles.titleMarginBottom || '8px',
-            }}
-          >
-            {props.title}
-          </div>
-        )}
-        {props.description && (
-          <div
-            style={{
-              color: getStyle(styles.descriptionColor, 'iconBoxDescriptionColor'),
-              fontSize: getStyle(styles.descriptionFontSize, 'iconBoxDescriptionFontSize'),
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {props.description}
-          </div>
-        )}
+
+      {/* Content - order based on layout */}
+      <div style={{ order: isRightLayout ? 0 : 1, flex: isTopLayout ? undefined : 1 }}>
+        {renderContent()}
       </div>
     </div>
   );

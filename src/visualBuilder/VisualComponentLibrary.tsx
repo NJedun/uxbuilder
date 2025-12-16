@@ -341,14 +341,11 @@ const componentTemplates = [
     label: 'Image Box',
     canBeChild: true,
     defaultProps: {
-      variant: 'image', // 'image' (default) or 'icon'
-      icon: '🚀',
-      iconImageUrl: '',
+      layout: 'top', // top, left, right
+      icon: '', // Text icon (optional)
+      iconImageUrl: '', // Image URL (takes precedence over icon)
       title: 'Feature Title',
       description: 'A brief description of this feature or service.',
-      layout: 'top', // top, left, right
-      featureImage: '',
-      featureImageHeight: '150px',
       linkText: '',
       linkUrl: '#',
     },
