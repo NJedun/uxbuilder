@@ -65,6 +65,233 @@ app.post('/api/ai-style', async (req, res) => {
   }
 });
 
+// Combined AI endpoint (style, vision, chat)
+app.post('/api/ai', async (req, res) => {
+  const apiKey = process.env.AZURE_OPENAI_KEY;
+  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT || AZURE_CONFIG.defaultEndpoint;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Azure OpenAI API key not configured' });
+  }
+
+  try {
+    const { action } = req.body;
+
+    let content;
+    switch (action) {
+      case 'style': {
+        const { prompt, projectJson } = req.body;
+        if (!prompt || !projectJson) {
+          return res.status(400).json({ error: 'Missing prompt or projectJson' });
+        }
+        const userPrompt = `Style this layout JSON:\n${projectJson}\n\nStyle: ${prompt}`;
+        const messages = [
+          { role: 'system', content: STYLE_PROMPT },
+          { role: 'user', content: userPrompt },
+        ];
+        content = await callAzureOpenAI(apiKey, azureEndpoint, messages, 16000);
+        break;
+      }
+
+      case 'vision': {
+        const { image, customPrompt } = req.body;
+        if (!image) {
+          return res.status(400).json({ error: 'Missing image data' });
+        }
+        const promptText = customPrompt || IMAGE_STYLE_PROMPT;
+        const messages = [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: promptText },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          },
+        ];
+        content = await callAzureOpenAI(apiKey, azureEndpoint, messages, 4000);
+        break;
+      }
+
+      case 'chat': {
+        const { projectName, userMessage, conversationHistory = [] } = req.body;
+        if (!projectName || !userMessage) {
+          return res.status(400).json({ error: 'Missing projectName or userMessage' });
+        }
+
+        // Fetch all pages for the project
+        const tableClient = getTableClient();
+        const pagesData = [];
+
+        const queryResults = tableClient.listEntities({
+          queryOptions: { filter: `PartitionKey eq '${projectName}'` }
+        });
+
+        for await (const entity of queryResults) {
+          if (entity.entityType === 'layout') continue;
+
+          // Parse sectionComponents - handle both string and object
+          let sectionComponents = {};
+          let components = [];
+
+          try {
+            if (entity.sectionComponents) {
+              sectionComponents = typeof entity.sectionComponents === 'string'
+                ? JSON.parse(entity.sectionComponents)
+                : entity.sectionComponents;
+            }
+          } catch (parseErr) {
+            console.error('Failed to parse sectionComponents for page:', entity.title, parseErr);
+          }
+
+          // Also try deprecated components field as fallback
+          try {
+            if (entity.components) {
+              components = typeof entity.components === 'string'
+                ? JSON.parse(entity.components)
+                : entity.components;
+            }
+          } catch (parseErr) {
+            console.error('Failed to parse components for page:', entity.title, parseErr);
+          }
+
+          pagesData.push({
+            title: entity.title,
+            pageType: entity.pageType,
+            slug: entity.slug,
+            summary: entity.summary || '',
+            sectionComponents,
+            components, // Include deprecated field as fallback
+          });
+        }
+
+        // Pass raw JSON to AI
+        const pagesJson = JSON.stringify(pagesData, null, 2);
+
+        const systemPrompt = `You are a friendly seed product assistant helping farmers find the right seeds.
+
+PRODUCT DATA:
+${pagesJson}
+
+RESPONSE STYLE:
+- Be conversational and friendly, like talking to a neighbor
+- Keep responses SHORT - 2-4 sentences for simple questions
+- Use bullet points only when comparing multiple products
+- Explain ratings simply (e.g., "rated 1 out of 9 for emergence - that's excellent")
+- Focus on what matters most to farmers: yield, disease resistance, best conditions
+- Never dump raw data - summarize naturally
+- End with a brief follow-up question when helpful
+- If info isn't available, say so simply
+
+LINKS:
+- When referencing a product page, use markdown links with the page's slug
+- Format: [Product Name](/slug-from-json)
+- Example: [Allegiant 009F23](/allegiant-soybeans/009f23)
+- Only link to pages that exist in the JSON data (use the "slug" field)
+- Do NOT make up URLs or use generic links like #home`;
+
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          { role: 'user', content: userMessage },
+        ];
+
+        content = await callAzureOpenAI(apiKey, azureEndpoint, messages, 2000);
+        break;
+      }
+
+      case 'pdfExtract': {
+        const { pdfImage } = req.body;
+        if (!pdfImage) {
+          return res.status(400).json({ error: 'Missing PDF image data' });
+        }
+        const messages = [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: PDF_EXTRACT_PROMPT },
+              { type: 'image_url', image_url: { url: pdfImage } },
+            ],
+          },
+        ];
+        const rawContent = await callAzureOpenAI(apiKey, azureEndpoint, messages, 4000);
+
+        // Try to parse and validate the JSON
+        let cleanedContent = rawContent
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '')
+          .trim();
+
+        const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          cleanedContent = jsonMatch[0];
+        }
+
+        try {
+          content = JSON.parse(cleanedContent);
+        } catch {
+          content = { raw: true, content: cleanedContent };
+        }
+        break;
+      }
+
+      case 'generateComponents': {
+        const { image } = req.body;
+        if (!image) {
+          return res.status(400).json({ error: 'Missing image data' });
+        }
+        const messages = [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: IMAGE_TO_COMPONENTS_PROMPT },
+              { type: 'image_url', image_url: { url: image } },
+            ],
+          },
+        ];
+        content = await callAzureOpenAI(apiKey, azureEndpoint, messages, 8000);
+        break;
+      }
+
+      default:
+        return res.status(400).json({ error: 'Invalid action. Use: style, vision, chat, pdfExtract, or generateComponents' });
+    }
+
+    return res.status(200).json({ content });
+  } catch (error) {
+    console.error('AI API error:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Helper function to call Azure OpenAI
+async function callAzureOpenAI(apiKey, azureEndpoint, messages, maxTokens = 4000) {
+  const response = await fetch(
+    `${azureEndpoint}/openai/deployments/${AZURE_CONFIG.deploymentName}/chat/completions?api-version=${AZURE_CONFIG.apiVersion}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify({
+        messages,
+        max_completion_tokens: maxTokens,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Azure OpenAI API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content || '';
+}
+
 // AI Vision endpoint (image-based style extraction)
 app.post('/api/ai-vision', async (req, res) => {
   const apiKey = process.env.AZURE_OPENAI_KEY;

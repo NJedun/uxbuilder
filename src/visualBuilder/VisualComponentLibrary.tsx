@@ -85,6 +85,11 @@ const ComponentIcons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
     </svg>
   ),
+  AIChatWidget: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  ),
 };
 
 const componentTemplates = [
@@ -580,6 +585,55 @@ const componentTemplates = [
       // Badge styles
       badgeBackgroundColor: '#003087',
       badgeTextColor: '#ffffff',
+    },
+  },
+  {
+    type: 'AIChatWidget',
+    label: 'AI Chat Widget',
+    canBeChild: true,
+    defaultProps: {
+      projectName: '', // Will be set from current project
+      title: 'Product Assistant',
+      placeholder: 'Ask about our seed products...',
+      welcomeMessage: 'Hello! I can help you find the right seed products for your needs. What are you looking for?',
+    },
+    defaultStyles: {
+      // Alignment styles
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+      containerHeight: '',
+      // Container styles
+      backgroundColor: '#ffffff',
+      borderRadius: '12px',
+      borderWidth: '1px',
+      borderStyle: 'solid',
+      borderColor: '#e5e7eb',
+      maxWidth: '400px',
+      minHeight: '500px',
+      // Header styles
+      headerBackgroundColor: '',
+      headerTextColor: '#ffffff',
+      headerFontSize: '16px',
+      headerFontWeight: '600',
+      headerPadding: '16px',
+      // Message styles
+      userMessageBgColor: '',
+      userMessageTextColor: '#ffffff',
+      assistantMessageBgColor: '#f3f4f6',
+      assistantMessageTextColor: '#374151',
+      messageFontSize: '14px',
+      messageBorderRadius: '12px',
+      // Input styles
+      inputBackgroundColor: '#f9fafb',
+      inputTextColor: '#111827',
+      inputBorderColor: '#d1d5db',
+      inputBorderRadius: '8px',
+      inputPadding: '10px 12px',
+      // Button styles
+      buttonBackgroundColor: '',
+      buttonTextColor: '#ffffff',
+      buttonBorderRadius: '8px',
+      buttonPadding: '10px 16px',
     },
   },
 ];

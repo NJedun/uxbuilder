@@ -1,3 +1,4 @@
+export { default as AIChatWidget } from './AIChatWidget';
 export { default as Breadcrumb } from './Breadcrumb';
 export { default as CategoryCard } from './CategoryCard';
 export { default as ColumnDropZone } from './ColumnDropZone';

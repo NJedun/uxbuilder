@@ -190,7 +190,7 @@ export default function GlobalStylePanel({ onClose }: { onClose: () => void }) {
           {/* Container Defaults */}
           {renderSection('Container Defaults', 'container', (
             <>
-              {renderColorInput('Background Color', 'containerBackgroundColor', '#1a1a2e')}
+              {renderColorInput('Background Color', 'containerBackgroundColor', '#727273')}
               {renderTextInput('Background Image URL', 'containerBackgroundImage', 'https://example.com/image.jpg')}
               {renderSelectInput('Background Size', 'containerBackgroundSize', [
                 { value: 'cover', label: 'Cover' },

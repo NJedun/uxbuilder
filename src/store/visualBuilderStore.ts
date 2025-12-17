@@ -255,7 +255,7 @@ const VERSION = '1.0.0';
 
 const defaultGlobalStyles: GlobalStyles = {
   // Container defaults
-  containerBackgroundColor: '#1a1a2e',
+  containerBackgroundColor: '#fff',
   containerPadding: '60px 40px',
   containerBorderRadius: '0',
 
@@ -282,25 +282,25 @@ const defaultGlobalStyles: GlobalStyles = {
   navDividerMargin: '0 8px',
 
   // Title defaults (H1)
-  titleColor: '#ffffff',
+  titleColor: '#000',
   titleFontSize: '42px',
   titleFontWeight: '700',
   titleMarginBottom: '20px',
 
   // H2 defaults
-  h2Color: '#ffffff',
+  h2Color: '#000',
   h2FontSize: '32px',
   h2FontWeight: '700',
   h2MarginBottom: '16px',
 
   // H3 defaults
-  h3Color: '#ffffff',
+  h3Color: '#000',
   h3FontSize: '24px',
   h3FontWeight: '600',
   h3MarginBottom: '12px',
 
   // H4 defaults
-  h4Color: '#ffffff',
+  h4Color: '#000',
   h4FontSize: '20px',
   h4FontWeight: '600',
   h4MarginBottom: '10px',

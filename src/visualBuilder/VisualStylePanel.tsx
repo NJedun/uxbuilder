@@ -83,6 +83,13 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
     productGridCardStyles: false,
     productGridTextStyles: false,
     productGridBadgeStyles: false,
+    // AIChatWidget sections
+    aiChatContent: true,
+    aiChatAlignment: true,
+    aiChatStyles: false,
+    aiChatHeaderStyles: false,
+    aiChatMessageStyles: false,
+    aiChatInputStyles: false,
   });
 
   // PDF upload state
@@ -212,10 +219,11 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
       const pdfImage = await pdfToImage(file);
 
       // Send to AI extraction API
-      const response = await fetch('/api/ai-pdf-extract', {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdfImage }),
+        body: JSON.stringify({ action: 'pdfExtract', pdfImage }),
       });
 
       if (!response.ok) {
@@ -2754,6 +2762,138 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
         <>
           {renderColorInput('Badge Background', 'badgeBackgroundColor', '#003087')}
           {renderColorInput('Badge Text Color', 'badgeTextColor', '#ffffff')}
+        </>
+      ))}
+
+      {/* AIChatWidget Content */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Content', 'aiChatContent', (
+        <>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Project Name</label>
+            <input
+              type="text"
+              value={selectedComponent.props?.projectName || ''}
+              onChange={(e) => handlePropChange('projectName', e.target.value)}
+              placeholder="Project to fetch pages from"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">Leave empty to use current project</p>
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Title</label>
+            <input
+              type="text"
+              value={selectedComponent.props?.title || ''}
+              onChange={(e) => handlePropChange('title', e.target.value)}
+              placeholder="e.g., Product Assistant"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Placeholder</label>
+            <input
+              type="text"
+              value={selectedComponent.props?.placeholder || ''}
+              onChange={(e) => handlePropChange('placeholder', e.target.value)}
+              placeholder="e.g., Ask about our products..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Welcome Message</label>
+            <textarea
+              value={selectedComponent.props?.welcomeMessage || ''}
+              onChange={(e) => handlePropChange('welcomeMessage', e.target.value)}
+              placeholder="Enter welcome message..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={3}
+            />
+          </div>
+        </>
+      ))}
+
+      {/* AIChatWidget Alignment */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Alignment', 'aiChatAlignment', (
+        <>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Horizontal Alignment</label>
+            <select
+              value={selectedComponent.customStyles?.justifyContent || 'flex-start'}
+              onChange={(e) => handleStyleChange('justifyContent', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="flex-start">Left</option>
+              <option value="center">Center</option>
+              <option value="flex-end">Right</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Vertical Alignment</label>
+            <select
+              value={selectedComponent.customStyles?.alignItems || 'flex-start'}
+              onChange={(e) => handleStyleChange('alignItems', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="flex-start">Top</option>
+              <option value="center">Center</option>
+              <option value="flex-end">Bottom</option>
+            </select>
+          </div>
+          {renderTextInput('Container Height', 'containerHeight', 'e.g., 100vh or 600px')}
+          <p className="text-xs text-gray-500 mt-1">Set height to enable vertical alignment</p>
+        </>
+      ))}
+
+      {/* AIChatWidget Container Styles */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Container Styles', 'aiChatStyles', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#ffffff')}
+          {renderTextInput('Max Width', 'maxWidth', 'e.g., 400px')}
+          {renderTextInput('Min Height', 'minHeight', 'e.g., 500px')}
+          {renderTextInput('Border Radius', 'borderRadius', 'e.g., 12px')}
+          {renderTextInput('Border Width', 'borderWidth', 'e.g., 1px')}
+          {renderColorInput('Border Color', 'borderColor', '#e5e7eb')}
+        </>
+      ))}
+
+      {/* AIChatWidget Header Styles */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Header Styles', 'aiChatHeaderStyles', (
+        <>
+          {renderColorInput('Header Background', 'headerBackgroundColor', '')}
+          <p className="text-xs text-gray-500 mb-2">Empty = use global button color</p>
+          {renderColorInput('Header Text Color', 'headerTextColor', '#ffffff')}
+          {renderTextInput('Header Font Size', 'headerFontSize', 'e.g., 16px')}
+          {renderTextInput('Header Font Weight', 'headerFontWeight', 'e.g., 600')}
+          {renderTextInput('Header Padding', 'headerPadding', 'e.g., 16px')}
+        </>
+      ))}
+
+      {/* AIChatWidget Message Styles */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Message Styles', 'aiChatMessageStyles', (
+        <>
+          {renderColorInput('User Message Background', 'userMessageBgColor', '')}
+          <p className="text-xs text-gray-500 mb-2">Empty = use global button color</p>
+          {renderColorInput('User Message Text', 'userMessageTextColor', '#ffffff')}
+          {renderColorInput('Assistant Message Background', 'assistantMessageBgColor', '#f3f4f6')}
+          {renderColorInput('Assistant Message Text', 'assistantMessageTextColor', '#374151')}
+          {renderTextInput('Message Font Size', 'messageFontSize', 'e.g., 14px')}
+          {renderTextInput('Message Border Radius', 'messageBorderRadius', 'e.g., 12px')}
+        </>
+      ))}
+
+      {/* AIChatWidget Input Styles */}
+      {selectedComponent.type === 'AIChatWidget' && renderSection('Input & Button Styles', 'aiChatInputStyles', (
+        <>
+          {renderColorInput('Input Background', 'inputBackgroundColor', '#f9fafb')}
+          {renderColorInput('Input Text Color', 'inputTextColor', '#111827')}
+          {renderColorInput('Input Border Color', 'inputBorderColor', '#d1d5db')}
+          {renderTextInput('Input Border Radius', 'inputBorderRadius', 'e.g., 8px')}
+          {renderTextInput('Input Padding', 'inputPadding', 'e.g., 10px 12px')}
+          {renderColorInput('Button Background', 'buttonBackgroundColor', '')}
+          <p className="text-xs text-gray-500 mb-2">Empty = use global button color</p>
+          {renderColorInput('Button Text Color', 'buttonTextColor', '#ffffff')}
+          {renderTextInput('Button Border Radius', 'buttonBorderRadius', 'e.g., 8px')}
+          {renderTextInput('Button Padding', 'buttonPadding', 'e.g., 10px 16px')}
         </>
       ))}
     </div>

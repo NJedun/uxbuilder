@@ -286,12 +286,12 @@ export default function AIGenerateModal({ isOpen, onClose }: AIGenerateModalProp
 
     try {
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
-      const response = await fetch(`${baseUrl}/api/ai-generate-components`, {
+      const response = await fetch(`${baseUrl}/api/ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image }),
+        body: JSON.stringify({ action: 'generateComponents', image }),
       });
 
       if (!response.ok) {

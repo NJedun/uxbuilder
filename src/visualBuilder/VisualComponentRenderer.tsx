@@ -1,6 +1,7 @@
 import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
 import type { ViewMode } from '../pages/VisualBuilder';
 import {
+  AIChatWidget,
   Breadcrumb,
   HeaderComponent,
   HeaderAllegiant,
@@ -228,6 +229,16 @@ export default function VisualComponentRenderer({
       case 'ProductGrid':
         return (
           <ProductGrid
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+            getStyle={getStyle}
+          />
+        );
+
+      case 'AIChatWidget':
+        return (
+          <AIChatWidget
             props={props}
             styles={styles}
             globalStyles={globalStyles}

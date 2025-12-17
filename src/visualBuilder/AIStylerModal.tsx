@@ -148,12 +148,14 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
   // Text-only styling via API route
   const callStyleAPI = async (promptText: string, projectJson: string): Promise<string> => {
-    const response = await fetch('/api/ai-style', {
+    const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const response = await fetch(`${baseUrl}/api/ai`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        action: 'style',
         prompt: promptText,
         projectJson,
       }),
@@ -170,12 +172,14 @@ export default function AIStylerModal({ isOpen, onClose }: AIStylerModalProps) {
 
   // Vision-based style extraction via API route
   const callVisionAPI = async (imageBase64: string): Promise<string> => {
-    const response = await fetch('/api/ai-vision', {
+    const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+    const response = await fetch(`${baseUrl}/api/ai`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        action: 'vision',
         image: imageBase64,
       }),
     });

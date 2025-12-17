@@ -12,7 +12,8 @@
       "Bash(npm run build:*)",
       "Bash(timeout 3 node:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
