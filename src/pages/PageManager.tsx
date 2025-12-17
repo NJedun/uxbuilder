@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 interface PageEntity {
   rowKey: string;
@@ -21,6 +23,8 @@ export default function PageManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const toast = useToast();
+  const { confirm } = useConfirm();
 
   // Get unique projects from pages
   const projects = Array.from(new Set(pages.map((p) => p.partitionKey)));
@@ -77,7 +81,13 @@ export default function PageManager() {
   };
 
   const handleDelete = async (rowKey: string, partitionKey: string) => {
-    if (!confirm('Are you sure you want to delete this page?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Page',
+      message: 'Are you sure you want to delete this page?',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
@@ -89,18 +99,23 @@ export default function PageManager() {
         throw new Error('Failed to delete page');
       }
 
-      // Refresh list
+      toast.showSuccess('Page deleted successfully');
       fetchPages();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete page');
+      toast.showError(err instanceof Error ? err.message : 'Failed to delete page');
     }
   };
 
   const handleDeleteProject = async (project: string) => {
     const projectPages = pages.filter(p => p.partitionKey === project);
-    const message = `Are you sure you want to delete the project "${project}"?\n\nThis will permanently delete ${projectPages.length} page(s) and all associated layouts.\n\nThis action cannot be undone.`;
 
-    if (!confirm(message)) return;
+    const confirmed = await confirm({
+      title: 'Delete Project',
+      message: `Are you sure you want to delete the project "${project}"? This will permanently delete ${projectPages.length} page(s) and all associated layouts. This action cannot be undone.`,
+      confirmText: 'Delete Project',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
@@ -113,11 +128,11 @@ export default function PageManager() {
         throw new Error(data.error || 'Failed to delete project');
       }
 
-      // Reset selection and refresh list
+      toast.showSuccess(`Project "${project}" deleted successfully`);
       setSelectedProject('all');
       fetchPages();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete project');
+      toast.showError(err instanceof Error ? err.message : 'Failed to delete project');
     }
   };
 

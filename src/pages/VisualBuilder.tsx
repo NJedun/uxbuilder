@@ -8,6 +8,8 @@ import AIStylerModal from '../visualBuilder/AIStylerModal';
 import SavePageModal from '../visualBuilder/SavePageModal';
 import AppHeader from '../components/AppHeader';
 import ProjectSelector from '../components/ProjectSelector';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { Layout, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 import { toPng } from 'html-to-image';
@@ -40,6 +42,8 @@ export default function VisualBuilder() {
   } = useVisualBuilderStore();
 
   const [searchParams] = useSearchParams();
+  const toast = useToast();
+  const { confirm } = useConfirm();
   const [editingPage, setEditingPage] = useState<EditingPage | null>(null);
   const [loadingPage, setLoadingPage] = useState(false);
 
@@ -220,9 +224,9 @@ export default function VisualBuilder() {
         const json = e.target?.result as string;
         const data = JSON.parse(json);
         importProject(data);
-        alert(`Project "${data.name}" imported successfully!`);
+        toast.showSuccess(`Project "${data.name}" imported successfully!`);
       } catch (error) {
-        alert('Failed to import project. Invalid JSON file.');
+        toast.showError('Failed to import project. Invalid JSON file.');
         console.error('Import error:', error);
       }
     };
@@ -236,7 +240,7 @@ export default function VisualBuilder() {
   const handleExportPNG = async () => {
     const canvasElement = document.getElementById('visual-builder-canvas');
     if (!canvasElement) {
-      alert('Canvas not found');
+      toast.showError('Canvas not found');
       return;
     }
 
@@ -260,16 +264,17 @@ export default function VisualBuilder() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      toast.showSuccess('PNG exported successfully');
     } catch (error) {
       console.error('Failed to export PNG:', error);
-      alert('Failed to export PNG');
+      toast.showError('Failed to export PNG');
     }
   };
 
   const handleExportPDF = async () => {
     const canvasElement = document.getElementById('visual-builder-canvas');
     if (!canvasElement) {
-      alert('Canvas not found');
+      toast.showError('Canvas not found');
       return;
     }
 
@@ -302,20 +307,33 @@ export default function VisualBuilder() {
 
       pdf.addImage(dataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
       pdf.save(`${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.pdf`);
+      toast.showSuccess('PDF exported successfully');
     } catch (error) {
       console.error('Failed to export PDF:', error);
-      alert('Failed to export PDF');
+      toast.showError('Failed to export PDF');
     }
   };
 
-  const handleNew = () => {
-    if (confirm('Create a new project? Current work will be lost if not exported.')) {
+  const handleNew = async () => {
+    const confirmed = await confirm({
+      title: 'New Project',
+      message: 'Create a new project? Current work will be lost if not exported.',
+      confirmText: 'Create New',
+      variant: 'warning',
+    });
+    if (confirmed) {
       clearProject();
     }
   };
 
-  const handleClearCanvas = () => {
-    if (confirm('Clear all components from the canvas? Project name and global styles will be preserved.')) {
+  const handleClearCanvas = async () => {
+    const confirmed = await confirm({
+      title: 'Clear Canvas',
+      message: 'Clear all components from the canvas? Project name and global styles will be preserved.',
+      confirmText: 'Clear',
+      variant: 'warning',
+    });
+    if (confirmed) {
       clearCanvas();
     }
   };
@@ -422,16 +440,18 @@ export default function VisualBuilder() {
                       Clear Canvas
                     </button>
                     <div className="border-t border-gray-100 my-1" />
-                    <label
-                      htmlFor="import-input"
-                      onClick={() => setShowNewDropdown(false)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
+                    <button
+                      onClick={() => {
+                        setShowNewDropdown(false);
+                        fileInputRef.current?.click();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
                       Import JSON
-                    </label>
+                    </button>
                   </div>
                 </>
               )}

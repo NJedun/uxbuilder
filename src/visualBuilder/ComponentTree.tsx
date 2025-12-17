@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useVisualBuilderStore, VisualComponent } from '../store/visualBuilderStore';
+import { useConfirm } from '../components/ConfirmDialog';
 
 interface TreeNodeProps {
   component: VisualComponent;
@@ -17,6 +18,7 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
     moveComponent,
     deleteComponent,
   } = useVisualBuilderStore();
+  const { confirm } = useConfirm();
   const [expanded, setExpanded] = useState(true);
 
   const isSelected = selectedComponentId === component.id;
@@ -32,9 +34,15 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
     moveComponent(component.id, 'down', parentId);
   };
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Delete this component?')) {
+    const confirmed = await confirm({
+      title: 'Delete Component',
+      message: 'Are you sure you want to delete this component?',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (confirmed) {
       deleteComponent(component.id);
     }
   };

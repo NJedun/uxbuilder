@@ -6,6 +6,7 @@ import VisualStylePanel from '../visualBuilder/VisualStylePanel';
 import GlobalStylePanel from '../visualBuilder/GlobalStylePanel';
 import AppHeader from '../components/AppHeader';
 import ProjectSelector from '../components/ProjectSelector';
+import { useToast } from '../components/Toast';
 import { useVisualBuilderStore, VisualComponent, GlobalStyles } from '../store/visualBuilderStore';
 import { SectionStyles, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles, createDefaultBodySection, getDefaultBodySections } from '../types/layout';
 
@@ -15,6 +16,7 @@ type ActiveSection = 'header' | 'body' | 'footer';
 export default function LayoutEditor() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const toast = useToast();
 
   // Layout metadata
   const [layoutName, setLayoutName] = useState('');
@@ -140,7 +142,7 @@ export default function LayoutEditor() {
   // Delete a body section
   const deleteBodySection = (sectionId: string) => {
     if (bodySections.length <= 1) {
-      alert('Cannot delete the last body section');
+      toast.showWarning('Cannot delete the last body section');
       return;
     }
     const newSections = bodySections.filter(s => s.id !== sectionId);
@@ -260,7 +262,7 @@ export default function LayoutEditor() {
   // Save layout
   const handleSave = async () => {
     if (!projectName || !layoutName) {
-      alert('Please enter a project name and layout name');
+      toast.showWarning('Please enter a project name and layout name');
       return;
     }
 
@@ -318,14 +320,14 @@ export default function LayoutEditor() {
       }
 
       if (response.ok) {
-        alert('Layout saved successfully!');
+        toast.showSuccess('Layout saved successfully!');
         navigate('/layouts');
       } else {
         const err = await response.json();
         throw new Error(err.error || 'Failed to save layout');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save layout');
+      toast.showError(err instanceof Error ? err.message : 'Failed to save layout');
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,6 @@
 import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
 import type { ViewMode } from '../pages/VisualBuilder';
+import { useConfirm } from '../components/ConfirmDialog';
 import {
   AIChatWidget,
   Breadcrumb,
@@ -39,10 +40,17 @@ export default function VisualComponentRenderer({
 }: VisualComponentRendererProps) {
   const { deleteComponent, selectComponent, selectedComponentId, globalStyles } =
     useVisualBuilderStore();
+  const { confirm } = useConfirm();
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Delete this component?')) {
+    const confirmed = await confirm({
+      title: 'Delete Component',
+      message: 'Are you sure you want to delete this component?',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (confirmed) {
       deleteComponent(component.id);
     }
   };

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 interface LayoutEntity {
   rowKey: string;
@@ -20,6 +22,8 @@ export default function LayoutManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string>('all');
+  const toast = useToast();
+  const { confirm } = useConfirm();
 
   // Get unique projects from layouts
   const projects = Array.from(new Set(layouts.map((l) => l.partitionKey)));
@@ -53,7 +57,13 @@ export default function LayoutManager() {
   };
 
   const handleDelete = async (rowKey: string, partitionKey: string) => {
-    if (!confirm('Are you sure you want to delete this layout? Pages using this layout will need to be updated.')) return;
+    const confirmed = await confirm({
+      title: 'Delete Layout',
+      message: 'Are you sure you want to delete this layout? Pages using this layout will need to be updated.',
+      confirmText: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
@@ -65,9 +75,10 @@ export default function LayoutManager() {
         throw new Error('Failed to delete layout');
       }
 
+      toast.showSuccess('Layout deleted successfully');
       fetchLayouts();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete layout');
+      toast.showError(err instanceof Error ? err.message : 'Failed to delete layout');
     }
   };
 
@@ -96,9 +107,10 @@ export default function LayoutManager() {
         throw new Error('Failed to set default layout');
       }
 
+      toast.showSuccess('Default layout updated');
       fetchLayouts();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to set default layout');
+      toast.showError(err instanceof Error ? err.message : 'Failed to set default layout');
     }
   };
 

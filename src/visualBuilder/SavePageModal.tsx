@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useVisualBuilderStore } from '../store/visualBuilderStore';
 import { PageType } from '../types/layout';
+import { useToast } from '../components/Toast';
 
 interface PLPOption {
   rowKey: string;
@@ -38,6 +39,7 @@ interface SavePageModalProps {
 
 export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, previewLayoutId }: SavePageModalProps) {
   const { components, sectionComponents, globalStyles, projectName } = useVisualBuilderStore();
+  const toast = useToast();
 
   const isEditing = !!editingPage;
 
@@ -230,7 +232,7 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, p
           throw new Error(errData.error || 'Failed to update page');
         }
 
-        alert(`Page updated successfully!`);
+        toast.showSuccess('Page updated successfully!');
       } else {
         // Create new page using POST
         const pageData = {
@@ -260,7 +262,7 @@ export default function SavePageModal({ isOpen, onClose, onSaved, editingPage, p
         }
 
         const result = await response.json();
-        alert(`Page saved successfully!\nSlug: ${result.slug}`);
+        toast.showSuccess(`Page saved successfully! Slug: ${result.slug}`);
       }
 
       onSaved?.();
