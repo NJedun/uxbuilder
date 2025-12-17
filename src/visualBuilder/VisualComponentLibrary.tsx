@@ -688,6 +688,7 @@ export default function VisualComponentLibrary({
   const [layouts, setLayouts] = useState<LayoutEntity[]>([]);
   const [loadingLayouts, setLoadingLayouts] = useState(false);
   const [layoutsExpanded, setLayoutsExpanded] = useState(true);
+  const [availableSections, setAvailableSections] = useState<{ id: string; name: string }[]>([]);
 
   // Helper function to parse layout entity into Layout object
   const parseLayoutEntity = (layoutEntity: LayoutEntity): Layout | null => {
@@ -750,6 +751,13 @@ export default function VisualComponentLibrary({
               const layout = parseLayoutEntity(defaultLayout);
               if (layout) {
                 onLayoutSelect(layout);
+                // Update available sections for ComponentTree
+                setAvailableSections(
+                  layout.bodySections.map((section) => ({
+                    id: section.id,
+                    name: section.name,
+                  }))
+                );
               }
             }
           }
@@ -770,12 +778,20 @@ export default function VisualComponentLibrary({
 
     if (!layoutEntity) {
       onLayoutSelect(null);
+      setAvailableSections([]);
       return;
     }
 
     const layout = parseLayoutEntity(layoutEntity);
     if (layout) {
       onLayoutSelect(layout);
+      // Update available sections for ComponentTree
+      setAvailableSections(
+        layout.bodySections.map((section) => ({
+          id: section.id,
+          name: section.name,
+        }))
+      );
     }
   };
 
@@ -1060,7 +1076,7 @@ export default function VisualComponentLibrary({
 
       {/* Component Tree - shows structure and allows reordering */}
       <div className="flex-shrink-0 border-t border-gray-200 overflow-y-auto" style={{ minHeight: '150px', maxHeight: '250px' }}>
-        <ComponentTree />
+        <ComponentTree availableSections={availableSections} />
       </div>
     </div>
   );

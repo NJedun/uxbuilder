@@ -236,6 +236,7 @@ interface VisualBuilderState {
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => void;
   setGlobalStyles: (styles: GlobalStyles) => void;
   moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => void;
+  moveComponentToSection: (componentId: string, fromSectionId: string, toSectionId: string) => void;
   setActiveSectionId: (sectionId: string | null) => void;
   setSectionComponents: (sectionComponents: SectionComponentsMap) => void;
   getActiveComponents: () => VisualComponent[];
@@ -647,6 +648,60 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
         set({ components: moveInTree(state.components) });
       }
     }
+
+    get().saveToLocalStorage();
+  },
+
+  moveComponentToSection: (componentId: string, fromSectionId: string, toSectionId: string) => {
+    const state = get();
+
+    // Get current components from source section
+    const fromComponents = state.sectionComponents[fromSectionId] || [];
+
+    // Find the component to move (including nested search)
+    let componentToMove: VisualComponent | null = null;
+
+    const findAndRemove = (components: VisualComponent[]): VisualComponent[] => {
+      const result: VisualComponent[] = [];
+      for (const comp of components) {
+        if (comp.id === componentId) {
+          componentToMove = comp;
+          // Skip this component (don't add to result)
+        } else {
+          // Check children
+          if (comp.children && comp.children.length > 0) {
+            const updatedChildren = findAndRemove(comp.children);
+            result.push({ ...comp, children: updatedChildren });
+          } else {
+            result.push(comp);
+          }
+        }
+      }
+      return result;
+    };
+
+    const updatedFromComponents = findAndRemove(fromComponents);
+
+    if (!componentToMove) {
+      console.warn('Component not found:', componentId);
+      return;
+    }
+
+    // Get target section components and add the component
+    const toComponents = state.sectionComponents[toSectionId] || [];
+    const updatedToComponents = [...toComponents, componentToMove];
+
+    // Update both sections
+    set({
+      sectionComponents: {
+        ...state.sectionComponents,
+        [fromSectionId]: updatedFromComponents,
+        [toSectionId]: updatedToComponents,
+      },
+      // Switch to target section and select the moved component
+      activeSectionId: toSectionId,
+      selectedComponentId: componentId,
+    });
 
     get().saveToLocalStorage();
   },

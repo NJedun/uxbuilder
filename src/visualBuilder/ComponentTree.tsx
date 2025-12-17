@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { useVisualBuilderStore, VisualComponent } from '../store/visualBuilderStore';
 import { useConfirm } from '../components/ConfirmDialog';
 
+interface SectionInfo {
+  id: string;
+  name: string;
+}
+
 interface TreeNodeProps {
   component: VisualComponent;
   depth: number;
@@ -9,9 +14,22 @@ interface TreeNodeProps {
   parentId?: string;
   isFirst: boolean;
   isLast: boolean;
+  currentSectionId: string;
+  availableSections: SectionInfo[];
+  onMoveToSection?: (componentId: string, targetSectionId: string) => void;
 }
 
-function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNodeProps) {
+function TreeNode({
+  component,
+  depth,
+  index,
+  parentId,
+  isFirst,
+  isLast,
+  currentSectionId,
+  availableSections,
+  onMoveToSection,
+}: TreeNodeProps) {
   const {
     selectedComponentId,
     selectComponent,
@@ -20,9 +38,13 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
   } = useVisualBuilderStore();
   const { confirm } = useConfirm();
   const [expanded, setExpanded] = useState(true);
+  const [showSectionMenu, setShowSectionMenu] = useState(false);
 
   const isSelected = selectedComponentId === component.id;
   const hasChildren = component.children && component.children.length > 0;
+
+  // Only show section move for root-level components (no parentId) when there are multiple sections
+  const canMoveToSection = !parentId && availableSections.length > 1;
 
   const handleMoveUp = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,6 +66,14 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
     });
     if (confirmed) {
       deleteComponent(component.id);
+    }
+  };
+
+  const handleMoveToSection = (e: React.MouseEvent, targetSectionId: string) => {
+    e.stopPropagation();
+    setShowSectionMenu(false);
+    if (onMoveToSection && targetSectionId !== currentSectionId) {
+      onMoveToSection(component.id, targetSectionId);
     }
   };
 
@@ -132,6 +162,52 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
 
         {/* Action buttons */}
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 hover:opacity-100">
+          {/* Move to section dropdown */}
+          {canMoveToSection && (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSectionMenu(!showSectionMenu);
+                }}
+                className="p-1 rounded text-xs text-purple-500 hover:bg-purple-100 hover:text-purple-700"
+                title="Move to section"
+              >
+                ⇄
+              </button>
+              {showSectionMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSectionMenu(false);
+                    }}
+                  />
+                  <div className="absolute right-0 bottom-full mb-1 bg-white border border-gray-200 rounded shadow-lg z-20 min-w-[140px]">
+                    <div className="px-2 py-1 text-xs text-gray-500 border-b border-gray-100">
+                      Move to:
+                    </div>
+                    {availableSections.map((section) => (
+                      <button
+                        key={section.id}
+                        onClick={(e) => handleMoveToSection(e, section.id)}
+                        disabled={section.id === currentSectionId}
+                        className={`w-full px-3 py-1.5 text-left text-xs ${
+                          section.id === currentSectionId
+                            ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                            : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                      >
+                        {section.name}
+                        {section.id === currentSectionId && ' (current)'}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <button
             onClick={handleMoveUp}
             disabled={isFirst}
@@ -178,6 +254,9 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
               parentId={component.id}
               isFirst={childIndex === 0}
               isLast={childIndex === component.children!.length - 1}
+              currentSectionId={currentSectionId}
+              availableSections={availableSections}
+              onMoveToSection={onMoveToSection}
             />
           ))}
         </div>
@@ -186,13 +265,31 @@ function TreeNode({ component, depth, index, parentId, isFirst, isLast }: TreeNo
   );
 }
 
-export default function ComponentTree() {
-  const { components, sectionComponents, activeSectionId } = useVisualBuilderStore();
+interface ComponentTreeProps {
+  availableSections?: SectionInfo[];
+}
+
+export default function ComponentTree({ availableSections = [] }: ComponentTreeProps) {
+  const { components, sectionComponents, activeSectionId, moveComponentToSection } = useVisualBuilderStore();
 
   // Get components for the active section, fallback to deprecated components array
   const activeComponents = activeSectionId && sectionComponents[activeSectionId]
     ? sectionComponents[activeSectionId]
     : components;
+
+  // Derive sections from sectionComponents if not provided
+  const sections: SectionInfo[] = availableSections.length > 0
+    ? availableSections
+    : Object.keys(sectionComponents).map((id, index) => ({
+        id,
+        name: `Body ${index + 1}`,
+      }));
+
+  const currentSectionId = activeSectionId || 'default';
+
+  const handleMoveToSection = (componentId: string, targetSectionId: string) => {
+    moveComponentToSection(componentId, currentSectionId, targetSectionId);
+  };
 
   if (activeComponents.length === 0) {
     return (
@@ -219,6 +316,9 @@ export default function ComponentTree() {
               index={index}
               isFirst={index === 0}
               isLast={index === activeComponents.length - 1}
+              currentSectionId={currentSectionId}
+              availableSections={sections}
+              onMoveToSection={handleMoveToSection}
             />
           </div>
         ))}
