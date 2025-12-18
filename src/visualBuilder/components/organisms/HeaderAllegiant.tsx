@@ -18,6 +18,9 @@ interface HeaderAllegiantProps {
     navLinks?: NavLink[];
     showSearch?: boolean;
     searchPlaceholder?: string;
+    // Search navigation settings
+    searchTargetUrl?: string; // URL to navigate to on search (e.g., "/preview/chat")
+    searchQueryParam?: string; // Query param name (default: "q")
   };
   styles: {
     backgroundColor?: string;
@@ -60,6 +63,7 @@ export default function HeaderAllegiant({
 }: HeaderAllegiantProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [searchValue, setSearchValue] = useState('');
 
   const isMobile = viewMode === 'mobile';
   const isTablet = viewMode === 'tablet';
@@ -68,6 +72,25 @@ export default function HeaderAllegiant({
   const navLinks = props.navLinks || [];
   const navLinkColor = getStyle(styles.navLinkColor, 'navLinkColor') || '#003087';
   const navLinkHoverColor = styles.navLinkHoverColor || '#0066cc';
+
+  // Handle search submission
+  const handleSearch = () => {
+    if (!searchValue.trim()) return;
+
+    const targetUrl = props.searchTargetUrl;
+    if (targetUrl) {
+      const queryParam = props.searchQueryParam || 'q';
+      const separator = targetUrl.includes('?') ? '&' : '?';
+      const fullUrl = `${targetUrl}${separator}${queryParam}=${encodeURIComponent(searchValue.trim())}`;
+      window.location.href = fullUrl;
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <header
@@ -251,6 +274,9 @@ export default function HeaderAllegiant({
               <input
                 type="text"
                 placeholder={props.searchPlaceholder || 'Search'}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 style={{
                   border: 'none',
                   outline: 'none',
@@ -262,6 +288,7 @@ export default function HeaderAllegiant({
                 }}
               />
               <button
+                onClick={handleSearch}
                 style={{
                   border: 'none',
                   background: 'transparent',
@@ -365,6 +392,9 @@ export default function HeaderAllegiant({
               <input
                 type="text"
                 placeholder={props.searchPlaceholder || 'Search'}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 style={{
                   border: 'none',
                   outline: 'none',
@@ -376,6 +406,7 @@ export default function HeaderAllegiant({
                 }}
               />
               <button
+                onClick={handleSearch}
                 style={{
                   border: 'none',
                   background: 'transparent',

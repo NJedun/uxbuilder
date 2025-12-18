@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { GlobalStyles, useVisualBuilderStore } from '../../../store/visualBuilderStore';
 
 interface ChatMessage {
@@ -12,6 +12,8 @@ interface AIChatWidgetProps {
     placeholder?: string;
     title?: string;
     welcomeMessage?: string;
+    // Auto-trigger from URL query param
+    autoTriggerQueryParam?: string; // Query param to check (default: "q")
   };
   styles: {
     // Alignment styles
@@ -102,18 +104,95 @@ export default function AIChatWidget({ props, styles, globalStyles, getStyle }: 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get current project name from store as fallback
-  const storeProjectName = useVisualBuilderStore((state) => state.projectName);
+  // Get current project name from store as fallback - use shallow comparison to prevent unnecessary re-renders
+  const storeProjectName = useVisualBuilderStore(
+    useCallback((state) => state.projectName, [])
+  );
   const projectName = props.projectName || storeProjectName || 'default';
   const placeholder = props.placeholder || 'Ask about our seed products...';
   const title = props.title || 'Product Assistant';
   const welcomeMessage = props.welcomeMessage || 'Hello! I can help you find the right seed products for your needs. What are you looking for?';
+  const autoTriggerQueryParam = props.autoTriggerQueryParam || 'q';
+
+  // Track if we've already auto-triggered to prevent duplicate triggers
+  const hasAutoTriggeredRef = useRef(false);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Refocus input after loading completes
+  useEffect(() => {
+    if (!isLoading && inputRef.current) {
+      // Use a small timeout to ensure DOM has updated
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Check for auto-trigger query parameter on mount
+  useEffect(() => {
+    if (hasAutoTriggeredRef.current) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryValue = urlParams.get(autoTriggerQueryParam);
+
+    if (queryValue && queryValue.trim()) {
+      hasAutoTriggeredRef.current = true;
+      // Trigger the chat with the query value
+      triggerChatWithMessage(queryValue.trim());
+
+      // Optionally remove the query param from URL to prevent re-triggering on refresh
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete(autoTriggerQueryParam);
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [autoTriggerQueryParam]);
+
+  // Function to trigger chat with a specific message (used by auto-trigger)
+  const triggerChatWithMessage = async (userMessage: string) => {
+    if (isLoading) return;
+
+    setError(null);
+
+    // Add user message
+    const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : '';
+      const response = await fetch(`${baseUrl}/api/ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          projectName,
+          userMessage,
+          conversationHistory: messages,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to get response');
+      }
+
+      const data = await response.json();
+      setMessages([...newMessages, { role: 'assistant', content: data.content }]);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Something went wrong';
+      setError(errorMessage);
+      // Keep the user message even if request failed
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,6 +398,7 @@ export default function AIChatWidget({ props, styles, globalStyles, getStyle }: 
       <div style={inputContainerStyle}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

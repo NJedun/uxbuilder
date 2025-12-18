@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useVisualBuilderStore, VisualComponent, defaultSeedProductData } from '../store/visualBuilderStore';
 import { Layout, BodySection, defaultBodyStyles, defaultHeaderStyles, defaultFooterStyles } from '../types/layout';
 import ComponentTree from './ComponentTree';
+
+type SidebarView = 'library' | 'tree';
 
 // SVG Icon components for the component library
 const ComponentIcons: Record<string, JSX.Element> = {
@@ -171,6 +173,9 @@ const componentTemplates = [
       showNavLinks: true,
       showSearch: true,
       searchPlaceholder: 'Search',
+      // Search navigation - configure where search redirects
+      searchTargetUrl: '', // e.g., "/preview/chat" - leave empty to disable navigation
+      searchQueryParam: 'q', // Query param name passed to target URL
     },
     defaultStyles: {
       backgroundColor: '#ffffff',
@@ -596,6 +601,8 @@ const componentTemplates = [
       title: 'Product Assistant',
       placeholder: 'Ask about our seed products...',
       welcomeMessage: 'Hello! I can help you find the right seed products for your needs. What are you looking for?',
+      // Auto-trigger from URL - reads query param and automatically starts conversation
+      autoTriggerQueryParam: 'q', // Query param to check (matches HeaderAllegiant default)
     },
     defaultStyles: {
       // Alignment styles
@@ -689,6 +696,8 @@ export default function VisualComponentLibrary({
   const [loadingLayouts, setLoadingLayouts] = useState(false);
   const [layoutsExpanded, setLayoutsExpanded] = useState(true);
   const [availableSections, setAvailableSections] = useState<{ id: string; name: string }[]>([]);
+  const [sidebarView, setSidebarView] = useState<SidebarView>('library');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Helper function to parse layout entity into Layout object
   const parseLayoutEntity = (layoutEntity: LayoutEntity): Layout | null => {
@@ -827,6 +836,17 @@ export default function VisualComponentLibrary({
   const selectedRow = selectedComponent?.type === 'Row' ? selectedComponent : null;
   const rowComponents = findRowComponents(activeComponents);
 
+  // Filter components based on search query
+  const filteredTemplates = useMemo(() => {
+    if (!searchQuery.trim()) return componentTemplates;
+    const query = searchQuery.toLowerCase();
+    return componentTemplates.filter(
+      (template) =>
+        template.type.toLowerCase().includes(query) ||
+        template.label.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   const handleAddComponent = (
     template: typeof componentTemplates[0],
     toColumn?: number,
@@ -851,10 +871,44 @@ export default function VisualComponentLibrary({
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-full flex flex-col min-h-0">
+      {/* View Toggle Tabs */}
+      <div className="flex border-b border-gray-200 flex-shrink-0">
+        <button
+          onClick={() => setSidebarView('library')}
+          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+            sidebarView === 'library'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <span className="flex items-center justify-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Library
+          </span>
+        </button>
+        <button
+          onClick={() => setSidebarView('tree')}
+          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+            sidebarView === 'tree'
+              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <span className="flex items-center justify-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            Tree
+          </span>
+        </button>
+      </div>
+
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {/* Layout Preview Section */}
-        {onLayoutSelect && (
+        {/* Layout Preview Section - only shown in library view */}
+        {sidebarView === 'library' && onLayoutSelect && (
           <div className="p-4 border-b border-gray-200" style={{ minHeight: '120px' }}>
             <button
               onClick={() => setLayoutsExpanded(!layoutsExpanded)}
@@ -975,8 +1029,39 @@ export default function VisualComponentLibrary({
           </div>
         )}
 
+        {/* Library View */}
+        {sidebarView === 'library' && (
         <div className="p-4">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Components</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">Components</h2>
+
+          {/* Search Input */}
+          <div className="relative mb-4">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search components..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
 
         <p className="text-xs text-gray-500 mb-4">
           {selectedRow
@@ -985,7 +1070,12 @@ export default function VisualComponentLibrary({
         </p>
 
         <div className="space-y-2">
-          {componentTemplates.map((template) => {
+          {filteredTemplates.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No components found</p>
+              <p className="text-xs mt-1">Try a different search term</p>
+            </div>
+          ) : filteredTemplates.map((template) => {
             // When a Row is selected and component can be a child, add to the selected column
             const shouldAddToRow = selectedRow && template.canBeChild;
             return (
@@ -1072,11 +1162,14 @@ export default function VisualComponentLibrary({
           </div>
         )}
         </div>
-      </div>
+        )}
 
-      {/* Component Tree - shows structure and allows reordering */}
-      <div className="flex-shrink-0 border-t border-gray-200 overflow-y-auto" style={{ minHeight: '150px', maxHeight: '250px' }}>
-        <ComponentTree availableSections={availableSections} />
+        {/* Tree View - Full height component tree */}
+        {sidebarView === 'tree' && (
+          <div className="flex-1">
+            <ComponentTree availableSections={availableSections} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -214,6 +214,24 @@ export interface VisualProjectData {
   theme: any; // Will be managed by ThemeContext
 }
 
+// Component template for saving/loading presets
+export interface ComponentTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  component: VisualComponent;
+  createdAt: string;
+}
+
+// History state for undo/redo
+interface HistoryState {
+  components: VisualComponent[];
+  sectionComponents: SectionComponentsMap;
+  globalStyles: GlobalStyles;
+}
+
+const MAX_HISTORY_SIZE = 50;
+
 interface VisualBuilderState {
   projectName: string;
   components: VisualComponent[]; // Deprecated, use sectionComponents
@@ -221,21 +239,36 @@ interface VisualBuilderState {
   activeSectionId: string | null;
   globalStyles: GlobalStyles;
   selectedComponentId: string | null;
+  selectedComponentIds: string[]; // Multi-select support
   draggedComponentType: string | null;
   // State for adding components to a specific column when a Row is selected
   selectedRowColumn: number;
+  // Component templates/presets
+  componentTemplates: ComponentTemplate[];
+  // Undo/Redo history
+  history: HistoryState[];
+  historyIndex: number;
+  isUndoRedoAction: boolean;
 
   setProjectName: (name: string) => void;
   setSelectedRowColumn: (column: number) => void;
   addComponent: (component: VisualComponent, parentId?: string) => void;
   updateComponent: (id: string, updates: Partial<VisualComponent>) => void;
   deleteComponent: (id: string) => void;
+  duplicateComponent: (id: string) => void;
   selectComponent: (id: string | null) => void;
+  toggleComponentSelection: (id: string, isCtrlKey: boolean, isShiftKey: boolean) => void;
+  selectMultipleComponents: (ids: string[]) => void;
+  clearSelection: () => void;
+  deleteSelectedComponents: () => void;
+  duplicateSelectedComponents: () => void;
+  moveSelectedComponentsToSection: (targetSectionId: string) => void;
   setDraggedComponentType: (type: string | null) => void;
   reorderComponents: (components: VisualComponent[]) => void;
   updateGlobalStyles: (updates: Partial<GlobalStyles>) => void;
   setGlobalStyles: (styles: GlobalStyles) => void;
   moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => void;
+  reorderComponentByDrag: (componentId: string, targetIndex: number, sourceParentId?: string, targetParentId?: string) => void;
   moveComponentToSection: (componentId: string, fromSectionId: string, toSectionId: string) => void;
   setActiveSectionId: (sectionId: string | null) => void;
   setSectionComponents: (sectionComponents: SectionComponentsMap) => void;
@@ -245,6 +278,18 @@ interface VisualBuilderState {
   importProject: (data: VisualProjectData) => void;
   clearProject: () => void;
   clearCanvas: () => void;
+
+  // Template functions
+  saveComponentAsTemplate: (componentId: string, name: string, description?: string) => void;
+  loadTemplate: (templateId: string, parentId?: string) => void;
+  deleteTemplate: (templateId: string) => void;
+
+  // Undo/Redo functions
+  undo: () => void;
+  redo: () => void;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
+  pushToHistory: () => void;
 
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
@@ -379,6 +424,8 @@ const defaultGlobalStyles: GlobalStyles = {
   seedProductValueColor: '#111827',
 };
 
+const TEMPLATES_STORAGE_KEY = 'visualBuilder_templates';
+
 export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   projectName: localStorage.getItem(PROJECT_NAME_KEY) || 'Untitled Project',
   components: [], // Deprecated, maintained for backward compatibility
@@ -386,8 +433,14 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
   activeSectionId: null,
   globalStyles: { ...defaultGlobalStyles },
   selectedComponentId: null,
+  selectedComponentIds: [],
   draggedComponentType: null,
   selectedRowColumn: 0,
+  componentTemplates: JSON.parse(localStorage.getItem(TEMPLATES_STORAGE_KEY) || '[]'),
+  // Undo/Redo state
+  history: [],
+  historyIndex: -1,
+  isUndoRedoAction: false,
 
   setProjectName: (name: string) => {
     set({ projectName: name });
@@ -404,6 +457,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   addComponent: (component: VisualComponent, parentId?: string) => {
     const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
 
     // Helper to add to parent in a component tree
     const addToParent = (components: VisualComponent[]): VisualComponent[] => {
@@ -458,6 +513,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   updateComponent: (id: string, updates: Partial<VisualComponent>) => {
     const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
 
     const updateInTree = (components: VisualComponent[]): VisualComponent[] => {
       return components.map(comp => {
@@ -506,6 +563,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   deleteComponent: (id: string) => {
     const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
 
     const deleteFromTree = (components: VisualComponent[]): VisualComponent[] => {
       return components
@@ -552,8 +611,289 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  duplicateComponent: (id: string) => {
+    const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
+
+    // Helper to generate new IDs for a component and all its children
+    const cloneWithNewIds = (comp: VisualComponent): VisualComponent => {
+      const newId = `${comp.type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      return {
+        ...comp,
+        id: newId,
+        props: { ...comp.props },
+        customStyles: comp.customStyles ? { ...comp.customStyles } : undefined,
+        children: comp.children ? comp.children.map(cloneWithNewIds) : undefined,
+      };
+    };
+
+    // Helper to find component and its parent context
+    const findComponentAndContext = (
+      components: VisualComponent[],
+      targetId: string,
+      parentId?: string
+    ): { component: VisualComponent; parentId?: string; index: number } | null => {
+      for (let i = 0; i < components.length; i++) {
+        if (components[i].id === targetId) {
+          return { component: components[i], parentId, index: i };
+        }
+        if (components[i].children) {
+          const found = findComponentAndContext(components[i].children!, targetId, components[i].id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    // Helper to insert component after another in tree
+    const insertAfterInTree = (
+      components: VisualComponent[],
+      targetId: string,
+      newComponent: VisualComponent,
+      targetParentId?: string
+    ): VisualComponent[] => {
+      if (!targetParentId) {
+        // Insert at root level
+        const index = components.findIndex(c => c.id === targetId);
+        if (index !== -1) {
+          const result = [...components];
+          result.splice(index + 1, 0, newComponent);
+          return result;
+        }
+      }
+
+      return components.map(comp => {
+        if (comp.id === targetParentId && comp.children) {
+          const index = comp.children.findIndex(c => c.id === targetId);
+          if (index !== -1) {
+            const newChildren = [...comp.children];
+            newChildren.splice(index + 1, 0, newComponent);
+            return { ...comp, children: newChildren };
+          }
+        }
+        if (comp.children) {
+          return { ...comp, children: insertAfterInTree(comp.children, targetId, newComponent, targetParentId) };
+        }
+        return comp;
+      });
+    };
+
+    // Search in all sections
+    for (const sectionId of Object.keys(state.sectionComponents)) {
+      const sectionComps = state.sectionComponents[sectionId];
+      const context = findComponentAndContext(sectionComps, id);
+
+      if (context) {
+        const cloned = cloneWithNewIds(context.component);
+        const updatedComponents = insertAfterInTree(sectionComps, id, cloned, context.parentId);
+
+        set({
+          sectionComponents: {
+            ...state.sectionComponents,
+            [sectionId]: updatedComponents,
+          },
+          selectedComponentId: cloned.id,
+        });
+        get().saveToLocalStorage();
+        return;
+      }
+    }
+
+    // Fallback to deprecated components array
+    const context = findComponentAndContext(state.components, id);
+    if (context) {
+      const cloned = cloneWithNewIds(context.component);
+      const updatedComponents = insertAfterInTree(state.components, id, cloned, context.parentId);
+
+      set({
+        components: updatedComponents,
+        selectedComponentId: cloned.id,
+      });
+      get().saveToLocalStorage();
+    }
+  },
+
   selectComponent: (id: string | null) => {
-    set({ selectedComponentId: id });
+    set({ selectedComponentId: id, selectedComponentIds: id ? [id] : [] });
+  },
+
+  toggleComponentSelection: (id: string, isCtrlKey: boolean, isShiftKey: boolean) => {
+    const state = get();
+
+    if (!isCtrlKey && !isShiftKey) {
+      // Simple click - select only this component
+      set({ selectedComponentId: id, selectedComponentIds: [id] });
+      return;
+    }
+
+    if (isCtrlKey) {
+      // Ctrl+click - toggle selection
+      const currentIds = state.selectedComponentIds;
+      if (currentIds.includes(id)) {
+        // Remove from selection
+        const newIds = currentIds.filter(cid => cid !== id);
+        set({
+          selectedComponentIds: newIds,
+          selectedComponentId: newIds.length > 0 ? newIds[newIds.length - 1] : null,
+        });
+      } else {
+        // Add to selection
+        set({
+          selectedComponentIds: [...currentIds, id],
+          selectedComponentId: id,
+        });
+      }
+      return;
+    }
+
+    if (isShiftKey && state.selectedComponentId) {
+      // Shift+click - select range
+      const activeComponents = state.activeSectionId && state.sectionComponents[state.activeSectionId]
+        ? state.sectionComponents[state.activeSectionId]
+        : state.components;
+
+      // Get flat list of component IDs in order
+      const flattenIds = (components: VisualComponent[]): string[] => {
+        const ids: string[] = [];
+        for (const comp of components) {
+          ids.push(comp.id);
+          if (comp.children) {
+            ids.push(...flattenIds(comp.children));
+          }
+        }
+        return ids;
+      };
+
+      const allIds = flattenIds(activeComponents);
+      const startIndex = allIds.indexOf(state.selectedComponentId);
+      const endIndex = allIds.indexOf(id);
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        const start = Math.min(startIndex, endIndex);
+        const end = Math.max(startIndex, endIndex);
+        const rangeIds = allIds.slice(start, end + 1);
+
+        // Merge with existing selection if Ctrl is also held
+        const newIds = isCtrlKey
+          ? [...new Set([...state.selectedComponentIds, ...rangeIds])]
+          : rangeIds;
+
+        set({
+          selectedComponentIds: newIds,
+          selectedComponentId: id,
+        });
+      }
+    }
+  },
+
+  selectMultipleComponents: (ids: string[]) => {
+    set({
+      selectedComponentIds: ids,
+      selectedComponentId: ids.length > 0 ? ids[ids.length - 1] : null,
+    });
+  },
+
+  clearSelection: () => {
+    set({ selectedComponentId: null, selectedComponentIds: [] });
+  },
+
+  deleteSelectedComponents: () => {
+    const state = get();
+    if (state.selectedComponentIds.length === 0) return;
+
+    // Push to history before bulk delete
+    get().pushToHistory();
+
+    // Delete each selected component
+    for (const id of state.selectedComponentIds) {
+      const deleteFromTree = (components: VisualComponent[]): VisualComponent[] => {
+        return components
+          .filter(comp => comp.id !== id)
+          .map(comp => ({
+            ...comp,
+            children: comp.children ? deleteFromTree(comp.children) : undefined
+          }));
+      };
+
+      // Search across all sections
+      const newSectionComponents = { ...state.sectionComponents };
+      for (const sectionId of Object.keys(newSectionComponents)) {
+        newSectionComponents[sectionId] = deleteFromTree(newSectionComponents[sectionId]);
+      }
+
+      set({
+        sectionComponents: newSectionComponents,
+        components: deleteFromTree(state.components),
+      });
+    }
+
+    set({ selectedComponentId: null, selectedComponentIds: [] });
+    get().saveToLocalStorage();
+  },
+
+  duplicateSelectedComponents: () => {
+    const state = get();
+    if (state.selectedComponentIds.length === 0) return;
+
+    // Push to history before bulk duplicate
+    get().pushToHistory();
+
+    // Duplicate each selected component using existing duplicateComponent logic
+    for (const id of state.selectedComponentIds) {
+      get().duplicateComponent(id);
+    }
+  },
+
+  moveSelectedComponentsToSection: (targetSectionId: string) => {
+    const state = get();
+    if (state.selectedComponentIds.length === 0) return;
+    if (!state.activeSectionId || state.activeSectionId === targetSectionId) return;
+
+    // Push to history before bulk move
+    get().pushToHistory();
+
+    const fromSectionId = state.activeSectionId;
+    const fromComponents = state.sectionComponents[fromSectionId] || [];
+    const toComponents = state.sectionComponents[targetSectionId] || [];
+
+    // Find and remove selected components from source
+    const componentsToMove: VisualComponent[] = [];
+
+    const findAndRemove = (components: VisualComponent[]): VisualComponent[] => {
+      const result: VisualComponent[] = [];
+      for (const comp of components) {
+        if (state.selectedComponentIds.includes(comp.id)) {
+          componentsToMove.push(comp);
+          // Skip this component (don't add to result)
+        } else {
+          // Check children recursively
+          if (comp.children && comp.children.length > 0) {
+            const updatedChildren = findAndRemove(comp.children);
+            result.push({ ...comp, children: updatedChildren });
+          } else {
+            result.push(comp);
+          }
+        }
+      }
+      return result;
+    };
+
+    const updatedFromComponents = findAndRemove(fromComponents);
+    const updatedToComponents = [...toComponents, ...componentsToMove];
+
+    set({
+      sectionComponents: {
+        ...state.sectionComponents,
+        [fromSectionId]: updatedFromComponents,
+        [targetSectionId]: updatedToComponents,
+      },
+      activeSectionId: targetSectionId,
+      selectedComponentId: componentsToMove.length > 0 ? componentsToMove[0].id : null,
+      selectedComponentIds: componentsToMove.map(c => c.id),
+    });
+
+    get().saveToLocalStorage();
   },
 
   setDraggedComponentType: (type: string | null) => {
@@ -590,6 +930,8 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
 
   moveComponent: (id: string, direction: 'up' | 'down', parentId?: string) => {
     const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
 
     const moveInArray = (arr: VisualComponent[]): VisualComponent[] => {
       const index = arr.findIndex(comp => comp.id === id);
@@ -652,8 +994,108 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  reorderComponentByDrag: (componentId: string, targetIndex: number, sourceParentId?: string, targetParentId?: string) => {
+    const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
+
+    // Helper to find and remove component from tree
+    const removeFromTree = (
+      components: VisualComponent[],
+      idToRemove: string
+    ): { components: VisualComponent[]; removed: VisualComponent | null } => {
+      let removed: VisualComponent | null = null;
+
+      const newComponents = components.filter(comp => {
+        if (comp.id === idToRemove) {
+          removed = comp;
+          return false;
+        }
+        return true;
+      }).map(comp => {
+        if (comp.children && !removed) {
+          const result = removeFromTree(comp.children, idToRemove);
+          if (result.removed) {
+            removed = result.removed;
+            return { ...comp, children: result.components };
+          }
+        }
+        return comp;
+      });
+
+      return { components: newComponents, removed };
+    };
+
+    // Helper to insert component at index in tree
+    const insertInTree = (
+      components: VisualComponent[],
+      componentToInsert: VisualComponent,
+      index: number,
+      parentId?: string
+    ): VisualComponent[] => {
+      if (!parentId) {
+        // Insert at root level
+        const newComponents = [...components];
+        newComponents.splice(index, 0, componentToInsert);
+        return newComponents;
+      }
+
+      return components.map(comp => {
+        if (comp.id === parentId) {
+          const children = comp.children ? [...comp.children] : [];
+          children.splice(index, 0, componentToInsert);
+          return { ...comp, children };
+        }
+        if (comp.children) {
+          return { ...comp, children: insertInTree(comp.children, componentToInsert, index, parentId) };
+        }
+        return comp;
+      });
+    };
+
+    // Work with the active section components
+    if (state.activeSectionId && state.sectionComponents[state.activeSectionId]) {
+      let sectionComps = [...state.sectionComponents[state.activeSectionId]];
+
+      // Remove component from its current position
+      const { components: afterRemove, removed } = removeFromTree(sectionComps, componentId);
+
+      if (!removed) {
+        console.warn('Component not found for drag reorder:', componentId);
+        return;
+      }
+
+      // Insert at new position
+      const finalComponents = insertInTree(afterRemove, removed, targetIndex, targetParentId);
+
+      set({
+        sectionComponents: {
+          ...state.sectionComponents,
+          [state.activeSectionId]: finalComponents,
+        },
+      });
+    } else {
+      // Fallback to deprecated components array
+      let comps = [...state.components];
+
+      const { components: afterRemove, removed } = removeFromTree(comps, componentId);
+
+      if (!removed) {
+        console.warn('Component not found for drag reorder:', componentId);
+        return;
+      }
+
+      const finalComponents = insertInTree(afterRemove, removed, targetIndex, targetParentId);
+      set({ components: finalComponents });
+    }
+
+    get().saveToLocalStorage();
+  },
+
   moveComponentToSection: (componentId: string, fromSectionId: string, toSectionId: string) => {
     const state = get();
+    // Push current state to history before making changes
+    get().pushToHistory();
 
     // Get current components from source section
     const fromComponents = state.sectionComponents[fromSectionId] || [];
@@ -839,6 +1281,175 @@ export const useVisualBuilderStore = create<VisualBuilderState>((set, get) => ({
       });
     }
     get().saveToLocalStorage();
+  },
+
+  saveComponentAsTemplate: (componentId: string, name: string, description?: string) => {
+    const state = get();
+
+    // Helper to find component in tree
+    const findComponent = (components: VisualComponent[], id: string): VisualComponent | null => {
+      for (const comp of components) {
+        if (comp.id === id) return comp;
+        if (comp.children) {
+          const found = findComponent(comp.children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    // Helper to clone component with new IDs (for when template is loaded)
+    const cloneComponent = (comp: VisualComponent): VisualComponent => {
+      return {
+        ...comp,
+        id: comp.id, // Keep original ID in template, will be regenerated on load
+        props: { ...comp.props },
+        customStyles: comp.customStyles ? { ...comp.customStyles } : undefined,
+        children: comp.children ? comp.children.map(cloneComponent) : undefined,
+      };
+    };
+
+    // Search in all sections
+    let component: VisualComponent | null = null;
+    for (const sectionId of Object.keys(state.sectionComponents)) {
+      component = findComponent(state.sectionComponents[sectionId], componentId);
+      if (component) break;
+    }
+
+    // Fallback to deprecated components
+    if (!component) {
+      component = findComponent(state.components, componentId);
+    }
+
+    if (!component) {
+      console.warn('Component not found:', componentId);
+      return;
+    }
+
+    const template: ComponentTemplate = {
+      id: `template-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      name,
+      description,
+      component: cloneComponent(component),
+      createdAt: new Date().toISOString(),
+    };
+
+    const newTemplates = [...state.componentTemplates, template];
+    set({ componentTemplates: newTemplates });
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
+  },
+
+  loadTemplate: (templateId: string, parentId?: string) => {
+    const state = get();
+    const template = state.componentTemplates.find(t => t.id === templateId);
+
+    if (!template) {
+      console.warn('Template not found:', templateId);
+      return;
+    }
+
+    // Generate new IDs for the component and all children
+    const generateNewIds = (comp: VisualComponent): VisualComponent => {
+      const newId = `${comp.type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      return {
+        ...comp,
+        id: newId,
+        props: { ...comp.props },
+        customStyles: comp.customStyles ? { ...comp.customStyles } : undefined,
+        children: comp.children ? comp.children.map(generateNewIds) : undefined,
+      };
+    };
+
+    const newComponent = generateNewIds(template.component);
+
+    // Use addComponent to add the cloned component
+    get().addComponent(newComponent, parentId);
+  },
+
+  deleteTemplate: (templateId: string) => {
+    const state = get();
+    const newTemplates = state.componentTemplates.filter(t => t.id !== templateId);
+    set({ componentTemplates: newTemplates });
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
+  },
+
+  // Undo/Redo implementations
+  pushToHistory: () => {
+    const state = get();
+    // Don't push to history if this is an undo/redo action
+    if (state.isUndoRedoAction) return;
+
+    const historyState: HistoryState = {
+      components: JSON.parse(JSON.stringify(state.components)),
+      sectionComponents: JSON.parse(JSON.stringify(state.sectionComponents)),
+      globalStyles: JSON.parse(JSON.stringify(state.globalStyles)),
+    };
+
+    // Remove any future history if we're not at the end
+    const newHistory = state.history.slice(0, state.historyIndex + 1);
+    newHistory.push(historyState);
+
+    // Limit history size
+    if (newHistory.length > MAX_HISTORY_SIZE) {
+      newHistory.shift();
+    }
+
+    set({
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+    });
+  },
+
+  undo: () => {
+    const state = get();
+    if (state.historyIndex <= 0) return;
+
+    const newIndex = state.historyIndex - 1;
+    const historyState = state.history[newIndex];
+
+    if (historyState) {
+      set({
+        isUndoRedoAction: true,
+        components: JSON.parse(JSON.stringify(historyState.components)),
+        sectionComponents: JSON.parse(JSON.stringify(historyState.sectionComponents)),
+        globalStyles: JSON.parse(JSON.stringify(historyState.globalStyles)),
+        historyIndex: newIndex,
+        selectedComponentId: null,
+      });
+      set({ isUndoRedoAction: false });
+      get().saveToLocalStorage();
+    }
+  },
+
+  redo: () => {
+    const state = get();
+    if (state.historyIndex >= state.history.length - 1) return;
+
+    const newIndex = state.historyIndex + 1;
+    const historyState = state.history[newIndex];
+
+    if (historyState) {
+      set({
+        isUndoRedoAction: true,
+        components: JSON.parse(JSON.stringify(historyState.components)),
+        sectionComponents: JSON.parse(JSON.stringify(historyState.sectionComponents)),
+        globalStyles: JSON.parse(JSON.stringify(historyState.globalStyles)),
+        historyIndex: newIndex,
+        selectedComponentId: null,
+      });
+      set({ isUndoRedoAction: false });
+      get().saveToLocalStorage();
+    }
+  },
+
+  canUndo: () => {
+    const state = get();
+    return state.historyIndex > 0;
+  },
+
+  canRedo: () => {
+    const state = get();
+    return state.historyIndex < state.history.length - 1;
   },
 
   saveToLocalStorage: () => {

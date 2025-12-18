@@ -39,6 +39,10 @@ export default function VisualBuilder() {
     clearCanvas,
     setSectionComponents,
     setActiveSectionId,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useVisualBuilderStore();
 
   const [searchParams] = useSearchParams();
@@ -54,6 +58,32 @@ export default function VisualBuilder() {
       setProjectName(savedProjectName);
     }
   }, []);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if target is an input or textarea to avoid interfering with text editing
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo()) {
+          undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo()) {
+          redo();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   // Load page data if editing
   useEffect(() => {
@@ -379,6 +409,38 @@ export default function VisualBuilder() {
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Undo/Redo Buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={undo}
+                disabled={!canUndo()}
+                className={`p-1.5 sm:p-2 rounded-md transition-colors ${
+                  canUndo()
+                    ? 'text-gray-600 hover:bg-gray-200 hover:text-gray-800'
+                    : 'text-gray-300 cursor-not-allowed'
+                }`}
+                title="Undo (Ctrl+Z)"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+              </button>
+              <button
+                onClick={redo}
+                disabled={!canRedo()}
+                className={`p-1.5 sm:p-2 rounded-md transition-colors ${
+                  canRedo()
+                    ? 'text-gray-600 hover:bg-gray-200 hover:text-gray-800'
+                    : 'text-gray-300 cursor-not-allowed'
+                }`}
+                title="Redo (Ctrl+Y)"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
                 </svg>
               </button>
             </div>

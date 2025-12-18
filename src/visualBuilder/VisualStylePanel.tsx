@@ -951,6 +951,36 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
             />
             <label htmlFor="showSearch" className="text-xs text-gray-600">Show Search Box</label>
           </div>
+
+          {/* Search Navigation Settings */}
+          {props.showSearch !== false && (
+            <div className="pt-2 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">Search Navigation</p>
+              <div className="mb-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Target URL</label>
+                <input
+                  type="text"
+                  value={props.searchTargetUrl || ''}
+                  onChange={(e) => handlePropChange('searchTargetUrl', e.target.value)}
+                  placeholder="/preview/chat"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+                <p className="text-xs text-gray-400 mt-1">URL to navigate when searching (leave empty to disable)</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Query Parameter</label>
+                <input
+                  type="text"
+                  value={props.searchQueryParam || 'q'}
+                  onChange={(e) => handlePropChange('searchQueryParam', e.target.value)}
+                  placeholder="q"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+                <p className="text-xs text-gray-400 mt-1">URL parameter name for the search query</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
