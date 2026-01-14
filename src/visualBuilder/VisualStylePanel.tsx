@@ -2926,6 +2926,198 @@ export default function VisualStylePanel({ previewLayout }: VisualStylePanelProp
           {renderTextInput('Button Padding', 'buttonPadding', 'e.g., 10px 16px')}
         </>
       ))}
+
+      {/* AllegiantSeedForm Content */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Content', 'allegiantFormContent', (
+        <>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Form Description</label>
+            <input
+              type="text"
+              value={props.formDescription || ''}
+              onChange={(e) => handlePropChange('formDescription', e.target.value)}
+              placeholder="Please fill out all fields..."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Submit Button Text</label>
+            <input
+              type="text"
+              value={props.submitButtonText || 'Submit'}
+              onChange={(e) => handlePropChange('submitButtonText', e.target.value)}
+              placeholder="Submit"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 mb-1">Success Message</label>
+            <input
+              type="text"
+              value={props.successMessage || ''}
+              onChange={(e) => handlePropChange('successMessage', e.target.value)}
+              placeholder="Thank you! Your form has been submitted."
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </>
+      ))}
+
+      {/* AllegiantSeedForm Fields */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Form Fields', 'allegiantFormFields', (
+        <>
+          <p className="text-xs text-gray-500 mb-3">Add, edit, or remove form fields</p>
+          {(props.fields || []).map((field: { id: string; label: string; type: string; required?: boolean; width?: string; placeholder?: string }, index: number) => (
+            <div key={field.id || index} className="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-gray-700">Field {index + 1}</span>
+                <button
+                  onClick={() => {
+                    const newFields = (props.fields || []).filter((_: unknown, i: number) => i !== index);
+                    handlePropChange('fields', newFields);
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Label</label>
+                  <input
+                    type="text"
+                    value={field.label}
+                    onChange={(e) => {
+                      const newFields = [...(props.fields || [])];
+                      newFields[index] = { ...newFields[index], label: e.target.value };
+                      handlePropChange('fields', newFields);
+                    }}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Type</label>
+                  <select
+                    value={field.type}
+                    onChange={(e) => {
+                      const newFields = [...(props.fields || [])];
+                      newFields[index] = { ...newFields[index], type: e.target.value };
+                      handlePropChange('fields', newFields);
+                    }}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                  >
+                    <option value="text">Text</option>
+                    <option value="email">Email</option>
+                    <option value="tel">Phone</option>
+                    <option value="textarea">Textarea</option>
+                    <option value="select">Dropdown</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Width</label>
+                  <select
+                    value={field.width || '100'}
+                    onChange={(e) => {
+                      const newFields = [...(props.fields || [])];
+                      newFields[index] = { ...newFields[index], width: e.target.value };
+                      handlePropChange('fields', newFields);
+                    }}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                  >
+                    <option value="25">25%</option>
+                    <option value="50">50%</option>
+                    <option value="75">75%</option>
+                    <option value="100">100%</option>
+                  </select>
+                </div>
+                <div className="flex items-end pb-1">
+                  <label className="flex items-center gap-1 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={field.required !== false}
+                      onChange={(e) => {
+                        const newFields = [...(props.fields || [])];
+                        newFields[index] = { ...newFields[index], required: e.target.checked };
+                        handlePropChange('fields', newFields);
+                      }}
+                      className="w-3 h-3"
+                    />
+                    Required
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Placeholder</label>
+                <input
+                  type="text"
+                  value={field.placeholder || ''}
+                  onChange={(e) => {
+                    const newFields = [...(props.fields || [])];
+                    newFields[index] = { ...newFields[index], placeholder: e.target.value };
+                    handlePropChange('fields', newFields);
+                  }}
+                  placeholder="Optional placeholder text"
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newFields = [
+                ...(props.fields || []),
+                { id: `field_${Date.now()}`, label: 'New Field', type: 'text', required: false, width: '100' }
+              ];
+              handlePropChange('fields', newFields);
+            }}
+            className="w-full px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+          >
+            + Add Field
+          </button>
+        </>
+      ))}
+
+      {/* AllegiantSeedForm Container Styles */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Container Styles', 'allegiantFormContainer', (
+        <>
+          {renderColorInput('Background Color', 'backgroundColor', '#ffffff')}
+          {renderTextInput('Padding', 'padding', 'e.g., 32px')}
+          {renderTextInput('Border Radius', 'borderRadius', 'e.g., 0px')}
+          {renderTextInput('Border Width', 'borderWidth', 'e.g., 1px')}
+          {renderColorInput('Border Color', 'borderColor', '#e5e7eb')}
+        </>
+      ))}
+
+      {/* AllegiantSeedForm Label Styles */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Label Styles', 'allegiantFormLabels', (
+        <>
+          {renderColorInput('Label Color', 'labelColor', '#333333')}
+          {renderTextInput('Label Font Size', 'labelFontSize', 'e.g., 14px')}
+          {renderColorInput('Required Asterisk Color', 'requiredColor', '#c41230')}
+          {renderColorInput('Description Color', 'descriptionColor', '#666666')}
+        </>
+      ))}
+
+      {/* AllegiantSeedForm Input Styles */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Input Styles', 'allegiantFormInputs', (
+        <>
+          {renderColorInput('Input Background', 'inputBackgroundColor', '#ffffff')}
+          {renderColorInput('Input Text Color', 'inputTextColor', '#333333')}
+          {renderColorInput('Input Border Color', 'inputBorderColor', '#cccccc')}
+          {renderTextInput('Input Border Radius', 'inputBorderRadius', 'e.g., 4px')}
+        </>
+      ))}
+
+      {/* AllegiantSeedForm Button Styles */}
+      {selectedComponent.type === 'AllegiantSeedForm' && renderSection('Button Styles', 'allegiantFormButton', (
+        <>
+          {renderColorInput('Button Background', 'buttonBackgroundColor', '#0066a1')}
+          {renderColorInput('Button Text Color', 'buttonTextColor', '#ffffff')}
+          {renderTextInput('Button Border Radius', 'buttonBorderRadius', 'e.g., 4px')}
+        </>
+      ))}
     </div>
   );
 }

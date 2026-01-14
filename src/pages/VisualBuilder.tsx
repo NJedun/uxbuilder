@@ -85,13 +85,18 @@ export default function VisualBuilder() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, canUndo, canRedo]);
 
-  // Load page data if editing
+  // Load page data if editing, or clear canvas if creating new
   useEffect(() => {
     const editRowKey = searchParams.get('edit');
     const editProject = searchParams.get('project');
 
     if (editRowKey && editProject) {
       loadPageForEditing(editProject, editRowKey);
+    } else {
+      // No edit params - clear for a fresh canvas
+      setEditingPage(null);
+      setSectionComponents({});
+      setActiveSectionId(null);
     }
   }, [searchParams]);
 
@@ -371,6 +376,9 @@ export default function VisualBuilder() {
   const handleNewPage = () => {
     // Clear editing state so saving creates a new page instead of updating
     setEditingPage(null);
+    // Clear all section components for a fresh canvas
+    setSectionComponents({});
+    setActiveSectionId(null);
     // Also clear URL params if present
     if (searchParams.get('edit')) {
       window.history.replaceState({}, '', '/visual-builder');

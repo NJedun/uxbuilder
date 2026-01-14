@@ -1,8 +1,10 @@
 import { VisualComponent, useVisualBuilderStore, GlobalStyles } from '../store/visualBuilderStore';
 import type { ViewMode } from '../pages/VisualBuilder';
 import { useConfirm } from '../components/ConfirmDialog';
+import { useToast } from '../components/Toast';
 import {
   AIChatWidget,
+  AllegiantSeedForm,
   Breadcrumb,
   HeaderComponent,
   HeaderAllegiant,
@@ -41,6 +43,7 @@ export default function VisualComponentRenderer({
   const { deleteComponent, selectComponent, selectedComponentId, globalStyles } =
     useVisualBuilderStore();
   const { confirm } = useConfirm();
+  const toast = useToast();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -251,6 +254,22 @@ export default function VisualComponentRenderer({
             styles={styles}
             globalStyles={globalStyles}
             getStyle={getStyle}
+          />
+        );
+
+      case 'AllegiantSeedForm':
+        return (
+          <AllegiantSeedForm
+            props={props}
+            styles={styles}
+            globalStyles={globalStyles}
+            viewMode={viewMode}
+            getStyle={getStyle}
+            onToast={(message, type) => {
+              if (type === 'success') toast.showSuccess(message);
+              else if (type === 'error') toast.showError(message);
+              else toast.showInfo(message);
+            }}
           />
         );
 

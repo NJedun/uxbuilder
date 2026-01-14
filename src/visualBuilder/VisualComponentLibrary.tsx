@@ -92,6 +92,11 @@ const ComponentIcons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
+  AllegiantSeedForm: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
 };
 
 const componentTemplates = [
@@ -641,6 +646,45 @@ const componentTemplates = [
       buttonTextColor: '#ffffff',
       buttonBorderRadius: '8px',
       buttonPadding: '10px 16px',
+    },
+  },
+  {
+    type: 'AllegiantSeedForm',
+    label: 'Allegiant Seed Form',
+    canBeChild: true,
+    defaultProps: {
+      formTitle: '',
+      formDescription: 'Please fill out all fields unless marked optional',
+      fields: [
+        { id: 'firstName', label: 'First name', type: 'text', required: true, width: '50' },
+        { id: 'lastName', label: 'Last name', type: 'text', required: true, width: '50' },
+        { id: 'email', label: 'Email address', type: 'email', required: true, width: '50' },
+        { id: 'phone', label: 'Phone number', type: 'tel', required: true, width: '50' },
+        { id: 'city', label: 'City', type: 'text', required: true, width: '50' },
+        { id: 'state', label: 'State', type: 'text', required: true, width: '50' },
+        { id: 'comments', label: 'Questions or comments', type: 'textarea', required: true, width: '100', placeholder: 'Please be as detailed as possible so that we can better address your inquiry' },
+      ],
+      submitButtonText: 'Submit',
+      successMessage: 'Thank you! Your form has been submitted successfully.',
+    },
+    defaultStyles: {
+      backgroundColor: '#ffffff',
+      padding: '32px',
+      borderRadius: '0px',
+      borderWidth: '',
+      borderStyle: 'solid',
+      borderColor: '#e5e7eb',
+      labelColor: '#333333',
+      labelFontSize: '14px',
+      inputBorderColor: '#cccccc',
+      inputBorderRadius: '4px',
+      inputBackgroundColor: '#ffffff',
+      inputTextColor: '#333333',
+      requiredColor: '#c41230',
+      buttonBackgroundColor: '#0066a1',
+      buttonTextColor: '#ffffff',
+      buttonBorderRadius: '4px',
+      descriptionColor: '#666666',
     },
   },
 ];
