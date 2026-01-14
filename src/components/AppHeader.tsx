@@ -14,6 +14,7 @@ export default function AppHeader({ title, titleColor = 'text-gray-700', childre
     { path: '/visual-builder', label: 'Builder' },
     { path: '/layouts', label: 'Layouts' },
     { path: '/pages', label: 'Pages' },
+    { path: '/content-intake', label: 'Add Product' },
   ];
 
   const isActive = (path: string) => {
